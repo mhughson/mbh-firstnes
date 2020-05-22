@@ -50,7 +50,7 @@ void main (void) {
 		
 		clear_vram_buffer(); // do at the beginning of each frame
 
-		pal_bright(p);
+		pal_bright(p); // test
 
 		if (tick == 0)
 		{
