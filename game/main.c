@@ -11,7 +11,7 @@ void main (void)
 	unsigned char ix;
 	unsigned char iy;
 	unsigned char line_complete;
-	int address;
+	//int address;
 
 	ppu_off(); // screen off
 	
@@ -33,7 +33,8 @@ void main (void)
 	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
 	vram_write(text, sizeof(text)-1); // -1 null term
 	
-	set_scroll_y(0xff); // shift the bg down 1 pixel
+	scroll(0, 239); // shift the bg down 1 pixel
+	//set_scroll_y(0xff);
 	
 	ppu_on_all(); // turn on screen
 
@@ -80,6 +81,7 @@ void main (void)
 					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
 					*/
 
+					/*
 					put_block(0, BOARD_END_Y_PX_BOARD);
 					put_block(1, BOARD_END_Y_PX_BOARD);
 					put_block(2, BOARD_END_Y_PX_BOARD);
@@ -90,6 +92,7 @@ void main (void)
 					put_block(7, BOARD_END_Y_PX_BOARD);
 					put_block(8, BOARD_END_Y_PX_BOARD);
 					put_block(9, BOARD_END_Y_PX_BOARD);
+					*/
 
 					spawn_new_cluster();
 
@@ -186,7 +189,7 @@ void draw_sprites(void)
 
 			if (cur_cluster.layout & (0x8000 >> bit))
 			{
-				oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 1);
+				oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 1);
 			}
 			// else
 			// {
@@ -345,11 +348,11 @@ void put_cur_cluster()
 {
 	unsigned char ix;
 	unsigned char iy;
-	unsigned char iy2;
-	unsigned char line_complete;
-	unsigned char top;
-	unsigned char bottom;
-	int address;
+	//unsigned char iy2;
+	//unsigned char line_complete;
+	//unsigned char top;
+	//unsigned char bottom;
+	//int address;
 
 	do_line_check = 1;
 
@@ -413,13 +416,16 @@ unsigned char is_cluster_colliding()
 
 void spawn_new_cluster()
 {
+	unsigned char id;
 	// Spawn a new block.
 	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
 	cur_block.y = 0;
 
 	cur_rot = 0;
-	cur_cluster.def = cluster_defs[rand8() % NUM_CLUSTERS]; // def_z_rev_clust;
+	id = rand8() % NUM_CLUSTERS;
+	cur_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	cur_cluster.layout = cur_cluster.def[0];
+	cur_cluster.sprite = cluster_sprites[id];
 }
 
 void rotate_cur_cluster(char dir)

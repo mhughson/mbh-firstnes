@@ -19,6 +19,7 @@
 	.import		_oam_clear
 	.import		_oam_spr
 	.import		_pad_poll
+	.import		_scroll
 	.import		_bank_spr
 	.import		_rand8
 	.import		_vram_adr
@@ -29,7 +30,6 @@
 	.import		_one_vram_buffer
 	.import		_clear_vram_buffer
 	.import		_get_pad_new
-	.import		_set_scroll_y
 	.import		_get_ppu_addr
 	.import		_seed_rng
 	.export		_RoundSprL
@@ -52,6 +52,7 @@
 	.export		_cluster_defs
 	.export		_cur_rot
 	.export		_cur_cluster
+	.export		_cluster_sprites
 	.export		_do_line_check
 	.export		_line_crush_y
 	.export		_game_board
@@ -91,6 +92,14 @@ _cluster_defs:
 	.addr	_def_tee_clust
 	.addr	_def_L_clust
 	.addr	_def_L_rev_clust
+_cluster_sprites:
+	.byte	$10
+	.byte	$11
+	.byte	$12
+	.byte	$13
+	.byte	$14
+	.byte	$15
+	.byte	$16
 _empty_row:
 	.byte	$00
 	.byte	$00
@@ -156,184 +165,702 @@ _game_area:
 	.byte	$01
 	.byte	$00
 	.byte	$01
-	.byte	$8A
-	.byte	$06
+	.byte	$16
+	.byte	$B2
+	.byte	$E7
+	.byte	$00
+	.byte	$01
 	.byte	$02
-	.byte	$01
-	.byte	$09
-	.byte	$07
+	.byte	$A4
+	.byte	$A5
+	.byte	$A6
 	.byte	$00
 	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
-	.byte	$05
-	.byte	$00
-	.byte	$01
-	.byte	$09
-	.byte	$03
-	.byte	$00
-	.byte	$01
-	.byte	$13
 	.byte	$08
-	.byte	$04
-	.byte	$01
-	.byte	$09
-	.byte	$09
+	.byte	$E4
+	.byte	$E7
 	.byte	$00
 	.byte	$01
+	.byte	$0B
+	.byte	$E4
+	.byte	$C9
+	.byte	$F7
+	.byte	$00
+	.byte	$B2
+	.byte	$B3
+	.byte	$B4
+	.byte	$B5
+	.byte	$B6
+	.byte	$B7
+	.byte	$00
+	.byte	$A4
+	.byte	$A5
+	.byte	$A6
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$87
+	.byte	$89
+	.byte	$88
+	.byte	$8B
+	.byte	$A5
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$C0
+	.byte	$87
+	.byte	$8A
+	.byte	$88
+	.byte	$8B
+	.byte	$C2
+	.byte	$C3
+	.byte	$C4
+	.byte	$C5
+	.byte	$C6
+	.byte	$C7
+	.byte	$B3
+	.byte	$B4
+	.byte	$B5
+	.byte	$B6
+	.byte	$B7
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$80
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$D2
+	.byte	$D3
+	.byte	$D4
+	.byte	$D5
+	.byte	$D6
+	.byte	$D7
+	.byte	$C3
+	.byte	$C4
+	.byte	$C5
+	.byte	$C6
 	.byte	$C7
 	.byte	$00
+	.byte	$00
+	.byte	$E4
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$99
+	.byte	$98
+	.byte	$9B
+	.byte	$E6
+	.byte	$E7
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$D3
+	.byte	$D4
+	.byte	$D5
+	.byte	$D6
+	.byte	$D7
+	.byte	$00
+	.byte	$00
+	.byte	$F4
+	.byte	$97
+	.byte	$A8
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$B1
+	.byte	$B1
+	.byte	$E6
+	.byte	$E7
+	.byte	$00
+	.byte	$01
+	.byte	$08
+	.byte	$D8
+	.byte	$97
+	.byte	$A9
+	.byte	$AA
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$A7
+	.byte	$A8
+	.byte	$98
+	.byte	$9B
+	.byte	$F5
+	.byte	$B1
+	.byte	$E8
+	.byte	$F7
+	.byte	$00
+	.byte	$01
+	.byte	$08
+	.byte	$D0
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$C9
+	.byte	$E8
+	.byte	$F6
+	.byte	$F7
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$A4
+	.byte	$A5
+	.byte	$A7
+	.byte	$A8
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$D9
+	.byte	$F8
+	.byte	$F9
+	.byte	$A3
+	.byte	$00
+	.byte	$01
+	.byte	$05
+	.byte	$B2
+	.byte	$B3
+	.byte	$B4
+	.byte	$B4
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$A9
+	.byte	$98
+	.byte	$9B
+	.byte	$A2
+	.byte	$A2
+	.byte	$EA
+	.byte	$FA
+	.byte	$00
+	.byte	$01
+	.byte	$04
+	.byte	$E4
+	.byte	$F5
+	.byte	$B4
+	.byte	$E8
+	.byte	$F6
+	.byte	$97
+	.byte	$99
+	.byte	$98
+	.byte	$BB
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$9A
+	.byte	$9B
+	.byte	$E2
+	.byte	$E3
+	.byte	$00
+	.byte	$01
+	.byte	$06
+	.byte	$F4
+	.byte	$C9
+	.byte	$F6
+	.byte	$F6
+	.byte	$B4
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$F2
+	.byte	$F3
+	.byte	$00
+	.byte	$01
+	.byte	$06
+	.byte	$D0
+	.byte	$C2
+	.byte	$C3
+	.byte	$C4
+	.byte	$C5
+	.byte	$A7
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$A7
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$E2
+	.byte	$E3
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$EA
+	.byte	$D1
+	.byte	$D3
+	.byte	$D3
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$B8
+	.byte	$98
+	.byte	$9B
+	.byte	$E2
+	.byte	$F3
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$E0
+	.byte	$E1
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$83
+	.byte	$84
+	.byte	$85
+	.byte	$86
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$F0
+	.byte	$F1
+	.byte	$97
+	.byte	$B8
+	.byte	$98
+	.byte	$BB
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$93
+	.byte	$94
+	.byte	$95
+	.byte	$96
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$F2
+	.byte	$E3
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$B9
+	.byte	$BA
+	.byte	$9B
+	.byte	$87
+	.byte	$8B
+	.byte	$97
+	.byte	$FA
+	.byte	$9D
+	.byte	$00
+	.byte	$C7
+	.byte	$00
+	.byte	$00
+	.byte	$A4
+	.byte	$A5
+	.byte	$00
+	.byte	$E2
+	.byte	$E3
+	.byte	$A7
+	.byte	$98
+	.byte	$99
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$FA
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$AD
+	.byte	$00
+	.byte	$80
+	.byte	$01
+	.byte	$02
+	.byte	$90
+	.byte	$82
+	.byte	$84
+	.byte	$85
+	.byte	$84
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$BC
+	.byte	$BD
+	.byte	$BE
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$A1
+	.byte	$92
+	.byte	$94
+	.byte	$95
+	.byte	$94
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$CC
+	.byte	$CD
+	.byte	$CE
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$97
+	.byte	$9A
+	.byte	$98
+	.byte	$99
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$BB
+	.byte	$00
+	.byte	$00
+	.byte	$DB
+	.byte	$DC
+	.byte	$DD
+	.byte	$DE
+	.byte	$9E
+	.byte	$9F
+	.byte	$00
+	.byte	$00
+	.byte	$A7
+	.byte	$98
+	.byte	$98
+	.byte	$99
+	.byte	$97
+	.byte	$9A
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$00
+	.byte	$EB
+	.byte	$EC
+	.byte	$ED
+	.byte	$EE
+	.byte	$AE
+	.byte	$AF
+	.byte	$8C
+	.byte	$8C
+	.byte	$97
+	.byte	$A8
+	.byte	$98
+	.byte	$B9
+	.byte	$97
+	.byte	$B8
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8C
+	.byte	$BF
+	.byte	$FB
+	.byte	$FC
+	.byte	$FD
+	.byte	$FE
+	.byte	$8C
+	.byte	$01
+	.byte	$03
+	.byte	$97
+	.byte	$98
+	.byte	$01
+	.byte	$02
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$A7
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$CF
+	.byte	$8C
+	.byte	$8C
+	.byte	$CF
+	.byte	$8C
+	.byte	$8C
+	.byte	$8E
+	.byte	$01
+	.byte	$03
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$A9
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$AB
+	.byte	$82
+	.byte	$83
+	.byte	$84
+	.byte	$85
+	.byte	$84
+	.byte	$85
+	.byte	$83
+	.byte	$84
+	.byte	$85
+	.byte	$86
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8E
+	.byte	$8F
+	.byte	$8C
+	.byte	$01
+	.byte	$07
+	.byte	$97
+	.byte	$B8
+	.byte	$98
+	.byte	$98
+	.byte	$97
+	.byte	$98
+	.byte	$9A
+	.byte	$9B
+	.byte	$92
+	.byte	$93
+	.byte	$94
+	.byte	$95
+	.byte	$94
+	.byte	$95
+	.byte	$93
+	.byte	$94
+	.byte	$95
+	.byte	$96
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8C
+	.byte	$01
+	.byte	$09
+	.byte	$8D
+	.byte	$8E
+	.byte	$01
+	.byte	$02
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8D
+	.byte	$8E
+	.byte	$01
+	.byte	$07
+	.byte	$8F
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8C
+	.byte	$01
+	.byte	$06
+	.byte	$BF
+	.byte	$8C
+	.byte	$01
+	.byte	$05
+	.byte	$97
+	.byte	$98
+	.byte	$98
+	.byte	$8C
+	.byte	$01
+	.byte	$0B
+	.byte	$98
+	.byte	$98
+	.byte	$9B
+	.byte	$8C
+	.byte	$01
+	.byte	$04
+	.byte	$AE
+	.byte	$8C
+	.byte	$01
+	.byte	$07
+	.byte	$8D
+	.byte	$8E
+	.byte	$8E
+	.byte	$8F
+	.byte	$8C
+	.byte	$01
+	.byte	$09
+	.byte	$8D
+	.byte	$8E
+	.byte	$8E
+	.byte	$8F
+	.byte	$8C
+	.byte	$01
+	.byte	$03
+	.byte	$BF
+	.byte	$8C
+	.byte	$01
+	.byte	$20
+	.byte	$55
+	.byte	$55
+	.byte	$A7
+	.byte	$F5
+	.byte	$F5
+	.byte	$BD
+	.byte	$67
+	.byte	$55
+	.byte	$55
+	.byte	$DD
+	.byte	$AA
+	.byte	$00
+	.byte	$00
+	.byte	$88
+	.byte	$EE
+	.byte	$77
+	.byte	$D5
+	.byte	$FF
+	.byte	$AA
+	.byte	$00
+	.byte	$00
+	.byte	$88
+	.byte	$EE
+	.byte	$57
+	.byte	$5D
+	.byte	$DF
+	.byte	$AA
+	.byte	$00
+	.byte	$00
+	.byte	$88
+	.byte	$EE
+	.byte	$75
+	.byte	$FF
+	.byte	$FF
+	.byte	$AA
+	.byte	$00
+	.byte	$00
+	.byte	$88
+	.byte	$AA
+	.byte	$56
+	.byte	$51
+	.byte	$AA
+	.byte	$AA
+	.byte	$00
+	.byte	$00
+	.byte	$88
+	.byte	$66
+	.byte	$55
+	.byte	$55
+	.byte	$5A
+	.byte	$AA
+	.byte	$5F
+	.byte	$5F
+	.byte	$9B
+	.byte	$66
+	.byte	$55
+	.byte	$05
+	.byte	$01
+	.byte	$06
+	.byte	$05
 	.byte	$01
 	.byte	$00
 _text:
@@ -374,21 +901,21 @@ _def_L_rev_clust:
 	.word	$8E00
 	.word	$6440
 _palette_bg:
-	.byte	$0F
+	.byte	$33
 	.byte	$00
 	.byte	$10
 	.byte	$30
-	.byte	$0F
-	.byte	$07
-	.byte	$17
-	.byte	$27
-	.byte	$0F
-	.byte	$02
-	.byte	$12
+	.byte	$33
 	.byte	$22
+	.byte	$01
+	.byte	$30
+	.byte	$33
 	.byte	$0F
-	.byte	$09
-	.byte	$19
+	.byte	$1D
+	.byte	$22
+	.byte	$33
+	.byte	$0F
+	.byte	$26
 	.byte	$29
 _palette_sp:
 	.byte	$0F
@@ -420,7 +947,7 @@ _pad1_new:
 _cur_rot:
 	.res	1,$00
 _cur_cluster:
-	.res	4,$00
+	.res	5,$00
 _do_line_check:
 	.res	1,$00
 _line_crush_y:
@@ -463,7 +990,7 @@ _game_board:
 	asl     a
 	asl     a
 	clc
-	adc     #$28
+	adc     #$20
 	dey
 	sta     (sp),y
 ;
@@ -471,17 +998,17 @@ _game_board:
 ;
 	lda     #$00
 	tay
-L030D:	sta     (sp),y
+L050F:	sta     (sp),y
 	cmp     #$04
-	bcs     L01F1
+	bcs     L03ED
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
 	tya
 	iny
-L030C:	sta     (sp),y
+L050E:	sta     (sp),y
 	cmp     #$04
-	bcs     L01F2
+	bcs     L03EE
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -512,9 +1039,9 @@ L030C:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L0204
+	beq     L0400
 ;
-; oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 1);
+; oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 1);
 ;
 	jsr     decsp3
 	ldy     #$05
@@ -537,14 +1064,15 @@ L030C:	sta     (sp),y
 	adc     (sp),y
 	ldy     #$01
 	sta     (sp),y
-	tya
+	lda     _cur_cluster+4
 	dey
 	sta     (sp),y
+	lda     #$01
 	jsr     _oam_spr
 ;
 ; }
 ;
-L0204:	jsr     incsp1
+L0400:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
@@ -552,19 +1080,19 @@ L0204:	jsr     incsp1
 	clc
 	tya
 	adc     (sp),y
-	jmp     L030C
+	jmp     L050E
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L01F2:	dey
+L03EE:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L030D
+	jmp     L050F
 ;
 ; }
 ;
-L01F1:	jmp     incsp4
+L03ED:	jmp     incsp4
 
 .endproc
 
@@ -584,7 +1112,7 @@ L01F1:	jmp     incsp4
 	jsr     decsp3
 	lda     _pad1_new
 	and     #$20
-	beq     L0312
+	beq     L0514
 ;
 ; spawn_new_cluster();
 ;
@@ -592,9 +1120,9 @@ L01F1:	jmp     incsp4
 ;
 ; if (pad1_new & PAD_A)
 ;
-L0312:	lda     _pad1_new
+L0514:	lda     _pad1_new
 	and     #$80
-	beq     L0313
+	beq     L0515
 ;
 ; rotate_cur_cluster(1);
 ;
@@ -602,21 +1130,21 @@ L0312:	lda     _pad1_new
 ;
 ; else if (pad1_new & PAD_B)
 ;
-	jmp     L030F
-L0313:	lda     _pad1_new
+	jmp     L0511
+L0515:	lda     _pad1_new
 	and     #$40
-	beq     L0314
+	beq     L0516
 ;
 ; rotate_cur_cluster(-1);
 ;
 	lda     #$FF
-L030F:	jsr     _rotate_cur_cluster
+L0511:	jsr     _rotate_cur_cluster
 ;
 ; if (/*(pad1 & PAD_RIGHT && (tick_count % 4 == 0)) ||*/ pad1_new & PAD_RIGHT)
 ;
-L0314:	lda     _pad1_new
+L0516:	lda     _pad1_new
 	and     #$01
-	beq     L0315
+	beq     L0517
 ;
 ; old_x = cur_block.x;
 ;
@@ -630,10 +1158,10 @@ L0314:	lda     _pad1_new
 ;
 ; else if (/*(pad1 & PAD_LEFT && (tick_count % 4 == 0)) ||*/ pad1_new & PAD_LEFT)
 ;
-	jmp     L0222
-L0315:	lda     _pad1_new
+	jmp     L041E
+L0517:	lda     _pad1_new
 	and     #$02
-	beq     L0222
+	beq     L041E
 ;
 ; old_x = cur_block.x;
 ;
@@ -647,9 +1175,9 @@ L0315:	lda     _pad1_new
 ;
 ; if (is_cluster_colliding())
 ;
-L0222:	jsr     _is_cluster_colliding
+L041E:	jsr     _is_cluster_colliding
 	tax
-	beq     L0316
+	beq     L0518
 ;
 ; cur_block.x = old_x;
 ;
@@ -659,7 +1187,7 @@ L0222:	jsr     _is_cluster_colliding
 ;
 ; temp_fall_rate = fall_rate;
 ;
-L0316:	lda     _fall_rate
+L0518:	lda     _fall_rate
 	ldy     #$01
 	sta     (sp),y
 ;
@@ -667,21 +1195,21 @@ L0316:	lda     _fall_rate
 ;
 	lda     _pad1_new
 	and     #$04
-	bne     L0317
+	bne     L0519
 	lda     _pad1
 	and     #$08
-	beq     L0318
+	beq     L051A
 ;
 ; temp_fall_rate = tick_count;
 ;
-L0317:	lda     _tick_count
+L0519:	lda     _tick_count
 ;
 ; else if (pad1 & PAD_DOWN)
 ;
-	jmp     L0311
-L0318:	lda     _pad1
+	jmp     L0513
+L051A:	lda     _pad1
 	and     #$04
-	beq     L0319
+	beq     L051B
 ;
 ; temp_fall_rate >>= 4;
 ;
@@ -690,19 +1218,19 @@ L0318:	lda     _pad1
 	lsr     a
 	lsr     a
 	lsr     a
-L0311:	sta     (sp),y
+L0513:	sta     (sp),y
 ;
 ; if (tick_count % temp_fall_rate == 0)
 ;
-L0319:	lda     _tick_count
+L051B:	lda     _tick_count
 	jsr     pusha0
 	ldy     #$03
 	lda     (sp),y
 	jsr     tosumoda0
 	cpx     #$00
-	bne     L0238
+	bne     L0434
 	cmp     #$00
-	bne     L0238
+	bne     L0434
 ;
 ; cur_block.y += 1;
 ;
@@ -710,7 +1238,7 @@ L0319:	lda     _tick_count
 ;
 ; hit = 0;
 ;
-L0238:	lda     #$00
+L0434:	lda     #$00
 	ldy     #$02
 	sta     (sp),y
 ;
@@ -718,7 +1246,7 @@ L0238:	lda     #$00
 ;
 	jsr     _is_cluster_colliding
 	tax
-	beq     L023F
+	beq     L043B
 ;
 ; cur_block.y -= 1;
 ;
@@ -732,9 +1260,9 @@ L0238:	lda     #$00
 ;
 ; if (hit)
 ;
-L023F:	ldy     #$02
+L043B:	ldy     #$02
 	lda     (sp),y
-	beq     L0245
+	beq     L0441
 ;
 ; put_cur_cluster();
 ;
@@ -746,7 +1274,7 @@ L023F:	ldy     #$02
 ;
 ; }
 ;
-L0245:	jmp     incsp3
+L0441:	jmp     incsp3
 
 .endproc
 
@@ -821,7 +1349,7 @@ L0245:	jmp     incsp3
 	asl     a
 	asl     a
 	clc
-	adc     #$28
+	adc     #$20
 	jsr     _get_ppu_addr
 	jsr     stax0sp
 ;
@@ -850,10 +1378,10 @@ L0245:	jmp     incsp3
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L031B
+	bcc     L051D
 	inx
 	clc
-L031B:	adc     #<(_game_board)
+L051D:	adc     #<(_game_board)
 	sta     ptr1
 	txa
 	adc     #>(_game_board)
@@ -917,25 +1445,25 @@ L031B:	adc     #<(_game_board)
 ;
 ; do_line_check = 1;
 ;
-	jsr     decsp8
+	jsr     decsp2
 	lda     #$01
 	sta     _do_line_check
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
 	lda     #$00
-	ldy     #$06
-L031F:	sta     (sp),y
+	tay
+L0521:	sta     (sp),y
 	cmp     #$04
-	bcs     L026A
+	bcs     L0466
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
-	lda     #$00
+	tya
 	iny
-L031E:	sta     (sp),y
+L0520:	sta     (sp),y
 	cmp     #$04
-	bcs     L026B
+	bcs     L0467
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -966,16 +1494,16 @@ L031E:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L027D
+	beq     L0479
 ;
 ; put_block(cur_block.x + ix, cur_block.y + iy);
 ;
-	ldy     #$08
+	ldy     #$02
 	lda     (sp),y
 	clc
 	adc     _cur_block
 	jsr     pusha
-	ldy     #$08
+	ldy     #$02
 	lda     (sp),y
 	clc
 	adc     _cur_block+1
@@ -983,27 +1511,27 @@ L031E:	sta     (sp),y
 ;
 ; }
 ;
-L027D:	jsr     incsp1
+L0479:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
-	ldy     #$07
+	ldy     #$01
 	clc
-	lda     #$01
+	tya
 	adc     (sp),y
-	jmp     L031E
+	jmp     L0520
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L026B:	dey
+L0467:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L031F
+	jmp     L0521
 ;
 ; }
 ;
-L026A:	jmp     incsp8
+L0466:	jmp     incsp2
 
 .endproc
 
@@ -1034,9 +1562,9 @@ L026A:	jmp     incsp8
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L0321
+	bcc     L0523
 	inx
-L0321:	sta     ptr1
+L0523:	sta     ptr1
 	txa
 	clc
 	adc     #>(_game_board)
@@ -1071,21 +1599,21 @@ L0321:	sta     ptr1
 	ldy     #$00
 	lda     (sp),y
 	cmp     #$14
-	bcs     L0322
+	bcs     L0524
 	iny
 	lda     (sp),y
 	cmp     #$0A
-	bcc     L0323
+	bcc     L0525
 ;
 ; return 0;
 ;
-L0322:	ldx     #$00
+L0524:	ldx     #$00
 	txa
 	jmp     incsp2
 ;
 ; return get_block(x, y) == 0;
 ;
-L0323:	lda     (sp),y
+L0525:	lda     (sp),y
 	jsr     pusha
 	ldy     #$01
 	lda     (sp),y
@@ -1115,19 +1643,19 @@ L0323:	lda     (sp),y
 	jsr     decsp2
 	lda     #$00
 	tay
-L0327:	sta     (sp),y
+L0529:	sta     (sp),y
 	ldx     #$00
 	lda     (sp),y
 	cmp     #$04
-	bcs     L0328
+	bcs     L052A
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
 	txa
 	iny
-L0326:	sta     (sp),y
+L0528:	sta     (sp),y
 	cmp     #$04
-	bcs     L0294
+	bcs     L0490
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -1158,7 +1686,7 @@ L0326:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L02A9
+	beq     L04A5
 ;
 ; if (!is_block_free(cur_block.x + ix, cur_block.y + iy))
 ;
@@ -1173,7 +1701,7 @@ L0326:	sta     (sp),y
 	adc     _cur_block+1
 	jsr     _is_block_free
 	tax
-	bne     L02A9
+	bne     L04A5
 ;
 ; return 1;
 ;
@@ -1183,7 +1711,7 @@ L0326:	sta     (sp),y
 ;
 ; }
 ;
-L02A9:	jsr     incsp1
+L04A5:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
@@ -1191,19 +1719,19 @@ L02A9:	jsr     incsp1
 	clc
 	tya
 	adc     (sp),y
-	jmp     L0326
+	jmp     L0528
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L0294:	dey
+L0490:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0327
+	jmp     L0529
 ;
 ; return 0;
 ;
-L0328:	txa
+L052A:	txa
 ;
 ; }
 ;
@@ -1224,6 +1752,7 @@ L0328:	txa
 ;
 ; cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
 ;
+	jsr     decsp1
 	lda     #$03
 	sta     _cur_block
 ;
@@ -1236,22 +1765,29 @@ L0328:	txa
 ;
 	sta     _cur_rot
 ;
-; cur_cluster.def = cluster_defs[rand8() % NUM_CLUSTERS]; // def_z_rev_clust;
+; id = rand8() % NUM_CLUSTERS;
 ;
 	jsr     _rand8
 	jsr     pushax
 	lda     #$07
 	jsr     tosumoda0
-	stx     tmp1
+	ldy     #$00
+	sta     (sp),y
+;
+; cur_cluster.def = cluster_defs[id]; // def_z_rev_clust;
+;
+	ldx     #$00
+	lda     (sp),y
 	asl     a
-	rol     tmp1
+	bcc     L052D
+	inx
 	clc
-	adc     #<(_cluster_defs)
+L052D:	adc     #<(_cluster_defs)
 	sta     ptr1
-	lda     tmp1
+	txa
 	adc     #>(_cluster_defs)
 	sta     ptr1+1
-	ldy     #$01
+	iny
 	lda     (ptr1),y
 	tax
 	dey
@@ -1270,9 +1806,16 @@ L0328:	txa
 	lda     (ptr1),y
 	sta     _cur_cluster
 ;
+; cur_cluster.sprite = cluster_sprites[id];
+;
+	lda     (sp),y
+	tay
+	lda     _cluster_sprites,y
+	sta     _cur_cluster+4
+;
 ; }
 ;
-	rts
+	jmp     incsp1
 
 .endproc
 
@@ -1312,10 +1855,10 @@ L0328:	txa
 	ldx     #$00
 	lda     _cur_rot
 	asl     a
-	bcc     L032D
+	bcc     L0531
 	inx
 	clc
-L032D:	adc     _cur_cluster+2
+L0531:	adc     _cur_cluster+2
 	sta     ptr1
 	txa
 	adc     _cur_cluster+2+1
@@ -1330,7 +1873,7 @@ L032D:	adc     _cur_cluster+2
 ;
 	jsr     _is_cluster_colliding
 	tax
-	beq     L02C5
+	beq     L04C7
 ;
 ; cur_rot = old_rot;
 ;
@@ -1343,10 +1886,10 @@ L032D:	adc     _cur_cluster+2
 	ldx     #$00
 	lda     _cur_rot
 	asl     a
-	bcc     L032E
+	bcc     L0532
 	inx
 	clc
-L032E:	adc     _cur_cluster+2
+L0532:	adc     _cur_cluster+2
 	sta     ptr1
 	txa
 	adc     _cur_cluster+2+1
@@ -1360,7 +1903,7 @@ L032E:	adc     _cur_cluster+2
 ;
 ; }
 ;
-L02C5:	jmp     incsp2
+L04C7:	jmp     incsp2
 
 .endproc
 
@@ -1450,7 +1993,7 @@ L02C5:	jmp     incsp2
 	lda     #$60
 	ldy     #$02
 	sta     (sp),y
-	lda     #$28
+	lda     #$20
 	dey
 	sta     (sp),y
 	tya
@@ -1465,7 +2008,7 @@ L02C5:	jmp     incsp2
 	lda     #$A8
 	ldy     #$02
 	sta     (sp),y
-	lda     #$28
+	lda     #$20
 	dey
 	sta     (sp),y
 	tya
@@ -1480,7 +2023,7 @@ L02C5:	jmp     incsp2
 	lda     #$60
 	ldy     #$02
 	sta     (sp),y
-	lda     #$C0
+	lda     #$B8
 	dey
 	sta     (sp),y
 	tya
@@ -1495,7 +2038,7 @@ L02C5:	jmp     incsp2
 	lda     #$A8
 	ldy     #$02
 	sta     (sp),y
-	lda     #$C0
+	lda     #$B8
 	dey
 	sta     (sp),y
 	tya
@@ -1519,7 +2062,7 @@ L02C5:	jmp     incsp2
 ;
 ; ppu_off(); // screen off
 ;
-	jsr     decsp5
+	jsr     decsp3
 	jsr     _ppu_off
 ;
 ; pal_bg(palette_bg);
@@ -1562,11 +2105,11 @@ L02C5:	jmp     incsp2
 	lda     #$0F
 	jsr     _vram_write
 ;
-; set_scroll_y(0xff); // shift the bg down 1 pixel
+; scroll(0, 239); // shift the bg down 1 pixel
 ;
-	ldx     #$00
-	lda     #$FF
-	jsr     _set_scroll_y
+	jsr     push0
+	lda     #$EF
+	jsr     _scroll
 ;
 ; ppu_on_all(); // turn on screen
 ;
@@ -1574,7 +2117,7 @@ L02C5:	jmp     incsp2
 ;
 ; ppu_wait_nmi(); // wait till beginning of the frame
 ;
-L015E:	jsr     _ppu_wait_nmi
+L036E:	jsr     _ppu_wait_nmi
 ;
 ; tick_count++;
 ;
@@ -1602,18 +2145,18 @@ L015E:	jsr     _ppu_wait_nmi
 ;
 ; }
 ;
-	beq     L0332
+	beq     L0536
 	cmp     #$01
-	jeq     L01AA
+	beq     L03A6
 	cmp     #$02
-	beq     L015E
-	jmp     L015E
+	beq     L036E
+	jmp     L036E
 ;
 ; if (pad1_new & PAD_START)
 ;
-L0332:	lda     _pad1_new
+L0536:	lda     _pad1_new
 	and     #$10
-	beq     L015E
+	beq     L036E
 ;
 ; seed_rng();
 ;
@@ -1626,6 +2169,19 @@ L0332:	lda     _pad1_new
 ; vram_adr(NTADR_A(0,0));
 ;
 	ldx     #$20
+	lda     #$00
+	jsr     _vram_adr
+;
+; vram_fill(0, NAMETABLE_SIZE);
+;
+	lda     #$00
+	jsr     pusha
+	ldx     #$04
+	jsr     _vram_fill
+;
+; vram_adr(NTADR_C(0,0));
+;
+	ldx     #$28
 	lda     #$00
 	jsr     _vram_adr
 ;
@@ -1652,76 +2208,6 @@ L0332:	lda     _pad1_new
 ;
 	jsr     _ppu_on_all
 ;
-; put_block(0, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$00
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(1, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$01
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(2, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$02
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(3, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$03
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(4, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$04
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(5, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$05
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(6, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$06
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(7, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$07
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(8, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$08
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
-; put_block(9, BOARD_END_Y_PX_BOARD);
-;
-	lda     #$09
-	jsr     pusha
-	lda     #$13
-	jsr     _put_block
-;
 ; spawn_new_cluster();
 ;
 	jsr     _spawn_new_cluster
@@ -1733,12 +2219,12 @@ L0332:	lda     _pad1_new
 ;
 ; break;
 ;
-	jmp     L015E
+	jmp     L036E
 ;
 ; if (do_line_check)
 ;
-L01AA:	lda     _do_line_check
-	beq     L0334
+L03A6:	lda     _do_line_check
+	beq     L0538
 ;
 ; do_line_check = 0;
 ;
@@ -1748,58 +2234,58 @@ L01AA:	lda     _do_line_check
 ; for (iy = BOARD_END_Y_PX_BOARD; iy > 1; --iy)
 ;
 	lda     #$13
-	ldy     #$03
-L0330:	sta     (sp),y
+	ldy     #$01
+L0534:	sta     (sp),y
 	cmp     #$02
-	bcc     L0334
+	bcc     L0538
 ;
 ; line_complete = 1;
 ;
-	lda     #$01
+	tya
 	dey
 	sta     (sp),y
 ;
 ; for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
-	lda     #$00
-	ldy     #$04
-L032F:	sta     (sp),y
+	tya
+	ldy     #$02
+L0533:	sta     (sp),y
 	cmp     #$0A
-	bcs     L01BA
+	bcs     L03B6
 ;
 ; if (is_block_free(ix, iy))
 ;
 	lda     (sp),y
 	jsr     pusha
-	ldy     #$04
+	ldy     #$02
 	lda     (sp),y
 	jsr     _is_block_free
 	tax
-	beq     L01BB
+	beq     L03B7
 ;
 ; line_complete = 0;
 ;
 	lda     #$00
-	ldy     #$02
+	tay
 	sta     (sp),y
 ;
 ; break;
 ;
-	jmp     L0333
+	jmp     L0537
 ;
 ; for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
-L01BB:	ldy     #$04
+L03B7:	ldy     #$02
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L032F
+	jmp     L0533
 ;
 ; if (line_complete)
 ;
-L01BA:	ldy     #$02
-L0333:	lda     (sp),y
-	beq     L01B1
+L03B6:	ldy     #$00
+L0537:	lda     (sp),y
+	beq     L03AD
 ;
 ; line_crush_y = iy;
 ;
@@ -1809,40 +2295,40 @@ L0333:	lda     (sp),y
 ;
 ; break;
 ;
-	jmp     L0334
+	jmp     L0538
 ;
 ; for (iy = BOARD_END_Y_PX_BOARD; iy > 1; --iy)
 ;
-L01B1:	iny
+L03AD:	iny
 	lda     (sp),y
 	sec
 	sbc     #$01
-	jmp     L0330
+	jmp     L0534
 ;
 ; if (line_crush_y > 0)
 ;
-L0334:	lda     _line_crush_y
-	beq     L01CB
+L0538:	lda     _line_crush_y
+	beq     L03C7
 ;
 ; for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
 	lda     #$00
-	ldy     #$04
-L0331:	sta     (sp),y
+	ldy     #$02
+L0535:	sta     (sp),y
 	cmp     #$0A
-	bcs     L0335
+	bcs     L0539
 ;
 ; set_block(ix, line_crush_y, get_block(ix, line_crush_y-1));
 ;
 	jsr     decsp2
-	ldy     #$06
+	ldy     #$04
 	lda     (sp),y
 	ldy     #$01
 	sta     (sp),y
 	lda     _line_crush_y
 	dey
 	sta     (sp),y
-	ldy     #$06
+	ldy     #$04
 	lda     (sp),y
 	jsr     pusha
 	lda     _line_crush_y
@@ -1853,19 +2339,19 @@ L0331:	sta     (sp),y
 ;
 ; for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
-	ldy     #$04
+	ldy     #$02
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0331
+	jmp     L0535
 ;
 ; --line_crush_y;
 ;
-L0335:	dec     _line_crush_y
+L0539:	dec     _line_crush_y
 ;
 ; if (line_crush_y == 0)
 ;
-	bne     L01E1
+	bne     L03DD
 ;
 ; do_line_check = 1;
 ;
@@ -1874,19 +2360,19 @@ L0335:	dec     _line_crush_y
 ;
 ; else
 ;
-	jmp     L01E1
+	jmp     L03DD
 ;
 ; movement();
 ;
-L01CB:	jsr     _movement
+L03C7:	jsr     _movement
 ;
 ; draw_sprites();
 ;
-L01E1:	jsr     _draw_sprites
+L03DD:	jsr     _draw_sprites
 ;
 ; break;
 ;
-	jmp     L015E
+	jmp     L036E
 
 .endproc
 

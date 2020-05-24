@@ -9,9 +9,9 @@
 #define NAMETABLE_PATTERN_SIZE 0x3c0
 
 #define BOARD_START_X_PX 96
-#define BOARD_START_Y_PX 40
+#define BOARD_START_Y_PX 32
 #define BOARD_END_X_PX 168
-#define BOARD_END_Y_PX 192
+#define BOARD_END_Y_PX 184
 
 #define BOARD_END_X_PX_BOARD 9 // left edge of last block (width = 10)
 #define BOARD_END_Y_PX_BOARD 19 // top edge of last block (height = 20)
@@ -39,6 +39,7 @@ struct cluster
     */
     unsigned short layout;
     const unsigned short* def;
+    unsigned char sprite;
 };
 
 unsigned char tick_count;
@@ -144,6 +145,11 @@ unsigned char cur_rot;
 
 struct cluster cur_cluster;// = { def_z_clust }; // 165 1010 0101
 
+unsigned char cluster_sprites[NUM_CLUSTERS] =
+{
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16
+};
+
 unsigned char do_line_check;
 unsigned char line_crush_y;
 
@@ -153,13 +159,23 @@ unsigned char game_board[200];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
-const unsigned char palette_bg[]={
-//1x0c, 0x14, 0x23, 0x37,
-0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
-0x0f, 0x07, 0x17, 0x27, // oranges
-0x0f, 0x02, 0x12, 0x22, // blues
-0x0f, 0x09, 0x19, 0x29, // greens
-}; 
+// const unsigned char palette_bg[]={
+// //1x0c, 0x14, 0x23, 0x37,
+// 0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
+// 0x0f, 0x07, 0x17, 0x27, // oranges
+// 0x0f, 0x02, 0x12, 0x22, // blues
+// 0x0f, 0x09, 0x19, 0x29, // greens
+// }; 
+
+const unsigned char palette_bg[16]=
+{ 
+    0x33,0x00,0x10,0x30, // grey
+    0x33,0x22,0x01,0x30, // water
+    0x33,0x0f,0x1d,0x22, // rocks
+    0x33,0x0f,0x26,0x29  // platforms
+};
+
+
 
 const unsigned char palette_sp[]={
 0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
