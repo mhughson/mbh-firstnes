@@ -1,16 +1,160 @@
 /** (C) Matt Hughson 2020 */
 
+#define DEBUG_ENABLED 1
+
+// Nametable A: 	2400-2000 = 400
+// Attributes: 		2400-23c0 = 0x40
+// Patterns: 		0x400-0x40 = 0x3c0
+#define NAMETABLE_SIZE 0x400
+#define NAMETABLE_PATTERN_SIZE 0x3c0
+
+#define BOARD_START_X_PX 96
+#define BOARD_START_Y_PX 40
+#define BOARD_END_X_PX 168
+#define BOARD_END_Y_PX 192
+
+#define BOARD_END_X_PX_BOARD 9 // left edge of last block (width = 10)
+#define BOARD_END_Y_PX_BOARD 19 // top edge of last block (height = 20)
+
+// TODO: Rename. This is board x,y to board index.
+#define PIXEL_TO_BOARD_INDEX(x,y) ((y * 10) + (x))
+
 #pragma bss-name(push, "ZEROPAGE")
 
 // GLOBAL VARIABLES
 
+struct block
+{
+    unsigned char x;
+    unsigned char y;
+};
+
+struct cluster
+{
+    /*
+        1 1 0 0 ─┬─ [ byte 0 ]
+        0 1 1 0 ─┘
+        0 0 0 0
+        0 0 0 0
+    */
+    unsigned short layout;
+    const unsigned short* def;
+};
+
+unsigned char tick_count;
 unsigned char pad1;
 unsigned char pad1_new;
 const unsigned char text[] = "- PRESS START -";
 
+enum { STATE_MENU, STATE_GAME, STATE_OVER };
+unsigned char state = STATE_MENU;
+
+// The block operates in "logical space" from 0 -> w/h. The logical
+// space is converted to screen space at time of render (or ppu get).
+struct block cur_block = { 0, 0 };
+
+// How many frames need to pass before it falls 8 pixels.
+unsigned char fall_rate = 60;
+
+// Each entry in the array is a rotation.
+// Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
+// TODO: Perhaps a special character could be user to terminate the array
+//       prior to the end.
+/*
+    1 1 0 0
+    0 1 1 0
+    0 0 0 0
+    0 0 0 0
+
+    0 0 1 0
+    0 1 1 0
+    0 1 0 0
+    0 0 0 0
+*/
+const unsigned short def_z_clust[4] = 
+{ 
+    0xc600,
+    0x2640,
+    0xc600, // dupe.
+    0x2640, // dupe.
+};
+
+
+const unsigned short def_z_rev_clust[4] = 
+{ 
+    0x6C0,
+    0x8C40,
+    0x6C0, // dupe.
+    0x8C40, // dupe.
+};
+
+const unsigned short def_line_clust[4] =
+{
+    0xf0,
+    0x4444,
+    0xf0, // dupe.
+    0x4444 // dupe.
+};
+
+const unsigned short def_box_clust[4] =
+{
+    0xcc00,    
+    0xcc00,    
+    0xcc00,
+    0xcc00,
+};
+
+const unsigned short def_tee_clust[4] =
+{
+    0x4e00,    
+    0x4640,    
+    0xe40,
+    0x4c40,
+};
+
+const unsigned short def_L_clust[4] =
+{
+    0xe80,    
+    0xc440,    
+    0x2e00,
+    0x4460,
+};
+
+const unsigned short def_L_rev_clust[4] =
+{
+    0xe20,    
+    0x44c0,    
+    0x8e00,
+    0x6440,
+};
+
+#define NUM_CLUSTERS 7
+const unsigned short* cluster_defs [NUM_CLUSTERS] =
+{
+    def_z_clust,
+    def_z_rev_clust,
+    def_line_clust,
+    def_box_clust,
+    def_tee_clust,
+    def_L_clust,
+    def_L_rev_clust,
+};
+
+unsigned char cur_rot;
+
+struct cluster cur_cluster;// = { def_z_clust }; // 165 1010 0101
+
+unsigned char do_line_check;
+unsigned char line_crush_y;
+
 #pragma bss-name(push, "BSS")
 
+unsigned char game_board[200];
+char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
 const unsigned char palette_bg[]={
+//1x0c, 0x14, 0x23, 0x37,
 0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
 0x0f, 0x07, 0x17, 0x27, // oranges
 0x0f, 0x02, 0x12, 0x22, // blues
@@ -18,12 +162,43 @@ const unsigned char palette_bg[]={
 }; 
 
 const unsigned char palette_sp[]={
+0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
+0x0f, 0x09, 0x19, 0x29, // greens
 0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
-0,0,0,0,
-0,0,0,0,
 0,0,0,0
 }; 
 
 // PROTOTYPES
 void draw_sprites(void);
 void movement(void);
+
+// x, y in board space.
+void put_block(unsigned char x, unsigned char y);
+
+void set_block(unsigned char x, unsigned char y, unsigned char id);
+
+// x, y in board space.
+void clear_block(unsigned char x, unsigned char y);
+
+// Drops the current cluster at its current location.
+void put_cur_cluster();
+
+// x, y in map space.
+unsigned char get_block(unsigned char x, unsigned char y);
+
+// x, y in map space.
+unsigned char is_block_free(unsigned char x, unsigned char y);
+
+// Checks if the entire cluster is currently hitting any other blocks.
+unsigned char is_cluster_colliding();
+
+// creates a new cluster at the top of the play area.
+void spawn_new_cluster();
+
+// Rotate the current cluster by 90degs.
+void rotate_cur_cluster(char dir);
+
+
+// DEBUG
+void debug_fill_nametables(void);
+void debug_draw_board_area(void);
