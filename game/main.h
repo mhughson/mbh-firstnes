@@ -74,10 +74,10 @@ unsigned char fall_rate = 60;
 */
 const unsigned short def_z_clust[4] = 
 { 
-    0xc600,
-    0x2640,
-    0xc600, // dupe.
-    0x2640, // dupe.
+    0xc60,
+    0x264,
+    0xc60, // dupe.
+    0x264, // dupe.
 };
 
 
@@ -99,10 +99,10 @@ const unsigned short def_line_clust[4] =
 
 const unsigned short def_box_clust[4] =
 {
-    0xcc00,    
-    0xcc00,    
-    0xcc00,
-    0xcc00,
+    0x660,    
+    0x660,    
+    0x660,
+    0x660,
 };
 
 const unsigned short def_tee_clust[4] =
@@ -144,6 +144,7 @@ const unsigned short* cluster_defs [NUM_CLUSTERS] =
 unsigned char cur_rot;
 
 struct cluster cur_cluster;// = { def_z_clust }; // 165 1010 0101
+struct cluster next_cluster;
 
 unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
@@ -169,16 +170,16 @@ char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 const unsigned char palette_bg[16]=
 { 
-    0x33,0x00,0x10,0x30, // grey
-    0x33,0x22,0x01,0x30, // water
-    0x33,0x0f,0x1d,0x22, // rocks
-    0x33,0x0f,0x26,0x29  // platforms
+    0x3C,0x01,0x21,0x30, // bricks
+    0x3C,0x22,0x01,0x30, // water
+    0x3C,0x0f,0x1d,0x22, // rocks
+    0x3C,0x0f,0x26,0x29  // platforms
 };
 
 
 
 const unsigned char palette_sp[]={
-0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
+0x3C,0x01,0x21,0x30, // bricks
 0x0f, 0x09, 0x19, 0x29, // greens
 0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
 0,0,0,0
@@ -188,9 +189,7 @@ const unsigned char palette_sp[]={
 void draw_sprites(void);
 void movement(void);
 
-// x, y in board space.
-void put_block(unsigned char x, unsigned char y);
-
+// Set a block in x, y (board space)
 void set_block(unsigned char x, unsigned char y, unsigned char id);
 
 // x, y in board space.

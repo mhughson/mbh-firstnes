@@ -65,6 +65,16 @@ void main (void)
 					vram_fill(0, NAMETABLE_SIZE);
 					vram_adr(NTADR_A(0,0));
 					vram_unrle(game_area);
+
+					/*
+					for (iy = 10; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+					{
+						vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
+						vram_fill(1, 10);
+					}
+					memfill(game_board + 100, 1, 100);
+					*/
+
 					ppu_on_all(); // turn on screen
 
 					//cur_block.x = BOARD_START_X_PX;
@@ -93,7 +103,9 @@ void main (void)
 					put_block(8, BOARD_END_Y_PX_BOARD);
 					put_block(9, BOARD_END_Y_PX_BOARD);
 					*/
+					//memfill(game_board, 1, 200);
 
+					spawn_new_cluster();
 					spawn_new_cluster();
 
 					state = STATE_GAME;
@@ -107,7 +119,7 @@ void main (void)
 				if (do_line_check)
 				{
 					do_line_check = 0;
-					for (iy = BOARD_END_Y_PX_BOARD; iy > 1; --iy)
+					for (iy = BOARD_END_Y_PX_BOARD; iy > 0; --iy)
 					{	
 						line_complete = 1;
 						for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
@@ -189,7 +201,29 @@ void draw_sprites(void)
 
 			if (cur_cluster.layout & (0x8000 >> bit))
 			{
-				oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 1);
+				oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
+			}
+			// else
+			// {
+			// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
+			// }
+			
+		}
+	}
+
+	start_x = 15 << 3;
+	start_y = 0 << 3;
+
+	for (iy = 0; iy < 4; ++iy)
+	{	
+		for (ix = 0; ix < 4; ++ix)
+		{
+			// essentially an index into a bit array.
+			unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
+
+			if (next_cluster.layout & (0x8000 >> bit))
+			{
+				oam_spr(start_x + (ix << 3), start_y + (iy << 3), next_cluster.sprite, 0);
 			}
 			// else
 			// {
@@ -315,11 +349,6 @@ void movement(void)
 
 }
 
-void put_block(unsigned char x, unsigned char y)
-{
-	set_block(x, y, 1);
-}
-
 void set_block(unsigned char x, unsigned char y, unsigned char id)
 {
 	int address;
@@ -366,7 +395,7 @@ void put_cur_cluster()
 			// solid bit.
 			if (cur_cluster.layout & (0x8000 >> bit))
 			{
-				put_block(cur_block.x + ix, cur_block.y + iy);
+				set_block(cur_block.x + ix, cur_block.y + iy, cur_cluster.sprite);
 			}			
 		}
 	}
@@ -417,15 +446,23 @@ unsigned char is_cluster_colliding()
 void spawn_new_cluster()
 {
 	unsigned char id;
-	// Spawn a new block.
+
+
+	// Reset the block.
 	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
 	cur_block.y = 0;
 
 	cur_rot = 0;
-	id = rand8() % NUM_CLUSTERS;
-	cur_cluster.def = cluster_defs[id]; // def_z_rev_clust;
+
+	// Copy the next cluster to the current one.
+	cur_cluster.def = next_cluster.def;
 	cur_cluster.layout = cur_cluster.def[0];
-	cur_cluster.sprite = cluster_sprites[id];
+	cur_cluster.sprite = next_cluster.sprite;
+
+	id = rand8() % NUM_CLUSTERS;
+	next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
+	next_cluster.layout = next_cluster.def[0];
+	next_cluster.sprite = cluster_sprites[id];
 }
 
 void rotate_cur_cluster(char dir)
