@@ -58,68 +58,18 @@ void main (void)
 				{
 					seed_rng();
 
-					ppu_off(); // screen off
-
-					// clear the nametable and attributes.
-					vram_adr(NTADR_A(0,0));
-					vram_fill(0, NAMETABLE_SIZE);
-					vram_adr(NTADR_A(0,0));
-					vram_unrle(game_area);
-
-					/*
-					for (iy = 10; iy <= BOARD_END_Y_PX_BOARD; ++iy)
-					{
-						vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
-						vram_fill(1, 10);
-					}
-					memfill(game_board + 100, 1, 100);
-					*/
-
-					ppu_on_all(); // turn on screen
-
-					//cur_block.x = BOARD_START_X_PX;
-					//cur_block.y = BOARD_START_Y_PX;
-
-					//put_block(0, 0 + 152);
-					/*
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					put_block(rand8() % BOARD_END_X_PX_BOARD, rand8() % BOARD_END_Y_PX_BOARD);
-					*/
-
-					/*
-					put_block(0, BOARD_END_Y_PX_BOARD);
-					put_block(1, BOARD_END_Y_PX_BOARD);
-					put_block(2, BOARD_END_Y_PX_BOARD);
-					put_block(3, BOARD_END_Y_PX_BOARD);
-					put_block(4, BOARD_END_Y_PX_BOARD);
-					put_block(5, BOARD_END_Y_PX_BOARD);
-					put_block(6, BOARD_END_Y_PX_BOARD);
-					put_block(7, BOARD_END_Y_PX_BOARD);
-					put_block(8, BOARD_END_Y_PX_BOARD);
-					put_block(9, BOARD_END_Y_PX_BOARD);
-					*/
-					//memfill(game_board, 1, 200);
-
-					spawn_new_cluster();
-					spawn_new_cluster();
-
-					state = STATE_GAME;
+					go_to_state(STATE_GAME);
 				}
 				break;
 			}
 
 			case STATE_GAME:
 			{
-								// clear out lines.
+				// clear out lines.
 				if (do_line_check)
 				{
 					do_line_check = 0;
-					for (iy = BOARD_END_Y_PX_BOARD; iy > 0; --iy)
+					for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
 					{	
 						line_complete = 1;
 						for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
@@ -142,7 +92,7 @@ void main (void)
 					}
 				}
 
-				if (line_crush_y > 0)
+				if (line_crush_y > BOARD_OOB_END)
 				{
 					for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 					{
@@ -152,7 +102,7 @@ void main (void)
 
 					// Finished this pass, check again incase this was a multi-line
 					// kill.
-					if (line_crush_y == 0)
+					if (line_crush_y == BOARD_OOB_END)
 					{
 						do_line_check = 1;
 					}
@@ -164,11 +114,20 @@ void main (void)
 				
 				draw_sprites();
 
+				if (pad1_new & PAD_START)
+				{
+					go_to_state(STATE_OVER);
+				}
+
 				break;
 			}
 
 			case STATE_OVER:
 			{
+				if (pad1_new & PAD_START)
+				{
+					go_to_state(STATE_GAME);
+				}
 				break;
 			}
 		}
@@ -260,9 +219,16 @@ void movement(void)
 		rotate_cur_cluster(-1);
 	}
 
-	// TODO: Allow repeats
-	if (/*(pad1 & PAD_RIGHT && (tick_count % 4 == 0)) ||*/ pad1_new & PAD_RIGHT)
+	--horz_button_delay;
+
+	if (((pad1 & PAD_RIGHT) && horz_button_delay == 0) || (pad1_new & PAD_RIGHT))
 	{
+		horz_button_delay = button_delay;
+		if ((pad1_new & PAD_RIGHT))
+		{
+			horz_button_delay <<= 1;
+		}
+
 		// if (cur_block.x < BOARD_END_X_PX_BOARD)
 		// {
 			old_x = cur_block.x;
@@ -274,8 +240,13 @@ void movement(void)
 		// }
 		
 	}
-	else if (/*(pad1 & PAD_LEFT && (tick_count % 4 == 0)) ||*/ pad1_new & PAD_LEFT)
+	else if (((pad1 & PAD_LEFT) && horz_button_delay == 0) || pad1_new & PAD_LEFT)
 	{
+		horz_button_delay = button_delay;
+		if ((pad1_new & PAD_LEFT))
+		{
+			horz_button_delay <<= 1;
+		}
 		// handle here since x is unsigned.
 		// if (cur_block.x > 0)
 		// {
@@ -307,12 +278,14 @@ void movement(void)
 	//		 this function so that it can be manipulated (eg. when release
 	//	     reset the tick count).
 	temp_fall_rate = fall_rate;
-	if (pad1_new & PAD_DOWN || pad1 & PAD_UP)
+	if (pad1_new & PAD_DOWN)
 	{
+		require_new_down_button = 0;
+
 		// fall this frame.
 		temp_fall_rate = tick_count;
 	}
-	else if (pad1 & PAD_DOWN)
+	else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 	{
 		// fall 16 times as often.
 		temp_fall_rate >>= 4;
@@ -447,6 +420,7 @@ void spawn_new_cluster()
 {
 	unsigned char id;
 
+	require_new_down_button = 1;
 
 	// Reset the block.
 	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
@@ -524,6 +498,111 @@ void rotate_cur_cluster(char dir)
 
 	cur_cluster.layout = ret;
 	*/
+}
+
+void go_to_state(unsigned char new_state)
+{
+	int address;
+	unsigned char iy;
+	unsigned char fade_from_bright;
+	unsigned char fade_delay;
+	fade_delay = 5;
+
+	switch (state)
+	{
+		case STATE_OVER:
+		{
+			// We would have faded up to white entering game over, so now
+			// we need to fade back down.
+			fade_from_bright = 1;
+			break;
+		}
+	
+	default:
+		break;
+	}
+
+	state = new_state;
+
+	switch (state)
+	{
+		case STATE_MENU:
+		{
+			break;
+		}
+
+		case STATE_GAME:
+		{
+			ppu_off(); // screen off
+
+			// clear the nametable and attributes.
+			//vram_adr(NTADR_A(0,0));
+			//vram_fill(0, NAMETABLE_SIZE);
+			vram_adr(NTADR_A(0,0));
+			vram_unrle(game_area);
+
+			ppu_on_all(); // turn on screen
+
+			// for (iy = 0; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+			// {
+			// 	vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
+			// 	vram_fill(0, 10);
+			// }
+
+			memfill(game_board, 0, BOARD_SIZE);
+
+			spawn_new_cluster();
+			spawn_new_cluster();
+
+			if (fade_from_bright)
+			{
+				pal_bright(7);
+				delay(fade_delay);
+				pal_bright(6);
+				delay(fade_delay);
+				pal_bright(5);
+				delay(fade_delay);
+				pal_bright(4);
+				delay(fade_delay);
+			}
+
+			require_new_down_button = 1;
+
+			break;
+		}
+
+		case STATE_OVER:
+		{
+			delay(60);
+
+			oam_clear();
+
+			pal_bright(5);
+			delay(fade_delay);
+			pal_bright(6);
+			delay(fade_delay);
+			pal_bright(7);
+			delay(fade_delay);
+			pal_bright(8);
+			delay(fade_delay);
+			address = get_ppu_addr(0, 96, 112);
+			multi_vram_buffer_horz("GAME OVER!", 10, address);
+			pal_bright(7);
+			delay(fade_delay);
+			pal_bright(6);
+			delay(fade_delay);
+			pal_bright(5);
+			delay(fade_delay);
+			pal_bright(4);
+			delay(fade_delay);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
 }
 
 // DEBUG

@@ -9,12 +9,15 @@
 #define NAMETABLE_PATTERN_SIZE 0x3c0
 
 #define BOARD_START_X_PX 96
-#define BOARD_START_Y_PX 32
+#define BOARD_START_Y_PX 0
 #define BOARD_END_X_PX 168
 #define BOARD_END_Y_PX 184
 
+#define BOARD_OOB_END 3
 #define BOARD_END_X_PX_BOARD 9 // left edge of last block (width = 10)
-#define BOARD_END_Y_PX_BOARD 19 // top edge of last block (height = 20)
+#define BOARD_END_Y_PX_BOARD 23 // top edge of last block (height = 24)
+
+#define BOARD_SIZE 240 // 
 
 // TODO: Rename. This is board x,y to board index.
 #define PIXEL_TO_BOARD_INDEX(x,y) ((y * 10) + (x))
@@ -154,9 +157,13 @@ unsigned char cluster_sprites[NUM_CLUSTERS] =
 unsigned char do_line_check;
 unsigned char line_crush_y;
 
+unsigned char horz_button_delay;
+const unsigned char button_delay = 5;
+unsigned char require_new_down_button;
+
 #pragma bss-name(push, "BSS")
 
-unsigned char game_board[200];
+unsigned char game_board[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
@@ -212,6 +219,9 @@ void spawn_new_cluster();
 
 // Rotate the current cluster by 90degs.
 void rotate_cur_cluster(char dir);
+
+// Transition to a new state.
+void go_to_state(unsigned char new_state);
 
 
 // DEBUG
