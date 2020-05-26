@@ -43,6 +43,7 @@ struct cluster
     unsigned short layout;
     const unsigned short* def;
     unsigned char sprite;
+    unsigned char id;
 };
 
 unsigned char tick_count;
@@ -154,12 +155,20 @@ unsigned char cluster_sprites[NUM_CLUSTERS] =
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16
 };
 
+unsigned char cluster_offsets[NUM_CLUSTERS] = 
+{
+    3, 3, 2, 3, 4, 3, 3,
+    //10,10,10,10,10,10,10
+};
+
 unsigned char do_line_check;
 unsigned char line_crush_y;
 
 unsigned char horz_button_delay;
 const unsigned char button_delay = 5;
 unsigned char require_new_down_button;
+unsigned char fall_frame_counter;
+unsigned char cur_level;
 
 #pragma bss-name(push, "BSS")
 

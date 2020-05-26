@@ -65,24 +65,33 @@ void main (void)
 
 			case STATE_GAME:
 			{
-				// clear out lines.
+				// Search for full rows to clear out.
 				if (do_line_check)
 				{
+					// Stop searching for lines unless we fine one this frame.
 					do_line_check = 0;
+
+					// Start at the bottom of the board, and work our way up.
 					for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
-					{	
+					{
+						// Assume this row is complete unless we find an empty
+						// block.
 						line_complete = 1;
 						for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 						{
 							if (is_block_free(ix, iy))
 							{
+								// This block is empty, so we can stop checking this row.
 								line_complete = 0;
 								break;
 							}
 						}
 
+						// If this row was filled, we need to remove it and crush
+						// the rows above it into its place.
 						if (line_complete)
 						{
+							// Store line to crush.
 							line_crush_y = iy;
 							break;
 						}
@@ -92,12 +101,16 @@ void main (void)
 					}
 				}
 
+				// Are we currently shifting rows down?
 				if (line_crush_y > BOARD_OOB_END)
 				{
+					// Set each block in this row to the value in the row above it.
 					for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 					{
 						set_block(ix, line_crush_y, get_block(ix, line_crush_y-1));
 					}
+
+					// Next frame do the same on the line above.
 					--line_crush_y;
 
 					// Finished this pass, check again incase this was a multi-line
@@ -160,7 +173,13 @@ void draw_sprites(void)
 
 			if (cur_cluster.layout & (0x8000 >> bit))
 			{
-				oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
+				// Don't draw the current cluster if it is above the top of the board.
+				// We want it to be able to function and move up there, but should not
+				// be visible.
+				if (start_y + (iy << 3) > (BOARD_START_Y_PX + (BOARD_OOB_END << 3)))
+				{
+					oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
+				}
 			}
 			// else
 			// {
@@ -201,6 +220,8 @@ void movement(void)
 	unsigned char temp_fall_rate;
 	unsigned char old_x;
 
+	++fall_frame_counter;
+
 #if DEBUG_ENABLED
 	if (pad1_new & PAD_SELECT)
 	{
@@ -221,6 +242,7 @@ void movement(void)
 
 	--horz_button_delay;
 
+	old_x = cur_block.x;
 	if (((pad1 & PAD_RIGHT) && horz_button_delay == 0) || (pad1_new & PAD_RIGHT))
 	{
 		horz_button_delay = button_delay;
@@ -260,7 +282,10 @@ void movement(void)
 		
 	}
 
-	if (is_cluster_colliding())
+	// Only check for collision if we actually moved horz.
+	// Otherwise spawning into another tile will cause horz
+	// correction.
+	if (cur_block.x != old_x && is_cluster_colliding())
 	{
 		cur_block.x = old_x;
 	}
@@ -283,7 +308,7 @@ void movement(void)
 		require_new_down_button = 0;
 
 		// fall this frame.
-		temp_fall_rate = tick_count;
+		temp_fall_rate = fall_frame_counter;
 	}
 	else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 	{
@@ -291,7 +316,7 @@ void movement(void)
 		temp_fall_rate >>= 4;
 	}
 
-	if (tick_count % temp_fall_rate == 0)
+	if (fall_frame_counter % temp_fall_rate == 0)
 	{
 		cur_block.y += 1;
 	}
@@ -331,6 +356,12 @@ void set_block(unsigned char x, unsigned char y, unsigned char id)
 
 	// Update the logic array as well as the nametable to reflect it.
 
+	if (y <= BOARD_OOB_END)
+	{
+		// Don't place stuff out of bounds.
+		return;
+	}
+
 	address = get_ppu_addr(0, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(id, address);
 
@@ -350,6 +381,7 @@ void put_cur_cluster()
 {
 	unsigned char ix;
 	unsigned char iy;
+	unsigned char min_y;
 	//unsigned char iy2;
 	//unsigned char line_complete;
 	//unsigned char top;
@@ -357,6 +389,7 @@ void put_cur_cluster()
 	//int address;
 
 	do_line_check = 1;
+	min_y = 0xff; // max
 
 	for (iy = 0; iy < 4; ++iy)
 	{	
@@ -368,9 +401,21 @@ void put_cur_cluster()
 			// solid bit.
 			if (cur_cluster.layout & (0x8000 >> bit))
 			{
+				// This is basically always going to be the first thing drawn,
+				// but i couldn't think of a clever way to do this once.
+				if (cur_block.y + iy < min_y)
+				{
+					min_y = cur_block.y + iy;
+				}
 				set_block(cur_block.x + ix, cur_block.y + iy, cur_cluster.sprite);
 			}			
 		}
+	}
+
+	if (min_y <= BOARD_OOB_END)
+	{
+		go_to_state(STATE_OVER);
+		return;
 	}
 }
 
@@ -421,10 +466,7 @@ void spawn_new_cluster()
 	unsigned char id;
 
 	require_new_down_button = 1;
-
-	// Reset the block.
-	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
-	cur_block.y = 0;
+	fall_frame_counter = 0;
 
 	cur_rot = 0;
 
@@ -432,8 +474,25 @@ void spawn_new_cluster()
 	cur_cluster.def = next_cluster.def;
 	cur_cluster.layout = cur_cluster.def[0];
 	cur_cluster.sprite = next_cluster.sprite;
+	cur_cluster.id = next_cluster.id;
+
+	// Reset the block.
+	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
+	cur_block.y = cluster_offsets[cur_cluster.id];
+
+	// If the block is colliding right out of the game, move it up so that
+	// we get a cleaner game over.
+	if (is_cluster_colliding())
+	{
+		--cur_block.y;
+	}
+	// if (is_cluster_colliding())
+	// {
+	// 	--cur_block.y;
+	// }
 
 	id = rand8() % NUM_CLUSTERS;
+	next_cluster.id = id;
 	next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
@@ -503,7 +562,7 @@ void rotate_cur_cluster(char dir)
 void go_to_state(unsigned char new_state)
 {
 	int address;
-	unsigned char iy;
+	//unsigned char iy;
 	unsigned char fade_from_bright;
 	unsigned char fade_delay;
 	fade_delay = 5;
@@ -550,6 +609,8 @@ void go_to_state(unsigned char new_state)
 			// }
 
 			memfill(game_board, 0, BOARD_SIZE);
+
+			cur_level = 0;
 
 			spawn_new_cluster();
 			spawn_new_cluster();

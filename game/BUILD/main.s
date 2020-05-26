@@ -58,11 +58,14 @@
 	.export		_cur_cluster
 	.export		_next_cluster
 	.export		_cluster_sprites
+	.export		_cluster_offsets
 	.export		_do_line_check
 	.export		_line_crush_y
 	.export		_horz_button_delay
 	.export		_button_delay
 	.export		_require_new_down_button
+	.export		_fall_frame_counter
+	.export		_cur_level
 	.export		_game_board
 	.export		_empty_row
 	.export		_full_row
@@ -108,6 +111,14 @@ _cluster_sprites:
 	.byte	$14
 	.byte	$15
 	.byte	$16
+_cluster_offsets:
+	.byte	$03
+	.byte	$03
+	.byte	$02
+	.byte	$03
+	.byte	$04
+	.byte	$03
+	.byte	$03
 _empty_row:
 	.byte	$00
 	.byte	$00
@@ -944,7 +955,7 @@ _palette_sp:
 	.byte	$00
 	.byte	$00
 	.byte	$00
-L054E:
+L0579:
 	.byte	$47,$41,$4D,$45,$20,$4F,$56,$45,$52,$21,$00
 
 .segment	"BSS"
@@ -959,9 +970,9 @@ _pad1_new:
 _cur_rot:
 	.res	1,$00
 _cur_cluster:
-	.res	5,$00
+	.res	6,$00
 _next_cluster:
-	.res	5,$00
+	.res	6,$00
 _do_line_check:
 	.res	1,$00
 _line_crush_y:
@@ -969,6 +980,10 @@ _line_crush_y:
 _horz_button_delay:
 	.res	1,$00
 _require_new_down_button:
+	.res	1,$00
+_fall_frame_counter:
+	.res	1,$00
+_cur_level:
 	.res	1,$00
 .segment	"BSS"
 _game_board:
@@ -1014,17 +1029,17 @@ _game_board:
 ;
 	lda     #$00
 	tay
-L05A6:	sta     (sp),y
+L05D2:	sta     (sp),y
 	cmp     #$04
-	bcs     L05A9
+	jcs     L05D5
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
 	tya
 	iny
-L05A5:	sta     (sp),y
+L05D1:	sta     (sp),y
 	cmp     #$04
-	bcs     L03D6
+	jcs     L03DE
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -1055,7 +1070,23 @@ L05A5:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L03E8
+	beq     L03F3
+;
+; if (start_y + (iy << 3) > (BOARD_START_Y_PX + (BOARD_OOB_END << 3)))
+;
+	ldx     #$00
+	ldy     #$01
+	lda     (sp),y
+	jsr     aslax3
+	clc
+	ldy     #$03
+	adc     (sp),y
+	bcc     L05CC
+	inx
+L05CC:	cmp     #$19
+	txa
+	sbc     #$00
+	bcc     L03F3
 ;
 ; oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
 ;
@@ -1088,7 +1119,7 @@ L05A5:	sta     (sp),y
 ;
 ; }
 ;
-L03E8:	jsr     incsp1
+L03F3:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
@@ -1096,19 +1127,19 @@ L03E8:	jsr     incsp1
 	clc
 	tya
 	adc     (sp),y
-	jmp     L05A5
+	jmp     L05D1
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L03D6:	dey
+L03DE:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05A6
+	jmp     L05D2
 ;
 ; start_x = 15 << 3;
 ;
-L05A9:	lda     #$78
+L05D5:	lda     #$78
 	ldy     #$03
 	sta     (sp),y
 ;
@@ -1121,17 +1152,17 @@ L05A9:	lda     #$78
 ; for (iy = 0; iy < 4; ++iy)
 ;
 	tay
-L05A8:	sta     (sp),y
+L05D4:	sta     (sp),y
 	cmp     #$04
-	bcs     L03F7
+	bcs     L0404
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
 	tya
 	iny
-L05A7:	sta     (sp),y
+L05D3:	sta     (sp),y
 	cmp     #$04
-	bcs     L03F8
+	bcs     L0405
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -1162,7 +1193,7 @@ L05A7:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L040A
+	beq     L0417
 ;
 ; oam_spr(start_x + (ix << 3), start_y + (iy << 3), next_cluster.sprite, 0);
 ;
@@ -1195,7 +1226,7 @@ L05A7:	sta     (sp),y
 ;
 ; }
 ;
-L040A:	jsr     incsp1
+L0417:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
@@ -1203,19 +1234,19 @@ L040A:	jsr     incsp1
 	clc
 	tya
 	adc     (sp),y
-	jmp     L05A7
+	jmp     L05D3
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L03F8:	dey
+L0405:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05A8
+	jmp     L05D4
 ;
 ; }
 ;
-L03F7:	jmp     incsp4
+L0404:	jmp     incsp4
 
 .endproc
 
@@ -1230,12 +1261,16 @@ L03F7:	jmp     incsp4
 .segment	"CODE"
 
 ;
-; if (pad1_new & PAD_SELECT)
+; ++fall_frame_counter;
 ;
 	jsr     decsp3
+	inc     _fall_frame_counter
+;
+; if (pad1_new & PAD_SELECT)
+;
 	lda     _pad1_new
 	and     #$20
-	beq     L05B1
+	beq     L05DE
 ;
 ; spawn_new_cluster();
 ;
@@ -1243,9 +1278,9 @@ L03F7:	jmp     incsp4
 ;
 ; if (pad1_new & PAD_A)
 ;
-L05B1:	lda     _pad1_new
+L05DE:	lda     _pad1_new
 	and     #$80
-	beq     L05B2
+	beq     L05DF
 ;
 ; rotate_cur_cluster(1);
 ;
@@ -1253,41 +1288,47 @@ L05B1:	lda     _pad1_new
 ;
 ; else if (pad1_new & PAD_B)
 ;
-	jmp     L05AE
-L05B2:	lda     _pad1_new
+	jmp     L05DB
+L05DF:	lda     _pad1_new
 	and     #$40
-	beq     L05B3
+	beq     L05E0
 ;
 ; rotate_cur_cluster(-1);
 ;
 	lda     #$FF
-L05AE:	jsr     _rotate_cur_cluster
+L05DB:	jsr     _rotate_cur_cluster
 ;
 ; --horz_button_delay;
 ;
-L05B3:	dec     _horz_button_delay
+L05E0:	dec     _horz_button_delay
+;
+; old_x = cur_block.x;
+;
+	lda     _cur_block
+	ldy     #$00
+	sta     (sp),y
 ;
 ; if (((pad1 & PAD_RIGHT) && horz_button_delay == 0) || (pad1_new & PAD_RIGHT))
 ;
 	lda     _pad1
 	and     #$01
-	beq     L05B7
+	beq     L05E4
 	lda     _horz_button_delay
-	beq     L05BA
-L05B7:	lda     _pad1_new
+	beq     L05E7
+L05E4:	lda     _pad1_new
 	and     #$01
-	beq     L05BC
+	beq     L05E9
 ;
 ; horz_button_delay = button_delay;
 ;
-L05BA:	lda     _button_delay
+L05E7:	lda     _button_delay
 	sta     _horz_button_delay
 ;
 ; if ((pad1_new & PAD_RIGHT))
 ;
 	lda     _pad1_new
 	and     #$01
-	beq     L05BB
+	beq     L05E8
 ;
 ; horz_button_delay <<= 1;
 ;
@@ -1297,8 +1338,7 @@ L05BA:	lda     _button_delay
 ;
 ; old_x = cur_block.x;
 ;
-L05BB:	lda     _cur_block
-	ldy     #$00
+L05E8:	lda     _cur_block
 	sta     (sp),y
 ;
 ; cur_block.x += 1;
@@ -1307,26 +1347,26 @@ L05BB:	lda     _cur_block
 ;
 ; else if (((pad1 & PAD_LEFT) && horz_button_delay == 0) || pad1_new & PAD_LEFT)
 ;
-	jmp     L0436
-L05BC:	lda     _pad1
+	jmp     L0446
+L05E9:	lda     _pad1
 	and     #$02
-	beq     L05C0
+	beq     L05ED
 	lda     _horz_button_delay
-	beq     L05C3
-L05C0:	lda     _pad1_new
+	beq     L05F0
+L05ED:	lda     _pad1_new
 	and     #$02
-	beq     L0436
+	beq     L0446
 ;
 ; horz_button_delay = button_delay;
 ;
-L05C3:	lda     _button_delay
+L05F0:	lda     _button_delay
 	sta     _horz_button_delay
 ;
 ; if ((pad1_new & PAD_LEFT))
 ;
 	lda     _pad1_new
 	and     #$02
-	beq     L05C4
+	beq     L05F1
 ;
 ; horz_button_delay <<= 1;
 ;
@@ -1336,19 +1376,21 @@ L05C3:	lda     _button_delay
 ;
 ; old_x = cur_block.x;
 ;
-L05C4:	lda     _cur_block
-	ldy     #$00
+L05F1:	lda     _cur_block
 	sta     (sp),y
 ;
 ; cur_block.x -= 1; // note: wrap around
 ;
 	dec     _cur_block
 ;
-; if (is_cluster_colliding())
+; if (cur_block.x != old_x && is_cluster_colliding())
 ;
-L0436:	jsr     _is_cluster_colliding
+L0446:	lda     (sp),y
+	cmp     _cur_block
+	beq     L05F3
+	jsr     _is_cluster_colliding
 	tax
-	beq     L05C5
+	beq     L05F3
 ;
 ; cur_block.x = old_x;
 ;
@@ -1358,7 +1400,7 @@ L0436:	jsr     _is_cluster_colliding
 ;
 ; temp_fall_rate = fall_rate;
 ;
-L05C5:	lda     _fall_rate
+L05F3:	lda     _fall_rate
 	ldy     #$01
 	sta     (sp),y
 ;
@@ -1366,25 +1408,25 @@ L05C5:	lda     _fall_rate
 ;
 	lda     _pad1_new
 	and     #$04
-	beq     L05C6
+	beq     L05F4
 ;
 ; require_new_down_button = 0;
 ;
 	lda     #$00
 	sta     _require_new_down_button
 ;
-; temp_fall_rate = tick_count;
+; temp_fall_rate = fall_frame_counter;
 ;
-	lda     _tick_count
+	lda     _fall_frame_counter
 ;
 ; else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 ;
-	jmp     L05B0
-L05C6:	lda     _pad1
+	jmp     L05DD
+L05F4:	lda     _pad1
 	and     #$04
-	beq     L05CA
+	beq     L05F8
 	lda     _require_new_down_button
-	bne     L05CA
+	bne     L05F8
 ;
 ; temp_fall_rate >>= 4;
 ;
@@ -1393,19 +1435,19 @@ L05C6:	lda     _pad1
 	lsr     a
 	lsr     a
 	lsr     a
-L05B0:	sta     (sp),y
+L05DD:	sta     (sp),y
 ;
-; if (tick_count % temp_fall_rate == 0)
+; if (fall_frame_counter % temp_fall_rate == 0)
 ;
-L05CA:	lda     _tick_count
+L05F8:	lda     _fall_frame_counter
 	jsr     pusha0
 	ldy     #$03
 	lda     (sp),y
 	jsr     tosumoda0
 	cpx     #$00
-	bne     L045C
+	bne     L046E
 	cmp     #$00
-	bne     L045C
+	bne     L046E
 ;
 ; cur_block.y += 1;
 ;
@@ -1413,7 +1455,7 @@ L05CA:	lda     _tick_count
 ;
 ; hit = 0;
 ;
-L045C:	lda     #$00
+L046E:	lda     #$00
 	ldy     #$02
 	sta     (sp),y
 ;
@@ -1421,7 +1463,7 @@ L045C:	lda     #$00
 ;
 	jsr     _is_cluster_colliding
 	tax
-	beq     L0463
+	beq     L0475
 ;
 ; cur_block.y -= 1;
 ;
@@ -1435,9 +1477,9 @@ L045C:	lda     #$00
 ;
 ; if (hit)
 ;
-L0463:	ldy     #$02
+L0475:	ldy     #$02
 	lda     (sp),y
-	beq     L0469
+	beq     L047B
 ;
 ; put_cur_cluster();
 ;
@@ -1449,7 +1491,7 @@ L0463:	ldy     #$02
 ;
 ; }
 ;
-L0469:	jmp     incsp3
+L047B:	jmp     incsp3
 
 .endproc
 
@@ -1468,9 +1510,20 @@ L0469:	jmp     incsp3
 ;
 	jsr     pusha
 ;
+; if (y <= BOARD_OOB_END)
+;
+	jsr     decsp2
+	ldy     #$03
+	lda     (sp),y
+	cmp     #$04
+;
+; return;
+;
+	bcc     L047F
+;
 ; address = get_ppu_addr(0, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 ;
-	jsr     decsp4
+	jsr     decsp2
 	lda     #$00
 	ldy     #$01
 	sta     (sp),y
@@ -1516,10 +1569,10 @@ L0469:	jmp     incsp3
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L05CC
+	bcc     L05FA
 	inx
 	clc
-L05CC:	adc     #<(_game_board)
+L05FA:	adc     #<(_game_board)
 	sta     ptr1
 	txa
 	adc     #>(_game_board)
@@ -1531,7 +1584,7 @@ L05CC:	adc     #<(_game_board)
 ;
 ; }
 ;
-	jmp     incsp5
+L047F:	jmp     incsp5
 
 .endproc
 
@@ -1583,25 +1636,31 @@ L05CC:	adc     #<(_game_board)
 ;
 ; do_line_check = 1;
 ;
-	jsr     decsp2
+	jsr     decsp3
 	lda     #$01
 	sta     _do_line_check
 ;
+; min_y = 0xff; // max
+;
+	lda     #$FF
+	ldy     #$00
+	sta     (sp),y
+;
 ; for (iy = 0; iy < 4; ++iy)
-;
-	lda     #$00
-	tay
-L05D0:	sta     (sp),y
-	cmp     #$04
-	bcs     L0488
-;
-; for (ix = 0; ix < 4; ++ix)
 ;
 	tya
 	iny
-L05CF:	sta     (sp),y
+L0600:	sta     (sp),y
 	cmp     #$04
-	bcs     L0489
+	jcs     L049E
+;
+; for (ix = 0; ix < 4; ++ix)
+;
+	lda     #$00
+	iny
+L05FF:	sta     (sp),y
+	cmp     #$04
+	bcs     L049F
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -1632,18 +1691,42 @@ L05CF:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L049B
+	beq     L04B1
+;
+; if (cur_block.y + iy < min_y)
+;
+	ldx     #$00
+	ldy     #$02
+	lda     (sp),y
+	clc
+	adc     _cur_block+1
+	bcc     L05FB
+	inx
+L05FB:	dey
+	cmp     (sp),y
+	txa
+	sbc     #$00
+	bcs     L04B4
+;
+; min_y = cur_block.y + iy;
+;
+	iny
+	lda     (sp),y
+	clc
+	adc     _cur_block+1
+	dey
+	sta     (sp),y
 ;
 ; set_block(cur_block.x + ix, cur_block.y + iy, cur_cluster.sprite);
 ;
-	jsr     decsp2
-	ldy     #$04
+L04B4:	jsr     decsp2
+	ldy     #$05
 	lda     (sp),y
 	clc
 	adc     _cur_block
 	ldy     #$01
 	sta     (sp),y
-	ldy     #$03
+	ldy     #$04
 	lda     (sp),y
 	clc
 	adc     _cur_block+1
@@ -1654,27 +1737,39 @@ L05CF:	sta     (sp),y
 ;
 ; }
 ;
-L049B:	jsr     incsp1
+L04B1:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
-	ldy     #$01
-	clc
-	tya
-	adc     (sp),y
-	jmp     L05CF
-;
-; for (iy = 0; iy < 4; ++iy)
-;
-L0489:	dey
+	ldy     #$02
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05D0
+	jmp     L05FF
+;
+; for (iy = 0; iy < 4; ++iy)
+;
+L049F:	dey
+	clc
+	tya
+	adc     (sp),y
+	jmp     L0600
+;
+; if (min_y <= BOARD_OOB_END)
+;
+L049E:	dey
+	lda     (sp),y
+	cmp     #$04
+	bcs     L04BC
+;
+; go_to_state(STATE_OVER);
+;
+	lda     #$02
+	jsr     _go_to_state
 ;
 ; }
 ;
-L0488:	jmp     incsp2
+L04BC:	jmp     incsp3
 
 .endproc
 
@@ -1705,9 +1800,9 @@ L0488:	jmp     incsp2
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L05D2
+	bcc     L0602
 	inx
-L05D2:	sta     ptr1
+L0602:	sta     ptr1
 	txa
 	clc
 	adc     #>(_game_board)
@@ -1742,21 +1837,21 @@ L05D2:	sta     ptr1
 	ldy     #$00
 	lda     (sp),y
 	cmp     #$18
-	bcs     L05D3
+	bcs     L0603
 	iny
 	lda     (sp),y
 	cmp     #$0A
-	bcc     L05D4
+	bcc     L0604
 ;
 ; return 0;
 ;
-L05D3:	ldx     #$00
+L0603:	ldx     #$00
 	txa
 	jmp     incsp2
 ;
 ; return get_block(x, y) == 0;
 ;
-L05D4:	lda     (sp),y
+L0604:	lda     (sp),y
 	jsr     pusha
 	ldy     #$01
 	lda     (sp),y
@@ -1786,19 +1881,19 @@ L05D4:	lda     (sp),y
 	jsr     decsp2
 	lda     #$00
 	tay
-L05D8:	sta     (sp),y
+L0608:	sta     (sp),y
 	ldx     #$00
 	lda     (sp),y
 	cmp     #$04
-	bcs     L05D9
+	bcs     L0609
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
 	txa
 	iny
-L05D7:	sta     (sp),y
+L0607:	sta     (sp),y
 	cmp     #$04
-	bcs     L04B3
+	bcs     L04D1
 ;
 ; unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 ;
@@ -1829,7 +1924,7 @@ L05D7:	sta     (sp),y
 	sta     tmp1
 	pla
 	ora     tmp1
-	beq     L04C8
+	beq     L04E6
 ;
 ; if (!is_block_free(cur_block.x + ix, cur_block.y + iy))
 ;
@@ -1844,7 +1939,7 @@ L05D7:	sta     (sp),y
 	adc     _cur_block+1
 	jsr     _is_block_free
 	tax
-	bne     L04C8
+	bne     L04E6
 ;
 ; return 1;
 ;
@@ -1854,7 +1949,7 @@ L05D7:	sta     (sp),y
 ;
 ; }
 ;
-L04C8:	jsr     incsp1
+L04E6:	jsr     incsp1
 ;
 ; for (ix = 0; ix < 4; ++ix)
 ;
@@ -1862,19 +1957,19 @@ L04C8:	jsr     incsp1
 	clc
 	tya
 	adc     (sp),y
-	jmp     L05D7
+	jmp     L0607
 ;
 ; for (iy = 0; iy < 4; ++iy)
 ;
-L04B3:	dey
+L04D1:	dey
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05D8
+	jmp     L0608
 ;
 ; return 0;
 ;
-L05D9:	txa
+L0609:	txa
 ;
 ; }
 ;
@@ -1899,15 +1994,10 @@ L05D9:	txa
 	lda     #$01
 	sta     _require_new_down_button
 ;
-; cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
-;
-	lda     #$03
-	sta     _cur_block
-;
-; cur_block.y = 0;
+; fall_frame_counter = 0;
 ;
 	lda     #$00
-	sta     _cur_block+1
+	sta     _fall_frame_counter
 ;
 ; cur_rot = 0;
 ;
@@ -1936,24 +2026,54 @@ L05D9:	txa
 	lda     _next_cluster+4
 	sta     _cur_cluster+4
 ;
+; cur_cluster.id = next_cluster.id;
+;
+	lda     _next_cluster+5
+	sta     _cur_cluster+5
+;
+; cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
+;
+	lda     #$03
+	sta     _cur_block
+;
+; cur_block.y = cluster_offsets[cur_cluster.id];
+;
+	ldy     _cur_cluster+5
+	lda     _cluster_offsets,y
+	sta     _cur_block+1
+;
+; if (is_cluster_colliding())
+;
+	jsr     _is_cluster_colliding
+	tax
+	beq     L0502
+;
+; --cur_block.y;
+;
+	dec     _cur_block+1
+;
 ; id = rand8() % NUM_CLUSTERS;
 ;
-	jsr     _rand8
+L0502:	jsr     _rand8
 	jsr     pushax
 	lda     #$07
 	jsr     tosumoda0
 	ldy     #$00
 	sta     (sp),y
 ;
+; next_cluster.id = id;
+;
+	sta     _next_cluster+5
+;
 ; next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 ;
 	ldx     #$00
 	lda     (sp),y
 	asl     a
-	bcc     L05DC
+	bcc     L060C
 	inx
 	clc
-L05DC:	adc     #<(_cluster_defs)
+L060C:	adc     #<(_cluster_defs)
 	sta     ptr1
 	txa
 	adc     #>(_cluster_defs)
@@ -2026,10 +2146,10 @@ L05DC:	adc     #<(_cluster_defs)
 	ldx     #$00
 	lda     _cur_rot
 	asl     a
-	bcc     L05E0
+	bcc     L0610
 	inx
 	clc
-L05E0:	adc     _cur_cluster+2
+L0610:	adc     _cur_cluster+2
 	sta     ptr1
 	txa
 	adc     _cur_cluster+2+1
@@ -2044,7 +2164,7 @@ L05E0:	adc     _cur_cluster+2
 ;
 	jsr     _is_cluster_colliding
 	tax
-	beq     L04F3
+	beq     L051C
 ;
 ; cur_rot = old_rot;
 ;
@@ -2057,10 +2177,10 @@ L05E0:	adc     _cur_cluster+2
 	ldx     #$00
 	lda     _cur_rot
 	asl     a
-	bcc     L05E1
+	bcc     L0611
 	inx
 	clc
-L05E1:	adc     _cur_cluster+2
+L0611:	adc     _cur_cluster+2
 	sta     ptr1
 	txa
 	adc     _cur_cluster+2+1
@@ -2074,7 +2194,7 @@ L05E1:	adc     _cur_cluster+2
 ;
 ; }
 ;
-L04F3:	jmp     incsp2
+L051C:	jmp     incsp2
 
 .endproc
 
@@ -2095,7 +2215,7 @@ L04F3:	jmp     incsp2
 ;
 ; fade_delay = 5;
 ;
-	jsr     decsp5
+	jsr     decsp4
 	lda     #$05
 	ldy     #$00
 	sta     (sp),y
@@ -2107,7 +2227,7 @@ L04F3:	jmp     incsp2
 ; }
 ;
 	cmp     #$02
-	bne     L04FF
+	bne     L0528
 ;
 ; fade_from_bright = 1;
 ;
@@ -2117,7 +2237,7 @@ L04F3:	jmp     incsp2
 ;
 ; state = new_state;
 ;
-L04FF:	ldy     #$05
+L0528:	ldy     #$04
 	lda     (sp),y
 	sta     _state
 ;
@@ -2127,23 +2247,23 @@ L04FF:	ldy     #$05
 ;
 ; }
 ;
-	bne     L05E2
+	bne     L0612
 ;
 ; }
 ;
-	jmp     incsp6
+	jmp     incsp5
 ;
 ; }
 ;
-L05E2:	cmp     #$01
-	beq     L050D
+L0612:	cmp     #$01
+	beq     L0536
 	cmp     #$02
-	beq     L0534
-	jmp     incsp6
+	beq     L055F
+	jmp     incsp5
 ;
 ; ppu_off(); // screen off
 ;
-L050D:	jsr     _ppu_off
+L0536:	jsr     _ppu_off
 ;
 ; vram_adr(NTADR_A(0,0));
 ;
@@ -2177,6 +2297,11 @@ L050D:	jsr     _ppu_off
 	lda     #$F0
 	jsr     _memfill
 ;
+; cur_level = 0;
+;
+	lda     #$00
+	sta     _cur_level
+;
 ; spawn_new_cluster();
 ;
 	jsr     _spawn_new_cluster
@@ -2189,7 +2314,7 @@ L050D:	jsr     _ppu_off
 ;
 	ldy     #$01
 	lda     (sp),y
-	beq     L051F
+	beq     L054A
 ;
 ; pal_bright(7);
 ;
@@ -2237,16 +2362,16 @@ L050D:	jsr     _ppu_off
 ;
 ; require_new_down_button = 1;
 ;
-L051F:	lda     #$01
+L054A:	lda     #$01
 	sta     _require_new_down_button
 ;
 ; break;
 ;
-	jmp     incsp6
+	jmp     incsp5
 ;
 ; delay(60);
 ;
-L0534:	lda     #$3C
+L055F:	lda     #$3C
 	jsr     _delay
 ;
 ; oam_clear();
@@ -2308,22 +2433,22 @@ L0534:	lda     #$3C
 	sta     (sp),y
 	lda     #$70
 	jsr     _get_ppu_addr
-	ldy     #$03
+	ldy     #$02
 	jsr     staxysp
 ;
 ; multi_vram_buffer_horz("GAME OVER!", 10, address);
 ;
 	jsr     decsp3
-	lda     #<(L054E)
+	lda     #<(L0579)
 	ldy     #$01
 	sta     (sp),y
 	iny
-	lda     #>(L054E)
+	lda     #>(L0579)
 	sta     (sp),y
 	lda     #$0A
 	ldy     #$00
 	sta     (sp),y
-	ldy     #$07
+	ldy     #$06
 	lda     (sp),y
 	tax
 	dey
@@ -2376,7 +2501,7 @@ L0534:	lda     #$3C
 ;
 ; break;
 ;
-	jmp     incsp6
+	jmp     incsp5
 
 .endproc
 
@@ -2590,7 +2715,7 @@ L0534:	lda     #$3C
 ;
 ; ppu_wait_nmi(); // wait till beginning of the frame
 ;
-L036F:	jsr     _ppu_wait_nmi
+L0377:	jsr     _ppu_wait_nmi
 ;
 ; tick_count++;
 ;
@@ -2618,18 +2743,18 @@ L036F:	jsr     _ppu_wait_nmi
 ;
 ; }
 ;
-	beq     L05E6
+	beq     L0616
 	cmp     #$01
-	beq     L0387
+	beq     L038F
 	cmp     #$02
-	jeq     L05EA
-	jmp     L036F
+	jeq     L061A
+	jmp     L0377
 ;
 ; if (pad1_new & PAD_START)
 ;
-L05E6:	lda     _pad1_new
+L0616:	lda     _pad1_new
 	and     #$10
-	beq     L036F
+	beq     L0377
 ;
 ; seed_rng();
 ;
@@ -2642,12 +2767,12 @@ L05E6:	lda     _pad1_new
 ;
 ; break;
 ;
-	jmp     L036F
+	jmp     L0377
 ;
 ; if (do_line_check)
 ;
-L0387:	lda     _do_line_check
-	beq     L05E8
+L038F:	lda     _do_line_check
+	beq     L0618
 ;
 ; do_line_check = 0;
 ;
@@ -2658,9 +2783,9 @@ L0387:	lda     _do_line_check
 ;
 	lda     #$17
 	ldy     #$01
-L05E4:	sta     (sp),y
+L0614:	sta     (sp),y
 	cmp     #$04
-	bcc     L05E8
+	bcc     L0618
 ;
 ; line_complete = 1;
 ;
@@ -2672,9 +2797,9 @@ L05E4:	sta     (sp),y
 ;
 	tya
 	ldy     #$02
-L05E3:	sta     (sp),y
+L0613:	sta     (sp),y
 	cmp     #$0A
-	bcs     L0397
+	bcs     L039F
 ;
 ; if (is_block_free(ix, iy))
 ;
@@ -2684,7 +2809,7 @@ L05E3:	sta     (sp),y
 	lda     (sp),y
 	jsr     _is_block_free
 	tax
-	beq     L0398
+	beq     L03A0
 ;
 ; line_complete = 0;
 ;
@@ -2694,21 +2819,21 @@ L05E3:	sta     (sp),y
 ;
 ; break;
 ;
-	jmp     L05E7
+	jmp     L0617
 ;
 ; for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
-L0398:	ldy     #$02
+L03A0:	ldy     #$02
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05E3
+	jmp     L0613
 ;
 ; if (line_complete)
 ;
-L0397:	ldy     #$00
-L05E7:	lda     (sp),y
-	beq     L038E
+L039F:	ldy     #$00
+L0617:	lda     (sp),y
+	beq     L0396
 ;
 ; line_crush_y = iy;
 ;
@@ -2718,29 +2843,29 @@ L05E7:	lda     (sp),y
 ;
 ; break;
 ;
-	jmp     L05E8
+	jmp     L0618
 ;
 ; for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
 ;
-L038E:	iny
+L0396:	iny
 	lda     (sp),y
 	sec
 	sbc     #$01
-	jmp     L05E4
+	jmp     L0614
 ;
 ; if (line_crush_y > BOARD_OOB_END)
 ;
-L05E8:	lda     _line_crush_y
+L0618:	lda     _line_crush_y
 	cmp     #$04
-	bcc     L03A8
+	bcc     L03B0
 ;
 ; for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 ;
 	lda     #$00
 	ldy     #$02
-L05E5:	sta     (sp),y
+L0615:	sta     (sp),y
 	cmp     #$0A
-	bcs     L05E9
+	bcs     L0619
 ;
 ; set_block(ix, line_crush_y, get_block(ix, line_crush_y-1));
 ;
@@ -2767,17 +2892,17 @@ L05E5:	sta     (sp),y
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L05E5
+	jmp     L0615
 ;
 ; --line_crush_y;
 ;
-L05E9:	dec     _line_crush_y
+L0619:	dec     _line_crush_y
 ;
 ; if (line_crush_y == BOARD_OOB_END)
 ;
 	lda     _line_crush_y
 	cmp     #$03
-	bne     L03BE
+	bne     L03C6
 ;
 ; do_line_check = 1;
 ;
@@ -2786,21 +2911,21 @@ L05E9:	dec     _line_crush_y
 ;
 ; else
 ;
-	jmp     L03BE
+	jmp     L03C6
 ;
 ; movement();
 ;
-L03A8:	jsr     _movement
+L03B0:	jsr     _movement
 ;
 ; draw_sprites();
 ;
-L03BE:	jsr     _draw_sprites
+L03C6:	jsr     _draw_sprites
 ;
 ; if (pad1_new & PAD_START)
 ;
 	lda     _pad1_new
 	and     #$10
-	jeq     L036F
+	jeq     L0377
 ;
 ; go_to_state(STATE_OVER);
 ;
@@ -2809,13 +2934,13 @@ L03BE:	jsr     _draw_sprites
 ;
 ; break;
 ;
-	jmp     L036F
+	jmp     L0377
 ;
 ; if (pad1_new & PAD_START)
 ;
-L05EA:	lda     _pad1_new
+L061A:	lda     _pad1_new
 	and     #$10
-	jeq     L036F
+	jeq     L0377
 ;
 ; go_to_state(STATE_GAME);
 ;
@@ -2824,7 +2949,7 @@ L05EA:	lda     _pad1_new
 ;
 ; break;
 ;
-	jmp     L036F
+	jmp     L0377
 
 .endproc
 
