@@ -11,6 +11,7 @@ void main (void)
 	unsigned char ix;
 	unsigned char iy;
 	unsigned char line_complete;
+	int i;
 	//int address;
 
 	ppu_off(); // screen off
@@ -30,10 +31,13 @@ void main (void)
 
 	//debug_fill_nametables();
 
+	off_nt = 0;
+	cur_nt = 2;
+
 	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
 	vram_write(text, sizeof(text)-1); // -1 null term
 	
-	scroll(0, 239); // shift the bg down 1 pixel
+	scroll(0, 0x1df); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
 	
 	ppu_on_all(); // turn on screen
@@ -68,11 +72,11 @@ void main (void)
 				// Search for full rows to clear out.
 				if (do_line_check)
 				{
-					// Stop searching for lines unless we fine one this frame.
+					// Stop searching for lines unless we find one this frame.
 					do_line_check = 0;
 
 					// Start at the bottom of the board, and work our way up.
-					for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
+					for (iy = line_check_start; iy > BOARD_OOB_END; --iy)
 					{
 						// Assume this row is complete unless we find an empty
 						// block.
@@ -91,28 +95,59 @@ void main (void)
 						// the rows above it into its place.
 						if (line_complete)
 						{
+							inc_lines_cleared();
+							display_lines_cleared();
+
 							// Store line to crush.
 							line_crush_y = iy;
+
+							// hide the primary nt.
+							scroll(0, 0x1df); // shift the bg down 1 pixel
+							cur_nt = 0;
+							off_nt = 2;
+
 							break;
 						}
 
 						// found a line so there might be more.
 						//do_line_check = 1;
 					}
-				}
 
-				// Are we currently shifting rows down?
+					// If we have finished updating the screen and are ready to move back to the primary
+					// nt, we can start updating the offscreen nt.
+					if (line_complete == 0)
+					{
+						refresh_offscreen_nt = BOARD_END_Y_PX_BOARD;
+					}
+				}
+			
+
+				// if (line_crush_y > BOARD_OOB_END)
+				// {
+				// 	// Set each block in this row to the value in the row above it.
+				// 	for(ix = 0; ix <= 3; ++ix)
+				// 	{
+				// 		multi_vram_buffer_vert(
+				// 			full_col, 
+				// 			19,
+				// 			get_ppu_addr(0, BOARD_START_X_PX + (ix << 3), (BOARD_OOB_END + 1) << 3));
+				// 	}
+				// }
+				// // Are we currently shifting rows down?
+				// else 
 				if (line_crush_y > BOARD_OOB_END)
 				{
+					//for (i = 0; i < 2 && line_crush_y > BOARD_OOB_END; ++i)
+					//{
 					// Set each block in this row to the value in the row above it.
 					for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 					{
-						set_block(ix, line_crush_y, get_block(ix, line_crush_y-1));
+						set_block_nt(ix, line_crush_y, get_block(ix, line_crush_y-1), off_nt);
 					}
 
 					// Next frame do the same on the line above.
 					--line_crush_y;
-
+					//}
 					// Finished this pass, check again incase this was a multi-line
 					// kill.
 					if (line_crush_y == BOARD_OOB_END)
@@ -122,7 +157,33 @@ void main (void)
 				}
 				else
 				{
-					movement();
+					// show the primary nt.
+					cur_nt = 2;
+					off_nt = 0;				
+					scroll(0, 255 - 16);
+
+					if (refresh_offscreen_nt)
+					{
+						for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+						{
+							set_block_nt(ix, refresh_offscreen_nt, 
+								get_block(ix, refresh_offscreen_nt), off_nt);
+						}
+
+						// Next frame do the same on the line above.
+						--refresh_offscreen_nt;
+
+						// Finished this pass, check again incase this was a multi-line
+						// kill.
+						if (refresh_offscreen_nt == BOARD_OOB_END)
+						{
+							refresh_offscreen_nt = 0;
+						}
+					}
+					//else
+					{
+						movement();
+					}
 				}
 				
 				draw_sprites();
@@ -362,13 +423,30 @@ void set_block(unsigned char x, unsigned char y, unsigned char id)
 		return;
 	}
 
-	address = get_ppu_addr(0, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
+	address = get_ppu_addr(cur_nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
+	one_vram_buffer(id, address);	
+	address = get_ppu_addr(off_nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(id, address);
 
 	//x = x >> 3; // div 8
 	//y = y >> 3; // div 8
 
 	// TODO: Is this too slow?
+	game_board[PIXEL_TO_BOARD_INDEX(x,y)] = id;
+}
+
+void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
+{
+	int address;
+	if (y <= BOARD_OOB_END)
+	{
+		// Don't place stuff out of bounds.
+		return;
+	}
+
+	address = get_ppu_addr(nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
+	one_vram_buffer(id, address);
+	
 	game_board[PIXEL_TO_BOARD_INDEX(x,y)] = id;
 }
 
@@ -382,13 +460,13 @@ void put_cur_cluster()
 	unsigned char ix;
 	unsigned char iy;
 	unsigned char min_y;
+	unsigned char max_y;
 	//unsigned char iy2;
 	//unsigned char line_complete;
 	//unsigned char top;
 	//unsigned char bottom;
 	//int address;
 
-	do_line_check = 1;
 	min_y = 0xff; // max
 
 	for (iy = 0; iy < 4; ++iy)
@@ -407,6 +485,10 @@ void put_cur_cluster()
 				{
 					min_y = cur_block.y + iy;
 				}
+				if (cur_block.y + iy > max_y)
+				{
+					max_y = cur_block.y + iy;
+				}
 				set_block(cur_block.x + ix, cur_block.y + iy, cur_cluster.sprite);
 			}			
 		}
@@ -417,6 +499,12 @@ void put_cur_cluster()
 		go_to_state(STATE_OVER);
 		return;
 	}
+	else
+	{
+		line_check_start = max_y;
+		do_line_check = 1;
+	}
+	
 }
 
 unsigned char get_block(unsigned char x, unsigned char y)
@@ -562,7 +650,7 @@ void rotate_cur_cluster(char dir)
 void go_to_state(unsigned char new_state)
 {
 	int address;
-	//unsigned char iy;
+	unsigned char i;
 	unsigned char fade_from_bright;
 	unsigned char fade_delay;
 	fade_delay = 5;
@@ -599,6 +687,8 @@ void go_to_state(unsigned char new_state)
 			//vram_fill(0, NAMETABLE_SIZE);
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(game_area);
+			vram_adr(NTADR_C(0,0));
+			vram_unrle(game_area);
 
 			ppu_on_all(); // turn on screen
 
@@ -610,7 +700,23 @@ void go_to_state(unsigned char new_state)
 
 			memfill(game_board, 0, BOARD_SIZE);
 
-			cur_level = 0;
+			// shift up 1
+			scroll(0, 255 - 16);
+
+			display_lines_cleared();
+
+			// leave a spot open.
+			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
+			{
+				set_block(i, BOARD_END_Y_PX_BOARD, 1);
+				//delay(1);
+				//set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+				//delay(1);
+				//set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+				//delay(1);
+				//set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+				//delay(1);
+			}
 
 			spawn_new_cluster();
 			spawn_new_cluster();
@@ -646,7 +752,7 @@ void go_to_state(unsigned char new_state)
 			delay(fade_delay);
 			pal_bright(8);
 			delay(fade_delay);
-			address = get_ppu_addr(0, 96, 112);
+			address = get_ppu_addr(cur_nt, 96, 112);
 			multi_vram_buffer_horz("GAME OVER!", 10, address);
 			pal_bright(7);
 			delay(fade_delay);
@@ -664,6 +770,32 @@ void go_to_state(unsigned char new_state)
 			break;
 		}
 	}
+}
+
+void inc_lines_cleared()
+{
+	++lines_cleared_one;
+	if (lines_cleared_one == 10)
+	{
+		lines_cleared_one = 0;
+		++lines_cleared_ten;
+		if (lines_cleared_ten == 10)
+		{
+			lines_cleared_ten = 0;
+			++lines_cleared_hundred;
+		}
+	}
+}
+
+void display_lines_cleared()
+{
+	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,0,0));
+	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,8,0));
+	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,16,0));
+
+	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(off_nt,0,0));
+	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(off_nt,8,0));
+	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(off_nt,16,0));
 }
 
 // DEBUG

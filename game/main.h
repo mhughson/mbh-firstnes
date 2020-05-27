@@ -162,19 +162,26 @@ unsigned char cluster_offsets[NUM_CLUSTERS] =
 };
 
 unsigned char do_line_check;
+unsigned char line_check_start;
 unsigned char line_crush_y;
+unsigned char refresh_offscreen_nt;
 
 unsigned char horz_button_delay;
 const unsigned char button_delay = 5;
 unsigned char require_new_down_button;
 unsigned char fall_frame_counter;
-unsigned char cur_level;
+unsigned char lines_cleared_one;
+unsigned char lines_cleared_ten;
+unsigned char lines_cleared_hundred;
+unsigned char cur_nt;
+unsigned char off_nt;
 
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 // const unsigned char palette_bg[]={
 // //1x0c, 0x14, 0x23, 0x37,
@@ -207,6 +214,7 @@ void movement(void);
 
 // Set a block in x, y (board space)
 void set_block(unsigned char x, unsigned char y, unsigned char id);
+void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt);
 
 // x, y in board space.
 void clear_block(unsigned char x, unsigned char y);
@@ -231,6 +239,9 @@ void rotate_cur_cluster(char dir);
 
 // Transition to a new state.
 void go_to_state(unsigned char new_state);
+
+void inc_lines_cleared();
+void display_lines_cleared();
 
 
 // DEBUG
