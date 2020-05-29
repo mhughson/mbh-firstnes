@@ -8,12 +8,6 @@
 
 void main (void) 
 {	
-	unsigned char ix;
-	unsigned char iy;
-	unsigned char line_complete;
-	int i;
-	//int address;
-
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -30,15 +24,18 @@ void main (void)
 	//load_room();
 
 	//debug_fill_nametables();
-
-	off_nt = 0;
-	cur_nt = 2;
-
-	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
-	vram_write(text, sizeof(text)-1); // -1 null term
 	
-	scroll(0, 0x1df); // shift the bg down 1 pixel
-	//set_scroll_y(0xff);
+			// TODO: This is actually the gameplay setup.
+			off_nt = 0;
+			cur_nt = 2;
+
+			// TODO: Use get_ppu functions with nt id.
+			vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
+			vram_write(text, sizeof(text)-1); // -1 null term
+			
+			scroll(0, 0x1df); // shift the bg down 1 pixel
+			//set_scroll_y(0xff);
+
 	
 	ppu_on_all(); // turn on screen
 
@@ -69,129 +66,18 @@ void main (void)
 
 			case STATE_GAME:
 			{
-				// Search for full rows to clear out.
-				if (do_line_check)
-				{
-					// Stop searching for lines unless we find one this frame.
-					do_line_check = 0;
 
-					// Start at the bottom of the board, and work our way up.
-					for (iy = line_check_start; iy > BOARD_OOB_END; --iy)
-					{
-						// Assume this row is complete unless we find an empty
-						// block.
-						line_complete = 1;
-						for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
-						{
-							if (is_block_free(ix, iy))
-							{
-								// This block is empty, so we can stop checking this row.
-								line_complete = 0;
-								break;
-							}
-						}
-
-						// If this row was filled, we need to remove it and crush
-						// the rows above it into its place.
-						if (line_complete)
-						{
-							inc_lines_cleared();
-							display_lines_cleared();
-
-							// Store line to crush.
-							line_crush_y = iy;
-
-							// hide the primary nt.
-							scroll(0, 0x1df); // shift the bg down 1 pixel
-							cur_nt = 0;
-							off_nt = 2;
-
-							break;
-						}
-
-						// found a line so there might be more.
-						//do_line_check = 1;
-					}
-
-					// If we have finished updating the screen and are ready to move back to the primary
-					// nt, we can start updating the offscreen nt.
-					if (line_complete == 0)
-					{
-						refresh_offscreen_nt = BOARD_END_Y_PX_BOARD;
-					}
-				}
-			
-
-				// if (line_crush_y > BOARD_OOB_END)
-				// {
-				// 	// Set each block in this row to the value in the row above it.
-				// 	for(ix = 0; ix <= 3; ++ix)
-				// 	{
-				// 		multi_vram_buffer_vert(
-				// 			full_col, 
-				// 			19,
-				// 			get_ppu_addr(0, BOARD_START_X_PX + (ix << 3), (BOARD_OOB_END + 1) << 3));
-				// 	}
-				// }
-				// // Are we currently shifting rows down?
-				// else 
-				if (line_crush_y > BOARD_OOB_END)
-				{
-					//for (i = 0; i < 2 && line_crush_y > BOARD_OOB_END; ++i)
-					//{
-					// Set each block in this row to the value in the row above it.
-					for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
-					{
-						set_block_nt(ix, line_crush_y, get_block(ix, line_crush_y-1), off_nt);
-					}
-
-					// Next frame do the same on the line above.
-					--line_crush_y;
-					//}
-					// Finished this pass, check again incase this was a multi-line
-					// kill.
-					if (line_crush_y == BOARD_OOB_END)
-					{
-						do_line_check = 1;
-					}
-				}
-				else
-				{
-					// show the primary nt.
-					cur_nt = 2;
-					off_nt = 0;				
-					scroll(0, 255 - 16);
-
-					if (refresh_offscreen_nt)
-					{
-						for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
-						{
-							set_block_nt(ix, refresh_offscreen_nt, 
-								get_block(ix, refresh_offscreen_nt), off_nt);
-						}
-
-						// Next frame do the same on the line above.
-						--refresh_offscreen_nt;
-
-						// Finished this pass, check again incase this was a multi-line
-						// kill.
-						if (refresh_offscreen_nt == BOARD_OOB_END)
-						{
-							refresh_offscreen_nt = 0;
-						}
-					}
-					//else
-					{
-						movement();
-					}
-				}
-				
+				movement();
 				draw_sprites();
+				//copy_board_to_nt();
 
+#if DEBUG_ENABLED
 				if (pad1_new & PAD_START)
 				{
-					go_to_state(STATE_OVER);
+					copy_board_to_nt();
+					//go_to_state(STATE_OVER);
 				}
+#endif
 
 				break;
 			}
@@ -277,9 +163,9 @@ void draw_sprites(void)
 
 void movement(void)
 {
-	char hit;
-	unsigned char temp_fall_rate;
-	unsigned char old_x;
+	hit = 0;
+	temp_fall_rate = 0;
+	old_x = 0;
 
 	++fall_frame_counter;
 
@@ -425,11 +311,7 @@ void set_block(unsigned char x, unsigned char y, unsigned char id)
 
 	address = get_ppu_addr(cur_nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(id, address);	
-	address = get_ppu_addr(off_nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
-	one_vram_buffer(id, address);
 
-	//x = x >> 3; // div 8
-	//y = y >> 3; // div 8
 
 	// TODO: Is this too slow?
 	game_board[PIXEL_TO_BOARD_INDEX(x,y)] = id;
@@ -459,14 +341,9 @@ void put_cur_cluster()
 {
 	unsigned char ix;
 	unsigned char iy;
-	unsigned char min_y;
-	unsigned char max_y;
-	//unsigned char iy2;
-	//unsigned char line_complete;
-	//unsigned char top;
-	//unsigned char bottom;
-	//int address;
 
+
+	max_y = 0;
 	min_y = 0xff; // max
 
 	for (iy = 0; iy < 4; ++iy)
@@ -501,8 +378,7 @@ void put_cur_cluster()
 	}
 	else
 	{
-		line_check_start = max_y;
-		do_line_check = 1;
+		try_collapse_board_data(max_y);
 	}
 	
 }
@@ -550,9 +426,9 @@ unsigned char is_cluster_colliding()
 }
 
 void spawn_new_cluster()
-{
-	unsigned char id;
-
+{	
+	id = 0;
+	
 	require_new_down_button = 1;
 	fall_frame_counter = 0;
 
@@ -601,50 +477,6 @@ void rotate_cur_cluster(char dir)
 		cur_rot = old_rot;
 		cur_cluster.layout = cur_cluster.def[cur_rot];
 	}
-
-	/*
-	// iterator through x and y of layout.
-	unsigned char ix;
-	unsigned char iy;
-
-	// destination x and y that we want to copy to.
-	unsigned char dx;
-	unsigned char dy;
-
-	// The bit index we want to copy from.
-	unsigned char tbit;
-	// The value of that bit in the current layout (off or on).
-	unsigned char tval;
-
-	// The rotated destination.
-	unsigned char dbit;
-
-	// Temp layout to copy into without impacting current layout.
-	unsigned short ret;
-
-	for (iy = 0; iy < 4; ++iy)
-	{	
-		for (ix = 0; ix < 4; ++ix)
-		{
-			// Essentially an index into a bit array.
-			// The data we are copying.
-			tbit = ((iy * 4) + (ix % 4));
-			tval = cur_cluster.layout & (0x8000 >> tbit);
-
-			// The destination.
-			dx = 3 - iy;
-			dy = ix;
-			dbit = ((dy * 4) + (dx % 4));
-
-			if (tval)
-			{
-				ret |= (0x8000 >> dbit);
-			}
-		}
-	}
-
-	cur_cluster.layout = ret;
-	*/
 }
 
 void go_to_state(unsigned char new_state)
@@ -685,8 +517,10 @@ void go_to_state(unsigned char new_state)
 			// clear the nametable and attributes.
 			//vram_adr(NTADR_A(0,0));
 			//vram_fill(0, NAMETABLE_SIZE);
-			vram_adr(NTADR_A(0,0));
-			vram_unrle(game_area);
+			//vram_adr(NTADR_A(0,0));
+			//vram_unrle(game_area);
+
+			// TODO: Use get_ppu functions with nt id.
 			vram_adr(NTADR_C(0,0));
 			vram_unrle(game_area);
 
@@ -709,16 +543,11 @@ void go_to_state(unsigned char new_state)
 			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
 			{
 				set_block(i, BOARD_END_Y_PX_BOARD, 1);
-				//delay(1);
-				//set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-				//delay(1);
-				//set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-				//delay(1);
-				//set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-				//delay(1);
 			}
 
+			// Spawn "next"
 			spawn_new_cluster();
+			// "Next" becomes current, and a new next is defined.
 			spawn_new_cluster();
 
 			if (fade_from_bright)
@@ -796,6 +625,98 @@ void display_lines_cleared()
 	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(off_nt,0,0));
 	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(off_nt,8,0));
 	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(off_nt,16,0));
+}
+
+void try_collapse_board_data(unsigned char start_y)
+{
+	unsigned char ix;
+	unsigned char iy;
+	unsigned char i;
+	unsigned char line_complete;
+
+	// Start at the bottom of the board, and work our way up.
+	for (iy = start_y; iy > BOARD_OOB_END; --iy)
+	{
+		// Assume this row is complete unless we find an empty
+		// block.
+		line_complete = 1;
+		for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+		{
+			if (is_block_free(ix, iy))
+			{
+				// This block is empty, so we can stop checking this row.
+				line_complete = 0;
+				break;
+			}
+		}
+
+		// If this row was filled, we need to remove it and crush
+		// the rows above it into its place.
+		if (line_complete)
+		{
+			inc_lines_cleared();
+			display_lines_cleared();
+
+			// Collapse the game board.
+
+			// TODO: Memcpy whole chunks.
+
+			//memcpy(&game_board[10], game_board, iy * 10);;
+
+			for (i = iy; i > BOARD_OOB_END; --i)
+			{
+				//memcpy(&game_board[PIXEL_TO_BOARD_INDEX(0, i)], &game_board[PIXEL_TO_BOARD_INDEX(0, i - 1)], 10);
+				 for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+				 {
+				 	game_board[PIXEL_TO_BOARD_INDEX(ix, i)] = game_board[PIXEL_TO_BOARD_INDEX(ix, i - 1)];
+				 }
+			}
+
+			// Since we just removed a line, the iterator should recheck this y position for
+			// a complete line.
+			++iy;
+		}
+	}
+
+	copy_board_to_nt();
+}
+
+void copy_board_to_nt()
+{
+	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
+	
+	unsigned char ix;
+	unsigned char iy;
+
+	// Clear out any existing vram commands to ensure we can safely do a bunch
+	// of work in this function.
+
+	delay(1);
+	clear_vram_buffer();	
+
+	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+	{
+		// copy a column into an array.
+		for (iy = 0; iy <= BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = game_board[PIXEL_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + (ix << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+
+		// delay often enough to avoid buffer overrun.
+		if (ix % 4 == 0)
+		{
+			delay(1);
+			clear_vram_buffer();				
+		}
+	}
 }
 
 // DEBUG

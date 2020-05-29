@@ -18,9 +18,10 @@
 #define BOARD_END_Y_PX_BOARD 23 // top edge of last block (height = 24)
 
 #define BOARD_SIZE 240 // 
+#define BOARD_HEIGHT (BOARD_END_Y_PX_BOARD - BOARD_OOB_END)
 
 // TODO: Rename. This is board x,y to board index.
-#define PIXEL_TO_BOARD_INDEX(x,y) ((y * 10) + (x))
+#define PIXEL_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -161,11 +162,6 @@ unsigned char cluster_offsets[NUM_CLUSTERS] =
     //10,10,10,10,10,10,10
 };
 
-unsigned char do_line_check;
-unsigned char line_check_start;
-unsigned char line_crush_y;
-unsigned char refresh_offscreen_nt;
-
 unsigned char horz_button_delay;
 const unsigned char button_delay = 5;
 unsigned char require_new_down_button;
@@ -176,12 +172,25 @@ unsigned char lines_cleared_hundred;
 unsigned char cur_nt;
 unsigned char off_nt;
 
+// movement()
+char hit;
+unsigned char temp_fall_rate;
+unsigned char old_x;
+// spawn_new_cluster()
+unsigned char id;
+// put_cur_cluster()
+unsigned char min_y;
+unsigned char max_y;
+
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+// copy_board_to_nt()
+char copy_board_data[BOARD_HEIGHT];
 
 // const unsigned char palette_bg[]={
 // //1x0c, 0x14, 0x23, 0x37,
@@ -215,7 +224,6 @@ void movement(void);
 // Set a block in x, y (board space)
 void set_block(unsigned char x, unsigned char y, unsigned char id);
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt);
-
 // x, y in board space.
 void clear_block(unsigned char x, unsigned char y);
 
@@ -242,6 +250,9 @@ void go_to_state(unsigned char new_state);
 
 void inc_lines_cleared();
 void display_lines_cleared();
+
+void try_collapse_board_data(unsigned char start_y);
+void copy_board_to_nt();
 
 
 // DEBUG
