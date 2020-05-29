@@ -185,6 +185,7 @@ unsigned char max_y;
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];
+unsigned char game_board_temp[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -258,3 +259,4 @@ void copy_board_to_nt();
 // DEBUG
 void debug_fill_nametables(void);
 void debug_draw_board_area(void);
+void debug_copy_board_data_to_nt(void);

@@ -25,23 +25,23 @@ void main (void)
 
 	//debug_fill_nametables();
 	
-			// TODO: This is actually the gameplay setup.
-			off_nt = 0;
-			cur_nt = 2;
+	// TODO: This is actually the gameplay setup.
+	off_nt = 0;
+	cur_nt = 2;
 
-			// TODO: Use get_ppu functions with nt id.
-			vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
-			vram_write(text, sizeof(text)-1); // -1 null term
-			
-			scroll(0, 0x1df); // shift the bg down 1 pixel
-			//set_scroll_y(0xff);
+	// TODO: Use get_ppu functions with nt id.
+	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
+	vram_write(text, sizeof(text)-1); // -1 null term
+	
+	scroll(0, 0x1df); // shift the bg down 1 pixel
+	//set_scroll_y(0xff);
 
 	
 	ppu_on_all(); // turn on screen
 
+	// infinite loop
 	while (1)
 	{
-		// infinite loop
 		ppu_wait_nmi(); // wait till beginning of the frame
 
 		tick_count++;
@@ -74,7 +74,7 @@ void main (void)
 #if DEBUG_ENABLED
 				if (pad1_new & PAD_START)
 				{
-					copy_board_to_nt();
+					debug_copy_board_data_to_nt();
 					//go_to_state(STATE_OVER);
 				}
 #endif
@@ -657,20 +657,11 @@ void try_collapse_board_data(unsigned char start_y)
 			inc_lines_cleared();
 			display_lines_cleared();
 
-			// Collapse the game board.
+			// Collapse the game board by copying the top of the board down to above
+			// where the line was cleared, to 1 line below the top of the board.
 
-			// TODO: Memcpy whole chunks.
-
-			//memcpy(&game_board[10], game_board, iy * 10);;
-
-			for (i = iy; i > BOARD_OOB_END; --i)
-			{
-				//memcpy(&game_board[PIXEL_TO_BOARD_INDEX(0, i)], &game_board[PIXEL_TO_BOARD_INDEX(0, i - 1)], 10);
-				 for(ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
-				 {
-				 	game_board[PIXEL_TO_BOARD_INDEX(ix, i)] = game_board[PIXEL_TO_BOARD_INDEX(ix, i - 1)];
-				 }
-			}
+			memcpy(game_board_temp, game_board, sizeof(game_board));
+			memcpy(&game_board[10], game_board_temp, iy * 10);;
 
 			// Since we just removed a line, the iterator should recheck this y position for
 			// a complete line.
@@ -743,4 +734,44 @@ void debug_draw_board_area(void)
 	oam_spr(BOARD_START_X_PX, BOARD_END_Y_PX, 0x01, 0);
 	oam_spr(BOARD_END_X_PX, BOARD_END_Y_PX, 0x01, 0);
 #endif//DEBUG_ENABLED
+}
+
+void debug_copy_board_data_to_nt(void)
+{
+#if DEBUG_ENABLED
+	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
+	
+	unsigned char ix;
+	unsigned char iy;
+
+	// Clear out any existing vram commands to ensure we can safely do a bunch
+	// of work in this function.
+
+	delay(1);
+	clear_vram_buffer();	
+
+	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+	{
+		// copy a column into an array.
+		for (iy = 0; iy <= BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = '0' + game_board[PIXEL_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + (ix << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+
+		// delay often enough to avoid buffer overrun.
+		if (ix % 4 == 0)
+		{
+			delay(1);
+			clear_vram_buffer();				
+		}
+	}
+#endif
 }
