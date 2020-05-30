@@ -60,7 +60,7 @@ unsigned char state = STATE_MENU;
 struct block cur_block = { 0, 0 };
 
 // How many frames need to pass before it falls 8 pixels.
-unsigned char fall_rate = 60;
+unsigned char fall_rate = 10;
 
 // Each entry in the array is a rotation.
 // Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
