@@ -267,7 +267,7 @@ void movement(void)
 		temp_fall_rate >>= 4;
 	}
 
-	if (fall_frame_counter % temp_fall_rate == 0)
+	if (fall_frame_counter % temp_fall_rate == 0 || temp_fall_rate == 0)
 	{
 		cur_block.y += 1;
 	}
