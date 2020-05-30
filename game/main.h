@@ -59,8 +59,9 @@ unsigned char state = STATE_MENU;
 // space is converted to screen space at time of render (or ppu get).
 struct block cur_block = { 0, 0 };
 
+
 // How many frames need to pass before it falls 8 pixels.
-unsigned char fall_rate = 60;
+unsigned char fall_rate = 48;
 
 // Each entry in the array is a rotation.
 // Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
@@ -218,6 +219,60 @@ const unsigned char palette_sp[]={
 0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
 0,0,0,0
 }; 
+
+/*
+Level	Frames per Gridcell
+00	        48
+01	        43
+02	        38
+03	        33
+04	        28
+05	        23
+06	        18
+07	        13
+08	        8
+09	        6
+10–12	    5
+13–15	    4
+16–18	    3
+19–28	    2
+29+	        1
+*/
+
+// https://tetris.fandom.com/wiki/Tetris_(NES,_Nintendo)
+unsigned char fall_rates_per_level[] =
+{
+    48,
+    43,
+    38,
+    33,
+    28,
+    23,
+    18,
+    13,
+    8,
+    6,
+    5, // 10-12
+    5, // 10-12
+    5, // 10-12
+    4, // 13-15
+    4, // 13-15
+    4, // 13-15
+    3, // 16–18
+    3, // 16–18
+    3, // 16–18
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    2, // 19–28
+    1, // 29+
+};
 
 // PROTOTYPES
 void draw_sprites(void);

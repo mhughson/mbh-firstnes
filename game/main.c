@@ -548,21 +548,21 @@ void go_to_state(unsigned char new_state)
 			display_lines_cleared();
 #if DEBUG_ENABLED
 			// leave a spot open.
-			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
-			{
-				set_block(i, BOARD_END_Y_PX_BOARD, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-				delay(1);
-				clear_vram_buffer();
-				set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
-				delay(1);
-				clear_vram_buffer();
-			}
+			// for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
+			// {
+			// 	set_block(i, BOARD_END_Y_PX_BOARD, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+			// 	delay(1);
+			// 	clear_vram_buffer();
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
+			// 	set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
+			// 	delay(1);
+			// 	clear_vram_buffer();
+			// }
 #endif //DEBUG_ENABLED
 			//debug_display_number(123, 0);
 			//debug_display_number(45, 1);
