@@ -386,8 +386,7 @@ void put_cur_cluster()
 		cur_block.y = 255;
 		draw_sprites();
 
-		//debug_copy_board_data_to_nt();
-		try_collapse_board_data(max_y);
+		clear_rows_in_data(max_y);
 	}
 	
 }
@@ -651,7 +650,9 @@ void display_lines_cleared()
 	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(off_nt,16,0));
 }
 
-void try_collapse_board_data(unsigned char start_y)
+// START OF ROW CLEAR SEQUENCE!
+
+void clear_rows_in_data(unsigned char start_y)
 {
 	unsigned char ix;
 	unsigned char iy;
@@ -684,81 +685,36 @@ void try_collapse_board_data(unsigned char start_y)
 			inc_lines_cleared();
 			display_lines_cleared();
 
-			// Collapse the game board by copying the top of the board down to above
-			// where the line was cleared, to 1 line below the top of the board.
-
-			//memcpy(game_board_temp, game_board, sizeof(game_board));
-			//memcpy(&game_board[10], game_board_temp, iy * 10);;
-
+			// Fill the row will empty data.
 			memcpy(&game_board[TILE_TO_BOARD_INDEX(0, iy)], empty_row, 10);
 
+			// Keep track of rows that we cleared so that they can be quickly
+			// collapsed later.
 			lines_cleared_y[i] = iy;
 
 			// Remember that we cleared some lines.
 			++i;
-
-			// Since we just removed a line, the iterator should recheck this y position for
-			// a complete line.
-			//++iy;
 		}
 	}
 
+	// If any lines we cleared, time to move to the next phase...
 	if (i > 0)
 	{
-		debug_display_number(lines_cleared_y[0], 6);
-		//debug_display_number(lines_cleared_y[1], 2);
-		//debug_display_number(lines_cleared_y[2], 1);
-		//debug_display_number(lines_cleared_y[3], 0);
-		//copy_board_to_nt();
 		reveal_empty_rows_to_nt();
 	}
-}
-
-void try_collapse_empty_row_data(void)
-{
-	unsigned char iy;
-	signed char i;
-
-	// Start at the bottom of the board, and work our way up.
-	for (i = 3; i >= 0; --i)
-	{
-		// Collapse the game board by copying the top of the board down to above
-		// where the line was cleared, to 1 line below the top of the board.
-
-		iy = lines_cleared_y[i];
-		if (iy != 0xff)
-		{
-			debug_display_number(iy, i);
-			memcpy(game_board_temp, game_board, sizeof(game_board));
-			memcpy(&game_board[10], game_board_temp, iy * 10);
-		}
-
-		//delay(60);
-		//clear_vram_buffer();
-		//debug_copy_board_data_to_nt();
-	}
-	//debug_copy_board_data_to_nt();
-
-
-
-	// TODO NEXT: Chunky update nt.
-	copy_board_to_nt();
-
-
-
-
 }
 
 void reveal_empty_rows_to_nt()
 {
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
 	
+	// Start in the middle of th board, and reveal outwards:
+	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
 	signed char ix = 4;
 	unsigned char iy;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
-
 	delay(1);
 	clear_vram_buffer();	
 
@@ -798,21 +754,46 @@ void reveal_empty_rows_to_nt()
 				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3), 
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));				
 
-		// delay often enough to avoid buffer overrun.
-		//if (ix % 4 == 0)
+		// Reveal these 2 new columns, and then move to the next one.
+		delay(5);
+		clear_vram_buffer();				
+	}
+
+	// Move on to the next phase...
+	try_collapse_empty_row_data();
+}
+
+void try_collapse_empty_row_data(void)
+{
+	unsigned char iy;
+	signed char i;
+
+	// Start at the bottom of the board, and work our way up.
+	for (i = 3; i >= 0; --i)
+	{
+		// Collapse the game board by copying the top of the board down to above
+		// where the line was cleared, to 1 line below the top of the board.
+
+		iy = lines_cleared_y[i];
+		if (iy != 0xff)
 		{
-			delay(5);
-			clear_vram_buffer();				
+			// We need to make a copy of game_board, because memcpy can not copy over itself.
+			// memmove would be function to use, but it does not exist in this library.
+			memcpy(game_board_temp, game_board, sizeof(game_board));
+			// index 10 is the start of the 2nd row.
+			memcpy(&game_board[10], game_board_temp, iy * 10);
 		}
 	}
 
-	try_collapse_empty_row_data();
+
+	// TODO NEXT: Chunky update nt.
+	copy_board_to_nt();
+
+
 }
 
 void copy_board_to_nt()
 {
-	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
-	
 	unsigned char ix;
 	unsigned char iy;
 
@@ -848,10 +829,9 @@ void copy_board_to_nt()
 }
 
 // DEBUG
-
+#if DEBUG_ENABLED
 void debug_fill_nametables(void)
 {
-#if DEBUG_ENABLED
 	vram_adr(NTADR_A(0,0));
 	vram_fill('a', NAMETABLE_PATTERN_SIZE);
 	vram_adr(NTADR_B(0,0));
@@ -860,22 +840,18 @@ void debug_fill_nametables(void)
 	vram_fill('c', NAMETABLE_PATTERN_SIZE);
 	vram_adr(NTADR_D(0,0));
 	vram_fill('d', NAMETABLE_PATTERN_SIZE);
-#endif //DEBUG_ENABLED
 }
 
 void debug_draw_board_area(void)
 {
-#if DEBUG_ENABLED
 	oam_spr(BOARD_START_X_PX, BOARD_START_Y_PX, 0x01, 0);
 	oam_spr(BOARD_END_X_PX, BOARD_START_Y_PX, 0x01, 0);
 	oam_spr(BOARD_START_X_PX, BOARD_END_Y_PX, 0x01, 0);
 	oam_spr(BOARD_END_X_PX, BOARD_END_Y_PX, 0x01, 0);
-#endif//DEBUG_ENABLED
 }
 
 void debug_copy_board_data_to_nt(void)
 {
-#if DEBUG_ENABLED
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
 	
 	unsigned char ix;
@@ -910,12 +886,11 @@ void debug_copy_board_data_to_nt(void)
 			clear_vram_buffer();				
 		}
 	}
-#endif
 }
 
 void debug_display_number(unsigned char num, unsigned char index)
 {
-#if DEBUG_ENABLED
+
 	char arr[3] = { 0, 0, 0 };
 	if (num > 100)
 	{
@@ -932,5 +907,5 @@ void debug_display_number(unsigned char num, unsigned char index)
 	multi_vram_buffer_horz(arr, 3, get_ppu_addr(cur_nt, 0, 232 - (index << 3)));
 	delay(1);
 	clear_vram_buffer();
-#endif //DEBUG_ENABLED
 }
+#endif //DEBUG_ENABLED

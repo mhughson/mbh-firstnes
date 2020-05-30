@@ -60,7 +60,7 @@ unsigned char state = STATE_MENU;
 struct block cur_block = { 0, 0 };
 
 // How many frames need to pass before it falls 8 pixels.
-unsigned char fall_rate = 10;
+unsigned char fall_rate = 60;
 
 // Each entry in the array is a rotation.
 // Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
@@ -253,14 +253,25 @@ void go_to_state(unsigned char new_state);
 void inc_lines_cleared();
 void display_lines_cleared();
 
-void try_collapse_board_data(unsigned char start_y);
-void try_collapse_empty_row_data(void);
+// CLEAR PHASES
+
+// First clear all the rows in CPU memory.
+void clear_rows_in_data(unsigned char start_y);
+
+// Then show the empty rows, 2 columns at a time...
 void reveal_empty_rows_to_nt();
+
+// Then collapse the empty rows in CPU memory...
+void try_collapse_empty_row_data(void);
+
+// Finally reveal to resolved board with all blocks in final position.
 void copy_board_to_nt();
 
 
 // DEBUG
+#if DEBUG_ENABLED
 void debug_fill_nametables(void);
 void debug_draw_board_area(void);
 void debug_copy_board_data_to_nt(void);
 void debug_display_number(unsigned char num, unsigned char index);
+#endif
