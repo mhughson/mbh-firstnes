@@ -21,7 +21,7 @@
 #define BOARD_HEIGHT (BOARD_END_Y_PX_BOARD - BOARD_OOB_END)
 
 // TODO: Rename. This is board x,y to board index.
-#define PIXEL_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
+#define TILE_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -192,6 +192,7 @@ unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
 
 // copy_board_to_nt()
 char copy_board_data[BOARD_HEIGHT];
+char lines_cleared_y[4];
 
 // const unsigned char palette_bg[]={
 // //1x0c, 0x14, 0x23, 0x37,
@@ -253,6 +254,8 @@ void inc_lines_cleared();
 void display_lines_cleared();
 
 void try_collapse_board_data(unsigned char start_y);
+void try_collapse_empty_row_data(void);
+void reveal_empty_rows_to_nt();
 void copy_board_to_nt();
 
 
@@ -260,3 +263,4 @@ void copy_board_to_nt();
 void debug_fill_nametables(void);
 void debug_draw_board_area(void);
 void debug_copy_board_data_to_nt(void);
+void debug_display_number(unsigned char num, unsigned char index);

@@ -111,28 +111,32 @@ void draw_sprites(void)
 	start_x = (cur_block.x << 3) + BOARD_START_X_PX;
 	start_y = (cur_block.y << 3) + BOARD_START_Y_PX;
 
-	for (iy = 0; iy < 4; ++iy)
-	{	
-		for (ix = 0; ix < 4; ++ix)
-		{
-			// essentially an index into a bit array.
-			unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
-
-			if (cur_cluster.layout & (0x8000 >> bit))
+	// 255 means hide.
+	if (cur_block.y != 255)
+	{
+		for (iy = 0; iy < 4; ++iy)
+		{	
+			for (ix = 0; ix < 4; ++ix)
 			{
-				// Don't draw the current cluster if it is above the top of the board.
-				// We want it to be able to function and move up there, but should not
-				// be visible.
-				if (start_y + (iy << 3) > (BOARD_START_Y_PX + (BOARD_OOB_END << 3)))
+				// essentially an index into a bit array.
+				unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
+
+				if (cur_cluster.layout & (0x8000 >> bit))
 				{
-					oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
+					// Don't draw the current cluster if it is above the top of the board.
+					// We want it to be able to function and move up there, but should not
+					// be visible.
+					if (start_y + (iy << 3) > (BOARD_START_Y_PX + (BOARD_OOB_END << 3)))
+					{
+						oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
+					}
 				}
+				// else
+				// {
+				// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
+				// }
+				
 			}
-			// else
-			// {
-			// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
-			// }
-			
 		}
 	}
 
@@ -314,7 +318,7 @@ void set_block(unsigned char x, unsigned char y, unsigned char id)
 
 
 	// TODO: Is this too slow?
-	game_board[PIXEL_TO_BOARD_INDEX(x,y)] = id;
+	game_board[TILE_TO_BOARD_INDEX(x,y)] = id;
 }
 
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
@@ -329,7 +333,7 @@ void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned c
 	address = get_ppu_addr(nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(id, address);
 	
-	game_board[PIXEL_TO_BOARD_INDEX(x,y)] = id;
+	game_board[TILE_TO_BOARD_INDEX(x,y)] = id;
 }
 
 void clear_block(unsigned char x, unsigned char y)
@@ -378,6 +382,11 @@ void put_cur_cluster()
 	}
 	else
 	{
+		// hide the sprite while we work.
+		cur_block.y = 255;
+		draw_sprites();
+
+		//debug_copy_board_data_to_nt();
 		try_collapse_board_data(max_y);
 	}
 	
@@ -385,7 +394,7 @@ void put_cur_cluster()
 
 unsigned char get_block(unsigned char x, unsigned char y)
 {
-	return game_board[PIXEL_TO_BOARD_INDEX(x,y)];
+	return game_board[TILE_TO_BOARD_INDEX(x,y)];
 }
 
 unsigned char is_block_free(unsigned char x, unsigned char y)
@@ -538,12 +547,27 @@ void go_to_state(unsigned char new_state)
 			scroll(0, 255 - 16);
 
 			display_lines_cleared();
-
+#if DEBUG_ENABLED
 			// leave a spot open.
 			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
 			{
 				set_block(i, BOARD_END_Y_PX_BOARD, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+				delay(1);
+				clear_vram_buffer();
+				set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
+				delay(1);
+				clear_vram_buffer();
 			}
+#endif //DEBUG_ENABLED
+			//debug_display_number(123, 0);
+			//debug_display_number(45, 1);
+			//debug_display_number(6, 2);
 
 			// Spawn "next"
 			spawn_new_cluster();
@@ -631,8 +655,11 @@ void try_collapse_board_data(unsigned char start_y)
 {
 	unsigned char ix;
 	unsigned char iy;
-	unsigned char i;
 	unsigned char line_complete;
+	unsigned char i = 0;
+
+	// 0xff used to indicate unused.
+	memfill(lines_cleared_y, 0xff, 4);
 
 	// Start at the bottom of the board, and work our way up.
 	for (iy = start_y; iy > BOARD_OOB_END; --iy)
@@ -660,16 +687,126 @@ void try_collapse_board_data(unsigned char start_y)
 			// Collapse the game board by copying the top of the board down to above
 			// where the line was cleared, to 1 line below the top of the board.
 
-			memcpy(game_board_temp, game_board, sizeof(game_board));
-			memcpy(&game_board[10], game_board_temp, iy * 10);;
+			//memcpy(game_board_temp, game_board, sizeof(game_board));
+			//memcpy(&game_board[10], game_board_temp, iy * 10);;
+
+			memcpy(&game_board[TILE_TO_BOARD_INDEX(0, iy)], empty_row, 10);
+
+			lines_cleared_y[i] = iy;
+
+			// Remember that we cleared some lines.
+			++i;
 
 			// Since we just removed a line, the iterator should recheck this y position for
 			// a complete line.
-			++iy;
+			//++iy;
 		}
 	}
 
+	if (i > 0)
+	{
+		debug_display_number(lines_cleared_y[0], 6);
+		//debug_display_number(lines_cleared_y[1], 2);
+		//debug_display_number(lines_cleared_y[2], 1);
+		//debug_display_number(lines_cleared_y[3], 0);
+		//copy_board_to_nt();
+		reveal_empty_rows_to_nt();
+	}
+}
+
+void try_collapse_empty_row_data(void)
+{
+	unsigned char iy;
+	signed char i;
+
+	// Start at the bottom of the board, and work our way up.
+	for (i = 3; i >= 0; --i)
+	{
+		// Collapse the game board by copying the top of the board down to above
+		// where the line was cleared, to 1 line below the top of the board.
+
+		iy = lines_cleared_y[i];
+		if (iy != 0xff)
+		{
+			debug_display_number(iy, i);
+			memcpy(game_board_temp, game_board, sizeof(game_board));
+			memcpy(&game_board[10], game_board_temp, iy * 10);
+		}
+
+		//delay(60);
+		//clear_vram_buffer();
+		//debug_copy_board_data_to_nt();
+	}
+	//debug_copy_board_data_to_nt();
+
+
+
+	// TODO NEXT: Chunky update nt.
 	copy_board_to_nt();
+
+
+
+
+}
+
+void reveal_empty_rows_to_nt()
+{
+	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
+	
+	signed char ix = 4;
+	unsigned char iy;
+
+	// Clear out any existing vram commands to ensure we can safely do a bunch
+	// of work in this function.
+
+	delay(1);
+	clear_vram_buffer();	
+
+	// Reveal from the center out.
+	for (; ix >= 0; --ix)
+	{
+		// LEFT SIDE
+
+		// copy a column into an array.
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + (ix << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+
+		
+		// RIGHT SIDE
+
+
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));				
+
+		// delay often enough to avoid buffer overrun.
+		//if (ix % 4 == 0)
+		{
+			delay(5);
+			clear_vram_buffer();				
+		}
+	}
+
+	try_collapse_empty_row_data();
 }
 
 void copy_board_to_nt()
@@ -688,9 +825,9 @@ void copy_board_to_nt()
 	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 	{
 		// copy a column into an array.
-		for (iy = 0; iy <= BOARD_HEIGHT; ++iy)
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
-			copy_board_data[iy] = game_board[PIXEL_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
 		}
 
 		multi_vram_buffer_vert(
@@ -753,9 +890,9 @@ void debug_copy_board_data_to_nt(void)
 	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 	{
 		// copy a column into an array.
-		for (iy = 0; iy <= BOARD_HEIGHT; ++iy)
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
-			copy_board_data[iy] = '0' + game_board[PIXEL_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			copy_board_data[iy] = '0' + game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
 		}
 
 		multi_vram_buffer_vert(
@@ -774,4 +911,26 @@ void debug_copy_board_data_to_nt(void)
 		}
 	}
 #endif
+}
+
+void debug_display_number(unsigned char num, unsigned char index)
+{
+#if DEBUG_ENABLED
+	char arr[3] = { 0, 0, 0 };
+	if (num > 100)
+	{
+		arr[2] = '0' + num % 10;
+		num /= 10;
+	}
+	if (num > 10)
+	{
+		arr[1] = '0' + num % 10;
+		num /= 10;
+	}
+	arr[0] = '0' + num % 10;
+
+	multi_vram_buffer_horz(arr, 3, get_ppu_addr(cur_nt, 0, 232 - (index << 3)));
+	delay(1);
+	clear_vram_buffer();
+#endif //DEBUG_ENABLED
 }
