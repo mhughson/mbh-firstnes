@@ -7,7 +7,10 @@
 #include "main.h"
 
 void main (void) 
-{	
+{
+	unsigned char temp_pal[16];
+	unsigned char pal_id;
+
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -74,7 +77,16 @@ void main (void)
 #if DEBUG_ENABLED
 				if (pad1_new & PAD_START)
 				{
-					debug_copy_board_data_to_nt();
+
+					memcpy(temp_pal, palette_bg, sizeof(palette_bg));
+					pal_id += 2;
+					pal_id = pal_id % 20;
+					temp_pal[1] = pal_changes[pal_id];
+					temp_pal[2] = pal_changes[pal_id + 1];
+					pal_bg(temp_pal);
+					debug_display_number(pal_id >> 1, 0);
+
+					//debug_copy_board_data_to_nt();
 					//go_to_state(STATE_OVER);
 				}
 #endif
@@ -263,8 +275,8 @@ void movement(void)
 	}
 	else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 	{
-		// fall 16 times as often.
-		temp_fall_rate >>= 4;
+		// fall every other frame.
+		temp_fall_rate = MIN(temp_fall_rate, 2);
 	}
 
 	if (fall_frame_counter % temp_fall_rate == 0 || temp_fall_rate == 0)
@@ -463,7 +475,13 @@ void spawn_new_cluster()
 	// 	--cur_block.y;
 	// }
 
+	// By checking twice we go from 1 in 7 chance of a dupe to
+	// 1 in 49 chance.
 	id = rand8() % NUM_CLUSTERS;
+	if (id == cur_cluster.id)
+	{
+		id = rand8() % NUM_CLUSTERS;
+	}
 	next_cluster.id = id;
 	next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
@@ -542,10 +560,22 @@ void go_to_state(unsigned char new_state)
 
 			memfill(game_board, 0, BOARD_SIZE);
 
+			// Reset stats.
+			lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
+			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+			
+			// load the palettes
+			pal_bg(palette_bg);
+			pal_spr(palette_sp);
+			
+			//cur_level = 99;
+			//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+
 			// shift up 1
 			scroll(0, 255 - 16);
 
 			display_lines_cleared();
+			display_level();
 #if DEBUG_ENABLED
 			// leave a spot open.
 			// for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
@@ -626,9 +656,25 @@ void go_to_state(unsigned char new_state)
 
 void inc_lines_cleared()
 {
+	unsigned char temp_pal[16];
+	unsigned char pal_id;
+
 	++lines_cleared_one;
+
 	if (lines_cleared_one == 10)
 	{
+		++cur_level;
+		fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+
+		memcpy(temp_pal, palette_bg, sizeof(palette_bg));
+		pal_id = (cur_level % 10) << 1; // array is pairs of 2
+		temp_pal[1] = pal_changes[pal_id];
+		temp_pal[2] = pal_changes[pal_id + 1];
+		pal_bg(temp_pal);
+
+		debug_display_number(fall_rate, 0);
+		display_level();
+
 		lines_cleared_one = 0;
 		++lines_cleared_ten;
 		if (lines_cleared_ten == 10)
@@ -637,6 +683,7 @@ void inc_lines_cleared()
 			++lines_cleared_hundred;
 		}
 	}
+	display_lines_cleared();
 }
 
 void display_lines_cleared()
@@ -644,10 +691,28 @@ void display_lines_cleared()
 	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,0,0));
 	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,8,0));
 	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,16,0));
+}
 
-	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(off_nt,0,0));
-	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(off_nt,8,0));
-	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(off_nt,16,0));
+void display_level()
+{
+	// We let level be displayed as zero based because it makes more sense when
+	// comparing it to lines (eg. lines is 80, level is 8).
+	unsigned char temp_level = cur_level;
+	unsigned char i = 0;
+
+	if (cur_level < 100)
+	{
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,0,8));
+	}
+
+	while(temp_level != 0)
+    {
+        unsigned char digit = temp_level % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, 16 - (i << 3), 8 ));
+
+        temp_level = temp_level / 10;
+		++i;
+    }
 }
 
 // START OF ROW CLEAR SEQUENCE!
@@ -683,7 +748,6 @@ void clear_rows_in_data(unsigned char start_y)
 		if (line_complete)
 		{
 			inc_lines_cleared();
-			display_lines_cleared();
 
 			// Fill the row will empty data.
 			memcpy(&game_board[TILE_TO_BOARD_INDEX(0, iy)], empty_row, 10);
@@ -890,14 +954,13 @@ void debug_copy_board_data_to_nt(void)
 
 void debug_display_number(unsigned char num, unsigned char index)
 {
-
 	char arr[3] = { 0, 0, 0 };
-	if (num > 100)
+	if (num >= 100)
 	{
 		arr[2] = '0' + num % 10;
 		num /= 10;
 	}
-	if (num > 10)
+	if (num >= 10)
 	{
 		arr[1] = '0' + num % 10;
 		num /= 10;

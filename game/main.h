@@ -62,6 +62,7 @@ struct block cur_block = { 0, 0 };
 
 // How many frames need to pass before it falls 8 pixels.
 unsigned char fall_rate = 48;
+unsigned char cur_level = 0;
 
 // Each entry in the array is a rotation.
 // Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
@@ -211,10 +212,23 @@ const unsigned char palette_bg[16]=
     0x3C,0x0f,0x26,0x29  // platforms
 };
 
-
+const unsigned char pal_changes[20] = 
+{
+    0x01, 0x21, // blues
+    0x13, 0x23, // purples
+    0x1c, 0x26, // dark blue + oj
+    0x0b, 0x1b, // dark green, soft green
+    0x06, 0x15, // reds
+    0x2c, 0x39, // limey blue
+    0x03, 0x35, // purples
+    0x16, 0x26, // oranges
+    0x11, 0x2b, // light green, blue
+    0x0f, 0x15, // bright reds
+};
 
 const unsigned char palette_sp[]={
-0x3C,0x01,0x21,0x30, // bricks
+0x0f, 0x00, 0x10, 0x30, // grey bricks
+//0x3C,0x01,0x21,0x30, // bricks
 0x0f, 0x09, 0x19, 0x29, // greens
 0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
 0,0,0,0
@@ -307,6 +321,7 @@ void go_to_state(unsigned char new_state);
 
 void inc_lines_cleared();
 void display_lines_cleared();
+void display_level();
 
 // CLEAR PHASES
 
