@@ -38,14 +38,18 @@ void main (void)
 	
 	scroll(0, 0x1df); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
-
 	
 	ppu_on_all(); // turn on screen
+
+	//music_play(0);
 
 	// infinite loop
 	while (1)
 	{
 		ppu_wait_nmi(); // wait till beginning of the frame
+
+
+		//set_music_speed(1);
 
 		tick_count++;
 		
@@ -62,7 +66,14 @@ void main (void)
 				{
 					seed_rng();
 
-					go_to_state(STATE_GAME);
+					if (pad1 & PAD_A)
+					{
+						go_to_state(STATE_SOUND_TEST);
+					}
+					else
+					{
+						go_to_state(STATE_GAME);
+					}
 				}
 				break;
 			}
@@ -99,6 +110,59 @@ void main (void)
 				if (pad1_new & PAD_START)
 				{
 					go_to_state(STATE_GAME);
+				}
+				break;
+			}
+
+			case STATE_SOUND_TEST:
+			{
+				// MUSIC
+				//
+
+				if (pad1_new & PAD_DOWN && test_song < 15)
+				{
+					++test_song;
+					display_song();
+				}
+				else if (pad1_new & PAD_UP && test_song > 0)
+				{
+					--test_song;
+					display_song();
+				}
+
+				if (pad1_new & PAD_B)
+				{
+					if (test_song == test_song_active)
+					{
+						test_song_active = 0xff;
+						music_stop();
+					}
+					else
+					{
+						test_song_active = test_song;
+						music_play(test_song);
+					}
+				}
+
+				
+				// SOUND
+				//
+
+				if (pad1_new & PAD_RIGHT && test_sound < 31)
+				{
+					++test_sound;
+					display_sound();
+				}
+				else if (pad1_new & PAD_LEFT && test_sound > 0)
+				{
+					--test_sound;
+					display_sound();
+				}
+
+				if (pad1_new & PAD_A)
+				{
+					//sfx_play(unsigned char sound,unsigned char channel);
+					sfx_play(test_sound, 0);
 				}
 				break;
 			}
@@ -536,6 +600,49 @@ void go_to_state(unsigned char new_state)
 			break;
 		}
 
+		case STATE_SOUND_TEST:
+		{
+			ppu_off(); // screen off
+			vram_adr(NTADR_A(0,0));
+			vram_fill(0, NAMETABLE_SIZE);
+
+			i = 4;
+			vram_adr(NTADR_A(16-(sizeof("SOUND TEST")>>1),i));
+			vram_write("SOUND TEST", sizeof("SOUND TEST")-1); // -1 null term
+
+			i += 2;
+			vram_adr(NTADR_A(16-(sizeof("B - PLAY/STOP SONG")>>1),i));
+			vram_write("B - PLAY/STOP SONG", sizeof("B - PLAY/STOP SONG")-1); // -1 null term
+
+			++i;
+			vram_adr(NTADR_A(16-(sizeof("A - PLAY SFX")>>1),i));
+			vram_write("A - PLAY SFX", sizeof("A - PLAY SFX")-1); // -1 null term
+
+			i += 4;
+			vram_adr(NTADR_A(8-(sizeof("SONG #")>>1),i));
+			vram_write("SONG #", sizeof("SONG #")-1); // -1 null term
+
+			vram_adr(NTADR_A(24-(sizeof("SFX #")>>1),i));
+			vram_write("SFX #", sizeof("SFX #")-1); // -1 null term
+
+			i += 10;
+			vram_adr(NTADR_A(8-(sizeof("UP/DOWN")>>1),i));
+			vram_write("UP/DOWN", sizeof("UP/DOWN")-1); // -1 null term
+
+			vram_adr(NTADR_A(24-(sizeof("LEFT/RIGHT")>>1),i));
+			vram_write("LEFT/RIGHT", sizeof("LEFT/RIGHT")-1); // -1 null term			
+
+			ppu_on_all(); // turn on screen
+
+			test_song = test_sound = 0;
+			test_song_active = 0xff;
+			
+			display_song();
+			display_sound();
+
+			break;
+		}
+
 		case STATE_GAME:
 		{
 			ppu_off(); // screen off
@@ -567,7 +674,7 @@ void go_to_state(unsigned char new_state)
 			// load the palettes
 			pal_bg(palette_bg);
 			pal_spr(palette_sp);
-			
+
 			//cur_level = 99;
 			//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
@@ -889,6 +996,47 @@ void copy_board_to_nt()
 			delay(1);
 			clear_vram_buffer();				
 		}
+	}
+}
+
+void display_song()
+{
+	unsigned char temp = test_song;
+	unsigned char i = 0;
+
+	if (test_song < 100)
+	{
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,56-(2<<3),112));
+	}
+
+	while(temp != 0)
+    {
+        unsigned char digit = temp % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(0, 56 - (i << 3), 112 ));
+
+        temp = temp / 10;
+		++i;
+    }	
+}
+
+void display_sound()
+{
+
+	unsigned char temp = test_sound;
+	unsigned char i = 0;
+
+	if (test_song < 100)
+	{
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,200-(2<<3),112));
+	}
+
+	while(temp != 0)
+    {
+        unsigned char digit = temp % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(0, 200 - (i << 3), 112 ));
+
+        temp = temp / 10;
+		++i;
 	}
 }
 

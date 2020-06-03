@@ -6,6 +6,9 @@ set path=%path%;..\bin\
 
 set CC65_HOME=..\
 
+MUSIC\text2data.exe MUSIC\songs.txt -ca65
+MUSIC\nsf2data.exe MUSIC\sounds.nsf -ca65
+
 cc65 -Oirs %name%.c --add-source
 ca65 crt0.s
 ca65 %name%.s -g

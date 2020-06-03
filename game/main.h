@@ -52,7 +52,7 @@ unsigned char pad1;
 unsigned char pad1_new;
 const unsigned char text[] = "- PRESS START -";
 
-enum { STATE_MENU, STATE_GAME, STATE_OVER };
+enum { STATE_MENU, STATE_GAME, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
 
 // The block operates in "logical space" from 0 -> w/h. The logical
@@ -183,6 +183,10 @@ unsigned char id;
 // put_cur_cluster()
 unsigned char min_y;
 unsigned char max_y;
+
+unsigned char test_song;
+unsigned char test_song_active;
+unsigned char test_sound;
 
 #pragma bss-name(push, "BSS")
 
@@ -336,6 +340,9 @@ void try_collapse_empty_row_data(void);
 
 // Finally reveal to resolved board with all blocks in final position.
 void copy_board_to_nt();
+
+void display_song();
+void display_sound();
 
 
 // DEBUG
