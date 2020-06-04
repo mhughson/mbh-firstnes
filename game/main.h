@@ -188,6 +188,9 @@ unsigned char test_song;
 unsigned char test_song_active;
 unsigned char test_sound;
 
+enum { MUSIC_TITLE, MUSIC_GAMEPLAY, MUSIC_PAUSE, MUSIC_GAMEOVER };
+enum { SOUND_ROTATE, SOUND_LAND, SOUND_ROW, SOUND_MULTIROW, SOUND_GAMEOVER, SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP };
+
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];

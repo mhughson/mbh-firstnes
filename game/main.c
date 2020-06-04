@@ -43,6 +43,8 @@ void main (void)
 
 	//music_play(0);
 
+	go_to_state(STATE_MENU);
+
 	// infinite loop
 	while (1)
 	{
@@ -65,6 +67,11 @@ void main (void)
 				if (pad1_new & PAD_START)
 				{
 					seed_rng();
+
+					music_stop();
+					sfx_play(SOUND_START, 0);
+
+					delay(4 * 0x18);
 
 					if (pad1 & PAD_A)
 					{
@@ -451,6 +458,8 @@ void put_cur_cluster()
 		}
 	}
 
+	sfx_play(SOUND_LAND, 0);
+
 	if (min_y <= BOARD_OOB_END)
 	{
 		go_to_state(STATE_OVER);
@@ -566,7 +575,13 @@ void rotate_cur_cluster(char dir)
 	{
 		cur_rot = old_rot;
 		cur_cluster.layout = cur_cluster.def[cur_rot];
+		sfx_play(SOUND_BLOCKED, 0);
 	}
+	else
+	{
+		sfx_play(SOUND_ROTATE, 0);
+	}
+	
 }
 
 void go_to_state(unsigned char new_state)
@@ -597,6 +612,7 @@ void go_to_state(unsigned char new_state)
 	{
 		case STATE_MENU:
 		{
+			music_play(MUSIC_TITLE);
 			break;
 		}
 
@@ -645,6 +661,8 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_GAME:
 		{
+			music_play(MUSIC_GAMEPLAY);
+
 			ppu_off(); // screen off
 
 			// clear the nametable and attributes.
@@ -685,21 +703,21 @@ void go_to_state(unsigned char new_state)
 			display_level();
 #if DEBUG_ENABLED
 			// leave a spot open.
-			// for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
-			// {
-			// 	set_block(i, BOARD_END_Y_PX_BOARD, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-			// 	delay(1);
-			// 	clear_vram_buffer();
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
-			// 	set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
-			// 	delay(1);
-			// 	clear_vram_buffer();
-			// }
+			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
+			{
+				set_block(i, BOARD_END_Y_PX_BOARD, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+				delay(1);
+				clear_vram_buffer();
+				set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
+				set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
+				delay(1);
+				clear_vram_buffer();
+			}
 #endif //DEBUG_ENABLED
 			//debug_display_number(123, 0);
 			//debug_display_number(45, 1);
@@ -729,6 +747,9 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_OVER:
 		{
+			sfx_play(SOUND_GAMEOVER, 0);
+			music_play(MUSIC_GAMEOVER);
+
 			delay(60);
 
 			oam_clear();
@@ -771,6 +792,7 @@ void inc_lines_cleared()
 	if (lines_cleared_one == 10)
 	{
 		++cur_level;
+
 		fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
 		memcpy(temp_pal, palette_bg, sizeof(palette_bg));
@@ -778,8 +800,9 @@ void inc_lines_cleared()
 		temp_pal[1] = pal_changes[pal_id];
 		temp_pal[2] = pal_changes[pal_id + 1];
 		pal_bg(temp_pal);
-
+#if DEBUG_ENABLED
 		debug_display_number(fall_rate, 0);
+#endif //DEBUG_ENABLED
 		display_level();
 
 		lines_cleared_one = 0;
@@ -830,6 +853,7 @@ void clear_rows_in_data(unsigned char start_y)
 	unsigned char iy;
 	unsigned char line_complete;
 	unsigned char i = 0;
+	unsigned char prev_level = cur_level;
 
 	// 0xff used to indicate unused.
 	memfill(lines_cleared_y, 0xff, 4);
@@ -871,6 +895,19 @@ void clear_rows_in_data(unsigned char start_y)
 	// If any lines we cleared, time to move to the next phase...
 	if (i > 0)
 	{
+		if (prev_level != cur_level)
+		{
+			sfx_play(SOUND_LEVELUP, 0);
+		}
+		else if (i == 4)
+		{
+			sfx_play(SOUND_MULTIROW, 0);
+		}
+		else
+		{
+			sfx_play(SOUND_ROW, 0);
+		}
+		
 		reveal_empty_rows_to_nt();
 	}
 }
