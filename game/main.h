@@ -52,7 +52,7 @@ unsigned char pad1;
 unsigned char pad1_new;
 const unsigned char text[] = "- PRESS START -";
 
-enum { STATE_MENU, STATE_GAME, STATE_OVER, STATE_SOUND_TEST };
+enum { STATE_MENU, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
 
 // The block operates in "logical space" from 0 -> w/h. The logical

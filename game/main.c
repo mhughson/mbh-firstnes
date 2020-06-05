@@ -92,23 +92,47 @@ void main (void)
 				draw_sprites();
 				//copy_board_to_nt();
 
-#if DEBUG_ENABLED
 				if (pad1_new & PAD_START)
 				{
-
-					memcpy(temp_pal, palette_bg, sizeof(palette_bg));
-					pal_id += 2;
-					pal_id = pal_id % 20;
-					temp_pal[1] = pal_changes[pal_id];
-					temp_pal[2] = pal_changes[pal_id + 1];
-					pal_bg(temp_pal);
-					debug_display_number(pal_id >> 1, 0);
-
-					//debug_copy_board_data_to_nt();
-					//go_to_state(STATE_OVER);
+					go_to_state(STATE_PAUSE);
 				}
+
+#if DEBUG_ENABLED
+				// if (pad1_new & PAD_START)
+				// {
+
+				// 	memcpy(temp_pal, palette_bg, sizeof(palette_bg));
+				// 	pal_id += 2;
+				// 	pal_id = pal_id % 20;
+				// 	temp_pal[1] = pal_changes[pal_id];
+				// 	temp_pal[2] = pal_changes[pal_id + 1];
+				// 	pal_bg(temp_pal);
+				// 	debug_display_number(pal_id >> 1, 0);
+
+				// 	//debug_copy_board_data_to_nt();
+				// 	//go_to_state(STATE_OVER);
+				// }
 #endif
 
+				break;
+			}
+
+			case STATE_PAUSE:
+			{
+				if ((tick_count % 60) < 30)
+				{
+					draw_sprites();
+				}
+				else
+				{
+					oam_clear();
+				}
+				
+
+				if (pad1_new & PAD_START)
+				{
+					go_to_state(STATE_GAME);
+				}
 				break;
 			}
 
@@ -589,8 +613,8 @@ void go_to_state(unsigned char new_state)
 	int address;
 	unsigned char i;
 	unsigned char fade_from_bright;
-	unsigned char fade_delay;
-	fade_delay = 5;
+	unsigned char fade_delay = 5;
+	unsigned char prev_state = state;
 
 	switch (state)
 	{
@@ -599,6 +623,12 @@ void go_to_state(unsigned char new_state)
 			// We would have faded up to white entering game over, so now
 			// we need to fade back down.
 			fade_from_bright = 1;
+			break;
+		}
+
+		case STATE_PAUSE:
+		{
+			pal_bright(4);
 			break;
 		}
 	
@@ -663,88 +693,97 @@ void go_to_state(unsigned char new_state)
 		{
 			music_play(MUSIC_GAMEPLAY);
 
-			ppu_off(); // screen off
+			if (prev_state != STATE_PAUSE)
+			{
+				ppu_off(); // screen off
 
-			// clear the nametable and attributes.
-			//vram_adr(NTADR_A(0,0));
-			//vram_fill(0, NAMETABLE_SIZE);
-			//vram_adr(NTADR_A(0,0));
-			//vram_unrle(game_area);
+				// clear the nametable and attributes.
+				//vram_adr(NTADR_A(0,0));
+				//vram_fill(0, NAMETABLE_SIZE);
+				//vram_adr(NTADR_A(0,0));
+				//vram_unrle(game_area);
 
-			// TODO: Use get_ppu functions with nt id.
-			vram_adr(NTADR_C(0,0));
-			vram_unrle(game_area);
+				// TODO: Use get_ppu functions with nt id.
+				vram_adr(NTADR_C(0,0));
+				vram_unrle(game_area);
 
-			ppu_on_all(); // turn on screen
+				ppu_on_all(); // turn on screen
 
-			// for (iy = 0; iy <= BOARD_END_Y_PX_BOARD; ++iy)
-			// {
-			// 	vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
-			// 	vram_fill(0, 10);
-			// }
+				// for (iy = 0; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+				// {
+				// 	vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
+				// 	vram_fill(0, 10);
+				// }
 
-			memfill(game_board, 0, BOARD_SIZE);
+				memfill(game_board, 0, BOARD_SIZE);
 
-			// Reset stats.
-			lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
-			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
-			
-			// load the palettes
-			pal_bg(palette_bg);
-			pal_spr(palette_sp);
+				// Reset stats.
+				lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
+				fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+				
+				// load the palettes
+				pal_bg(palette_bg);
+				pal_spr(palette_sp);
 
-			//cur_level = 99;
-			//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+				//cur_level = 99;
+				//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
-			// shift up 1
-			scroll(0, 255 - 16);
+				// shift up 1
+				scroll(0, 255 - 16);
 
-			display_lines_cleared();
-			display_level();
+				display_lines_cleared();
+				display_level();
 #if DEBUG_ENABLED
-			// leave a spot open.
-			for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
-			{
-				set_block(i, BOARD_END_Y_PX_BOARD, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-				delay(1);
-				clear_vram_buffer();
-				set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
-				set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
-				delay(1);
-				clear_vram_buffer();
-			}
+				// leave a spot open.
+				for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
+				{
+					set_block(i, BOARD_END_Y_PX_BOARD, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+					delay(1);
+					clear_vram_buffer();
+					set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
+					set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
+					delay(1);
+					clear_vram_buffer();
+				}
 #endif //DEBUG_ENABLED
-			//debug_display_number(123, 0);
-			//debug_display_number(45, 1);
-			//debug_display_number(6, 2);
+				//debug_display_number(123, 0);
+				//debug_display_number(45, 1);
+				//debug_display_number(6, 2);
 
-			// Spawn "next"
-			spawn_new_cluster();
-			// "Next" becomes current, and a new next is defined.
-			spawn_new_cluster();
+				// Spawn "next"
+				spawn_new_cluster();
+				// "Next" becomes current, and a new next is defined.
+				spawn_new_cluster();
 
-			if (fade_from_bright)
-			{
-				pal_bright(7);
-				delay(fade_delay);
-				pal_bright(6);
-				delay(fade_delay);
-				pal_bright(5);
-				delay(fade_delay);
-				pal_bright(4);
-				delay(fade_delay);
+				if (fade_from_bright)
+				{
+					pal_bright(7);
+					delay(fade_delay);
+					pal_bright(6);
+					delay(fade_delay);
+					pal_bright(5);
+					delay(fade_delay);
+					pal_bright(4);
+					delay(fade_delay);
+				}
+
+				require_new_down_button = 1;
 			}
-
-			require_new_down_button = 1;
 
 			break;
 		}
 
+		case STATE_PAUSE:
+		{
+			pal_bright(2);
+			music_play(MUSIC_PAUSE);
+			break;
+		}
 		case STATE_OVER:
 		{
 			sfx_play(SOUND_GAMEOVER, 0);
