@@ -188,8 +188,12 @@ unsigned char test_song;
 unsigned char test_song_active;
 unsigned char test_sound;
 
-enum { MUSIC_TITLE, MUSIC_GAMEPLAY, MUSIC_PAUSE, MUSIC_GAMEOVER };
-enum { SOUND_ROTATE, SOUND_LAND, SOUND_ROW, SOUND_MULTIROW, SOUND_GAMEOVER, SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP };
+enum { MUSIC_TITLE, MUSIC_GAMEPLAY, MUSIC_STRESS, MUSIC_PAUSE };
+enum 
+{ 
+    SOUND_ROTATE, SOUND_LAND, SOUND_ROW, SOUND_MULTIROW, SOUND_GAMEOVER, 
+    SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP, SOUND_LEVELUP_MULTI, 
+    SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG};
 
 #pragma bss-name(push, "BSS")
 
@@ -343,6 +347,8 @@ void try_collapse_empty_row_data(void);
 
 // Finally reveal to resolved board with all blocks in final position.
 void copy_board_to_nt();
+
+void add_block_at_bottom();
 
 void display_song();
 void display_sound();

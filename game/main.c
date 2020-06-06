@@ -786,10 +786,12 @@ void go_to_state(unsigned char new_state)
 		}
 		case STATE_OVER:
 		{
+			music_stop();
 			sfx_play(SOUND_GAMEOVER, 0);
-			music_play(MUSIC_GAMEOVER);
 
-			delay(60);
+			delay(120);
+
+			sfx_play(SOUND_GAMEOVER_SONG, 0);
 
 			oam_clear();
 
@@ -1073,6 +1075,65 @@ void copy_board_to_nt()
 			clear_vram_buffer();				
 		}
 	}
+}
+
+void add_block_at_bottom()
+{
+	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
+	
+	// Start in the middle of th board, and reveal outwards:
+	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
+	signed char ix = 4;
+	unsigned char iy;
+
+	// Clear out any existing vram commands to ensure we can safely do a bunch
+	// of work in this function.
+	delay(1);
+	clear_vram_buffer();	
+
+	// Reveal from the center out.
+	for (; ix >= 0; --ix)
+	{
+		// LEFT SIDE
+
+		// copy a column into an array.
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + (ix << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+
+		
+		// RIGHT SIDE
+
+
+		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		{
+			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
+		}
+
+		multi_vram_buffer_vert(
+			copy_board_data, 
+			BOARD_HEIGHT, 
+			get_ppu_addr(
+				cur_nt, 
+				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3), 
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));				
+
+		// Reveal these 2 new columns, and then move to the next one.
+		delay(5);
+		clear_vram_buffer();				
+	}
+
+	// Move on to the next phase...
+	try_collapse_empty_row_data();
 }
 
 void display_song()
