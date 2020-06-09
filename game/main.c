@@ -92,6 +92,13 @@ void main (void)
 				draw_sprites();
 				//copy_board_to_nt();
 
+				if (attack_queued)
+				{
+					add_block_at_bottom();
+					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
+					attack_queued = 0;
+				}
+
 				if (pad1_new & PAD_START)
 				{
 					go_to_state(STATE_PAUSE);
@@ -119,14 +126,16 @@ void main (void)
 
 			case STATE_PAUSE:
 			{
-				if ((tick_count % 60) < 30)
-				{
-					draw_sprites();
-				}
-				else
-				{
-					oam_clear();
-				}
+				oam_clear();
+
+				// if ((tick_count % 60) < 30)
+				// {
+				// 	draw_sprites();
+				// }
+				// else
+				// {
+				// 	oam_clear();
+				// }
 				
 
 				if (pad1_new & PAD_START)
@@ -283,7 +292,8 @@ void movement(void)
 #if DEBUG_ENABLED
 	if (pad1_new & PAD_SELECT)
 	{
-		spawn_new_cluster();
+		add_block_at_bottom();
+		//spawn_new_cluster();
 	}
 #endif // DEBUG_ENABLED
 
@@ -495,6 +505,7 @@ void put_cur_cluster()
 		cur_block.y = 255;
 		draw_sprites();
 
+		attack_queued = 1;
 		clear_rows_in_data(max_y);
 	}
 	
@@ -735,21 +746,21 @@ void go_to_state(unsigned char new_state)
 				display_level();
 #if DEBUG_ENABLED
 				// leave a spot open.
-				for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
-				{
-					set_block(i, BOARD_END_Y_PX_BOARD, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-					delay(1);
-					clear_vram_buffer();
-					set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
-					set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
-					delay(1);
-					clear_vram_buffer();
-				}
+				// for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
+				// {
+				// 	set_block(i, BOARD_END_Y_PX_BOARD, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
+				// 	delay(1);
+				// 	clear_vram_buffer();
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
+				// 	set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
+				// 	delay(1);
+				// 	clear_vram_buffer();
+				// }
 #endif //DEBUG_ENABLED
 				//debug_display_number(123, 0);
 				//debug_display_number(45, 1);
@@ -1079,11 +1090,7 @@ void copy_board_to_nt()
 
 void add_block_at_bottom()
 {
-	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
-	
-	// Start in the middle of th board, and reveal outwards:
-	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
-	signed char ix = 4;
+	signed char ix = rand8() % 10;
 	unsigned char iy;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
@@ -1092,7 +1099,7 @@ void add_block_at_bottom()
 	clear_vram_buffer();	
 
 	// Reveal from the center out.
-	for (; ix >= 0; --ix)
+	//for (; ix >= 0; --ix)
 	{
 		// LEFT SIDE
 
@@ -1100,40 +1107,13 @@ void add_block_at_bottom()
 		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END)] = copy_board_data[iy];
 		}
 
-		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
-			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + (ix << 3), 
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_HEIGHT + BOARD_OOB_END)] = 1;
 
-		
-		// RIGHT SIDE
-
-
-		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
-		{
-			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
-		}
-
-		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
-			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3), 
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));				
-
-		// Reveal these 2 new columns, and then move to the next one.
-		delay(5);
-		clear_vram_buffer();				
+		copy_board_to_nt();
 	}
-
-	// Move on to the next phase...
-	try_collapse_empty_row_data();
 }
 
 void display_song()

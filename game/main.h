@@ -195,6 +195,8 @@ enum
     SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP, SOUND_LEVELUP_MULTI, 
     SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG};
 
+unsigned char attack_queued;
+
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];
