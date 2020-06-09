@@ -4,6 +4,7 @@
 #include "LIB/nesdoug.h"
 #include "Sprites.h" // holds our metasprite data
 #include "BG/game_area.h"
+#include "BG/title_screen.h"
 #include "main.h"
 
 void main (void) 
@@ -31,6 +32,9 @@ void main (void)
 	// TODO: This is actually the gameplay setup.
 	off_nt = 0;
 	cur_nt = 2;
+
+	vram_adr(NTADR_A(0,0));
+	vram_unrle(title_screen);
 
 	// TODO: Use get_ppu functions with nt id.
 	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
