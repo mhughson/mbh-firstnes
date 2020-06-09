@@ -257,7 +257,7 @@ void draw_sprites(void)
 	}
 
 	start_x = 15 << 3;
-	start_y = 0 << 3;
+	start_y = 1 << 3;
 
 	for (iy = 0; iy < 4; ++iy)
 	{	
@@ -853,7 +853,7 @@ void inc_lines_cleared()
 		temp_pal[2] = pal_changes[pal_id + 1];
 		pal_bg(temp_pal);
 #if DEBUG_ENABLED
-		debug_display_number(fall_rate, 0);
+		//debug_display_number(fall_rate, 0);
 #endif //DEBUG_ENABLED
 		display_level();
 
@@ -870,9 +870,9 @@ void inc_lines_cleared()
 
 void display_lines_cleared()
 {
-	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,0,0));
-	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,8,0));
-	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,16,0));
+	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,3<<3,2<<3));
+	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,4<<3,2<<3));
+	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,5<<3,2<<3));
 }
 
 void display_level()
@@ -884,13 +884,13 @@ void display_level()
 
 	if (cur_level < 100)
 	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,0,8));
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,28<<3,2<<3));
 	}
 
 	while(temp_level != 0)
     {
         unsigned char digit = temp_level % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, 16 - (i << 3), 8 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (30<<3) - (i << 3), 2<<3 ));
 
         temp_level = temp_level / 10;
 		++i;
@@ -1110,7 +1110,7 @@ void add_block_at_bottom()
 			game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END)] = copy_board_data[iy];
 		}
 
-		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_HEIGHT + BOARD_OOB_END)] = 1;
+		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_HEIGHT + BOARD_OOB_END)] = 0xf7;
 
 		copy_board_to_nt();
 	}
