@@ -20,7 +20,6 @@
 #define BOARD_SIZE 240 // 
 #define BOARD_HEIGHT (BOARD_END_Y_PX_BOARD - BOARD_OOB_END)
 
-// TODO: Rename. This is board x,y to board index.
 #define TILE_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
 
 #pragma bss-name(push, "ZEROPAGE")

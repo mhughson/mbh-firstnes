@@ -89,6 +89,13 @@ void main (void)
 			{
 
 				movement();
+
+				--next_attack_y;
+				if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, (next_attack_y >> 3) - 1)] == 0)
+				{
+					next_attack_y = BOARD_END_Y_PX;
+				}
+
 				draw_sprites();
 				//copy_board_to_nt();
 
@@ -284,14 +291,15 @@ void draw_sprites(void)
 	{
 		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_END_Y_PX + 8, 0xf7, 0);
 
-		for (iy = 0; iy < BOARD_END_Y_PX_BOARD; ++iy)
-		{
-			if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, iy)] != 0)
-			{
-				oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_START_Y_PX + (iy << 3) - 8, 0xf7, 0);
-				break;
-			}
-		}
+		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), next_attack_y, 0xf7, 0);
+		// for (iy = 0; iy < BOARD_END_Y_PX_BOARD; ++iy)
+		// {
+		// 	if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, iy)] != 0)
+		// 	{
+		// 		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_START_Y_PX + (iy << 3) - 8, 0xf7, 0);
+		// 		break;
+		// 	}
+		// }
 	}
 
 	//debug_draw_board_area();
@@ -788,6 +796,7 @@ void go_to_state(unsigned char new_state)
 				spawn_new_cluster();
 
 				next_attack_x = rand8() % 10;
+				next_attack_y = BOARD_END_Y_PX;
 
 				if (fade_from_bright)
 				{
@@ -1112,6 +1121,7 @@ void add_block_at_bottom()
 	unsigned char iy;
 
 	next_attack_x = rand8() % 10;
+	next_attack_y = BOARD_END_Y_PX;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
