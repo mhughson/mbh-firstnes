@@ -50,7 +50,7 @@ struct cluster
 unsigned char tick_count;
 unsigned char pad1;
 unsigned char pad1_new;
-const unsigned char text[] = "- PRESS START -";
+//const unsigned char text[] = "- PRESS START -";
 
 enum { STATE_MENU, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
@@ -152,6 +152,8 @@ unsigned char cur_rot;
 
 struct cluster cur_cluster;// = { def_z_clust }; // 165 1010 0101
 struct cluster next_cluster;
+unsigned char next_attack_x;
+unsigned char next_attack_y;
 
 unsigned char cluster_sprites[NUM_CLUSTERS] =
 {

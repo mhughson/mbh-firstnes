@@ -35,10 +35,6 @@ void main (void)
 
 	vram_adr(NTADR_A(0,0));
 	vram_unrle(title_screen);
-
-	// TODO: Use get_ppu functions with nt id.
-	vram_adr(NTADR_A(16-(sizeof(text)>>1),20));
-	vram_write(text, sizeof(text)-1); // -1 null term
 	
 	scroll(0, 0x1df); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
@@ -279,6 +275,22 @@ void draw_sprites(void)
 			// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
 			// }
 			
+		}
+	}
+
+	
+
+	if (tick_count % 2 == 0)
+	{
+		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_END_Y_PX + 8, 0xf7, 0);
+
+		for (iy = 0; iy < BOARD_END_Y_PX_BOARD; ++iy)
+		{
+			if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, iy)] != 0)
+			{
+				oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_START_Y_PX + (iy << 3) - 8, 0xf7, 0);
+				break;
+			}
 		}
 	}
 
@@ -775,6 +787,8 @@ void go_to_state(unsigned char new_state)
 				// "Next" becomes current, and a new next is defined.
 				spawn_new_cluster();
 
+				next_attack_x = rand8() % 10;
+
 				if (fade_from_bright)
 				{
 					pal_bright(7);
@@ -1094,8 +1108,10 @@ void copy_board_to_nt()
 
 void add_block_at_bottom()
 {
-	signed char ix = rand8() % 10;
+	signed char ix = next_attack_x;
 	unsigned char iy;
+
+	next_attack_x = rand8() % 10;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -1108,13 +1124,28 @@ void add_block_at_bottom()
 		// LEFT SIDE
 
 		// copy a column into an array.
-		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		// for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		// {
+		// 	copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+		// 	game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END)] = copy_board_data[iy];
+		// }
+
+		for (iy = BOARD_END_Y_PX_BOARD; iy >= 0; --iy)
 		{
-			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
-			game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END)] = copy_board_data[iy];
+			// travel till we hit the first empty spot, which is where we will copy up to.
+			if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == 0)
+			{
+				// Now work our way back down, copying upwards as we go.
+				for (; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+				{
+					game_board[TILE_TO_BOARD_INDEX(ix, iy)] = game_board[TILE_TO_BOARD_INDEX(ix, iy + 1)];
+				}
+
+				break;
+			}
 		}
 
-		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_HEIGHT + BOARD_OOB_END)] = 0xf7;
+		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = 0xf7;
 
 		copy_board_to_nt();
 	}
