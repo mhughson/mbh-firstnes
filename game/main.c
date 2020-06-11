@@ -35,6 +35,8 @@ void main (void)
 
 	vram_adr(NTADR_A(0,0));
 	vram_unrle(title_screen);
+	vram_adr(NTADR_C(0,0));
+	vram_unrle(game_area);
 	
 	scroll(0, 0x1df); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
@@ -730,7 +732,7 @@ void go_to_state(unsigned char new_state)
 
 			if (prev_state != STATE_PAUSE)
 			{
-				ppu_off(); // screen off
+				//ppu_off(); // screen off
 
 				// clear the nametable and attributes.
 				//vram_adr(NTADR_A(0,0));
@@ -739,10 +741,10 @@ void go_to_state(unsigned char new_state)
 				//vram_unrle(game_area);
 
 				// TODO: Use get_ppu functions with nt id.
-				vram_adr(NTADR_C(0,0));
-				vram_unrle(game_area);
+				//vram_adr(NTADR_C(0,0));
+				//vram_unrle(game_area);
 
-				ppu_on_all(); // turn on screen
+				//ppu_on_all(); // turn on screen
 
 				// for (iy = 0; iy <= BOARD_END_Y_PX_BOARD; ++iy)
 				// {
@@ -764,7 +766,7 @@ void go_to_state(unsigned char new_state)
 				//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
 				// shift up 1
-				scroll(0, 255 - 16);
+				//scroll(0, 255 - 16);
 
 				display_lines_cleared();
 				display_level();
@@ -790,6 +792,14 @@ void go_to_state(unsigned char new_state)
 				//debug_display_number(45, 1);
 				//debug_display_number(6, 2);
 
+				while (scroll_y < 240)				
+				{
+					scroll(0, scroll_y);
+					delay(1);
+					scroll_y += 4;
+				}
+				scroll(0, 239);
+
 				// Spawn "next"
 				spawn_new_cluster();
 				// "Next" becomes current, and a new next is defined.
@@ -797,6 +807,9 @@ void go_to_state(unsigned char new_state)
 
 				next_attack_x = rand8() % 10;
 				next_attack_y = BOARD_END_Y_PX;
+
+				// Reset the ppu for gameover case.
+				copy_board_to_nt();
 
 				if (fade_from_bright)
 				{
