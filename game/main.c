@@ -92,12 +92,6 @@ void main (void)
 
 				movement();
 
-				--next_attack_y;
-				if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, (next_attack_y >> 3) - 1)] == 0)
-				{
-					next_attack_y = BOARD_END_Y_PX;
-				}
-
 				draw_sprites();
 				//copy_board_to_nt();
 
@@ -287,21 +281,33 @@ void draw_sprites(void)
 		}
 	}
 
-	
-
-	if (tick_count % 2 == 0)
+	// Loop through the attack columns and draw the off board portion as sprites.
+	for (ix = 0; ix < BOARD_WIDTH; ++ix)
 	{
-		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_END_Y_PX + 8, 0xf7, 0);
-
-		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), next_attack_y, 0xf7, 0);
-		// for (iy = 0; iy < BOARD_END_Y_PX_BOARD; ++iy)
-		// {
-		// 	if (game_board[TILE_TO_BOARD_INDEX(next_attack_x, iy)] != 0)
-		// 	{
-		// 		oam_spr(BOARD_START_X_PX + (next_attack_x << 3), BOARD_START_Y_PX + (iy << 3) - 8, 0xf7, 0);
-		// 		break;
-		// 	}
-		// }
+		if (attack_row_status[ix] > 0)
+		{
+			for (iy = 0; iy < attack_row_status[ix] && iy < ATTACK_QUEUE_SIZE; ++iy)
+			{
+				// gross. Try to detect if this is the last piece, and also the end of the arm.
+				if (attack_row_status[ix] <= ATTACK_QUEUE_SIZE && iy == attack_row_status[ix] - 1)
+				{
+				oam_spr(
+					BOARD_START_X_PX + (ix << 3), 
+					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
+					0xf9, 
+					3);
+				}
+				else
+				{
+				oam_spr(
+					BOARD_START_X_PX + (ix << 3), 
+					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
+					0xf8, 
+					3);
+				}
+				
+			}
+		}
 	}
 
 	//debug_draw_board_area();
@@ -805,8 +811,11 @@ void go_to_state(unsigned char new_state)
 				// "Next" becomes current, and a new next is defined.
 				spawn_new_cluster();
 
-				next_attack_x = rand8() % 10;
-				next_attack_y = BOARD_END_Y_PX;
+				memfill(attack_row_status, 0, BOARD_WIDTH);
+
+				// where to start the attack!
+				i = rand8() % BOARD_WIDTH;
+				attack_row_status[i] = 1;
 
 				// Reset the ppu for gameover case.
 				copy_board_to_nt();
@@ -944,6 +953,7 @@ void clear_rows_in_data(unsigned char start_y)
 	unsigned char ix;
 	unsigned char iy;
 	unsigned char line_complete;
+	unsigned char z;
 	unsigned char i = 0;
 	unsigned char prev_level = cur_level;
 
@@ -970,6 +980,17 @@ void clear_rows_in_data(unsigned char start_y)
 		// the rows above it into its place.
 		if (line_complete)
 		{
+			for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+			{
+				// search for attacks to clear.
+				z = get_block(ix, iy);
+
+				if (z == 0xf9 || z == 0xf8 || z == 0xf7)
+				{
+					attack_row_status[ix] = 0;
+				}
+			}
+
 			inc_lines_cleared();
 
 			// Fill the row will empty data.
@@ -1130,11 +1151,10 @@ void copy_board_to_nt()
 
 void add_block_at_bottom()
 {
-	signed char ix = next_attack_x;
+	signed char ix;
 	unsigned char iy;
 
-	next_attack_x = rand8() % 10;
-	next_attack_y = BOARD_END_Y_PX;
+	unsigned char attacks = 0;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -1142,36 +1162,47 @@ void add_block_at_bottom()
 	clear_vram_buffer();	
 
 	// Reveal from the center out.
-	//for (; ix >= 0; --ix)
+	for (ix = 0; ix < BOARD_WIDTH; ++ix)
 	{
-		// LEFT SIDE
-
-		// copy a column into an array.
-		// for (iy = 0; iy < BOARD_HEIGHT; ++iy)
-		// {
-		// 	copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
-		// 	game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END)] = copy_board_data[iy];
-		// }
-
-		for (iy = BOARD_END_Y_PX_BOARD; iy >= 0; --iy)
+		if (attack_row_status[ix] > 0)
 		{
-			// travel till we hit the first empty spot, which is where we will copy up to.
-			if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == 0)
+			++attacks;
+			++attack_row_status[ix];
+
+			if (attack_row_status[ix] > ATTACK_QUEUE_SIZE)
 			{
-				// Now work our way back down, copying upwards as we go.
-				for (; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+				for (iy = BOARD_END_Y_PX_BOARD; iy >= 0; --iy)
 				{
-					game_board[TILE_TO_BOARD_INDEX(ix, iy)] = game_board[TILE_TO_BOARD_INDEX(ix, iy + 1)];
+					// travel till we hit the first empty spot, which is where we will copy up to.
+					if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == 0)
+					{
+						// Now work our way back down, copying upwards as we go.
+						for (; iy <= BOARD_END_Y_PX_BOARD; ++iy)
+						{
+							game_board[TILE_TO_BOARD_INDEX(ix, iy)] = game_board[TILE_TO_BOARD_INDEX(ix, iy + 1)];
+						}
+
+						break;
+					}
 				}
 
-				break;
+				game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = (attack_row_status[ix] == (ATTACK_QUEUE_SIZE + 1)) ? 0xf9 : 0xf8;
+
+				// stay at 1 larger than the queue size to avoid overrun.
+				attack_row_status[ix] = ATTACK_QUEUE_SIZE + 1;
 			}
 		}
-
-		game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = 0xf7;
-
-		copy_board_to_nt();
 	}
+
+	// TODO: Compare to level expectations.
+	if (attacks == 0)
+	{
+		// where to start the attack!
+		attack_row_status[rand8() % BOARD_WIDTH] = 1;
+	}
+
+	// TODO: Only if changed above.
+	copy_board_to_nt();
 }
 
 void display_song()

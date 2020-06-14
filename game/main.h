@@ -19,6 +19,7 @@
 
 #define BOARD_SIZE 240 // 
 #define BOARD_HEIGHT (BOARD_END_Y_PX_BOARD - BOARD_OOB_END)
+#define BOARD_WIDTH (BOARD_END_X_PX_BOARD + 1)
 
 #define TILE_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
 
@@ -152,8 +153,9 @@ unsigned char cur_rot;
 
 struct cluster cur_cluster;// = { def_z_clust }; // 165 1010 0101
 struct cluster next_cluster;
-unsigned char next_attack_x;
-unsigned char next_attack_y;
+#define ATTACK_QUEUE_SIZE 3
+
+unsigned char attack_row_status[BOARD_WIDTH];
 
 unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
@@ -247,7 +249,7 @@ const unsigned char palette_sp[]={
 //0x3C,0x01,0x21,0x30, // bricks
 0x0f, 0x09, 0x19, 0x29, // greens
 0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
-0,0,0,0
+0x0f,0x22,0x31,0x30 // blocks
 }; 
 
 /*
