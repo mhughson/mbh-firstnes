@@ -286,10 +286,10 @@ void draw_sprites(void)
 	{
 		if (attack_row_status[ix] > 0)
 		{
-			for (iy = 0; iy < attack_row_status[ix] && iy < ATTACK_QUEUE_SIZE; ++iy)
+			for (iy = 0; iy < attack_row_status[ix] /*&& iy < ATTACK_QUEUE_SIZE*/; ++iy)
 			{
 				// gross. Try to detect if this is the last piece, and also the end of the arm.
-				if (attack_row_status[ix] <= ATTACK_QUEUE_SIZE && iy == attack_row_status[ix] - 1)
+				if (iy == attack_row_status[ix] - 1)
 				{
 				oam_spr(
 					BOARD_START_X_PX + (ix << 3), 
@@ -898,9 +898,14 @@ void inc_lines_cleared()
 
 		memcpy(temp_pal, palette_bg, sizeof(palette_bg));
 		pal_id = (cur_level % 10) << 1; // array is pairs of 2
+		// blocks
 		temp_pal[1] = pal_changes[pal_id];
 		temp_pal[2] = pal_changes[pal_id + 1];
+		// kraken
+		temp_pal[13] = pal_changes[pal_id];
+		//temp_pal[14] = pal_changes[pal_id + 1];
 		pal_bg(temp_pal);
+		
 #if DEBUG_ENABLED
 		//debug_display_number(fall_rate, 0);
 #endif //DEBUG_ENABLED
@@ -980,16 +985,16 @@ void clear_rows_in_data(unsigned char start_y)
 		// the rows above it into its place.
 		if (line_complete)
 		{
-			for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
-			{
-				// search for attacks to clear.
-				z = get_block(ix, iy);
+			// for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+			// {
+			// 	// search for attacks to clear.
+			// 	z = get_block(ix, iy);
 
-				if (z == 0xf9 || z == 0xf8 || z == 0xf7)
-				{
-					attack_row_status[ix] = 0;
-				}
-			}
+			// 	if (z == 0xf9 || z == 0xf8 || z == 0xf7)
+			// 	{
+			// 		attack_row_status[ix] = 0;
+			// 	}
+			// }
 
 			inc_lines_cleared();
 
@@ -1086,16 +1091,39 @@ void reveal_empty_rows_to_nt()
 
 void try_collapse_empty_row_data(void)
 {
+	unsigned char ix;
 	unsigned char iy;
 	signed char i;
 
-	// Start at the bottom of the board, and work our way up.
+	// first one is the bottom.
+	// TODO: Off by one?
+	iy = BOARD_END_Y_PX_BOARD - lines_cleared_y[0];
+
+	debug_display_number(iy, 0);
+
+	for (ix = 0; ix < BOARD_WIDTH; ++ix)
+	{
+		if (attack_row_status[ix] > ATTACK_QUEUE_SIZE && attack_row_status[ix] - (ATTACK_QUEUE_SIZE+1) >= (iy))
+		{
+			while (attack_row_status[ix] > 0)
+			{
+				--attack_row_status[ix];
+				delay(1);
+				draw_sprites();
+				clear_vram_buffer();	
+			}
+			
+		}
+	}
+
+	// Start at the top of the board, and work our way down.
 	for (i = 3; i >= 0; --i)
 	{
 		// Collapse the game board by copying the top of the board down to above
 		// where the line was cleared, to 1 line below the top of the board.
 
 		iy = lines_cleared_y[i];
+
 		if (iy != 0xff)
 		{
 			// We need to make a copy of game_board, because memcpy can not copy over itself.
@@ -1186,10 +1214,10 @@ void add_block_at_bottom()
 					}
 				}
 
-				game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = (attack_row_status[ix] == (ATTACK_QUEUE_SIZE + 1)) ? 0xf9 : 0xf8;
+				game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = 0xf7; //(attack_row_status[ix] == (ATTACK_QUEUE_SIZE + 1)) ? 0xf9 : 0xf8;
 
 				// stay at 1 larger than the queue size to avoid overrun.
-				attack_row_status[ix] = ATTACK_QUEUE_SIZE + 1;
+				//attack_row_status[ix] = ATTACK_QUEUE_SIZE + 1;
 			}
 		}
 	}
@@ -1308,20 +1336,26 @@ void debug_copy_board_data_to_nt(void)
 
 void debug_display_number(unsigned char num, unsigned char index)
 {
-	char arr[3] = { 0, 0, 0 };
-	if (num >= 100)
-	{
-		arr[2] = '0' + num % 10;
-		num /= 10;
-	}
-	if (num >= 10)
-	{
-		arr[1] = '0' + num % 10;
-		num /= 10;
-	}
-	arr[0] = '0' + num % 10;
+	// We let level be displayed as zero based because it makes more sense when
+	// comparing it to lines (eg. lines is 80, level is 8).
+	unsigned char temp = num;
+	unsigned char i = 0;
 
-	multi_vram_buffer_horz(arr, 3, get_ppu_addr(cur_nt, 0, 232 - (index << 3)));
+	if (temp < 100)
+	{
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,28<<3,232 - (index << 3)));
+	}
+
+	while(temp != 0)
+    {
+        unsigned char digit = temp % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (30<<3) - (i << 3), 232 - (index << 3) ));
+
+        temp = temp / 10;
+		++i;
+    }
+
+	//multi_vram_buffer_horz(arr, 3, get_ppu_addr(cur_nt, 0, 232 - (index << 3)));
 	delay(1);
 	clear_vram_buffer();
 }
