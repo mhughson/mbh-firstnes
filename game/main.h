@@ -62,7 +62,7 @@ unsigned char cur_option;
 //const unsigned char text[] = "- PRESS START -";
 enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
 unsigned char attack_style;
-#define ATTACK_STRING_LEN 8
+#define ATTACK_STRING_LEN 7
 unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
 {
     "FIXED",

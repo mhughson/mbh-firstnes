@@ -16,6 +16,9 @@ FEATURES:
 
 * Time based tentacle movement (rather than on landing).
 * Sound on hit tentacle.
+* Option to return to main menu on game over.
+* Game over screen.
+* Push start flashing text.
 
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
@@ -29,6 +32,7 @@ COMPLETE:
 
 * Hard drop (up on d-pad).
 * Option screen.
+* Credits screen.
 
 CUT:
 * Last chance move on hard drop (maybe optional).
@@ -1668,8 +1672,8 @@ void display_options()
 	unsigned char option_empty[] = {0x0, 0x0};
 	unsigned char option_icon[] = {0x25, 0x26};
 
-	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,16<<3,19<<3));
-	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,16<<3,21<<3));
+	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
+	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
 
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, (19 + ((1-cur_option)<<1))<<3));
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (19 + (cur_option<<1))<<3));
