@@ -5,6 +5,7 @@
 #include "Sprites.h" // holds our metasprite data
 #include "BG/game_area.h"
 #include "BG/title_screen.h"
+#include "BG/options_screen.h"
 #include "main.h"
 
 /*
@@ -22,10 +23,12 @@ FEATURES:
 * Score.
 * Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
 * Multiple tentacles.
+* Fast music when tentacle is maxed out.
 
 COMPLETE:
 
 * Hard drop (up on d-pad).
+* Option screen.
 
 CUT:
 * Last chance move on hard drop (maybe optional).
@@ -69,6 +72,9 @@ void main (void)
 
 	//music_play(0);
 
+	attack_style = ATTACK_ON_LAND;
+	music_on = 1;
+
 	go_to_state(STATE_MENU);
 
 	// infinite loop
@@ -97,19 +103,145 @@ void main (void)
 				{
 					seed_rng();
 
-					music_stop();
-					sfx_play(SOUND_START, 0);
-
-					delay(4 * 0x18);
-
 					if (pad1 & PAD_A)
 					{
+						music_stop();
 						go_to_state(STATE_SOUND_TEST);
 					}
 					else
 					{
+						music_stop();
+						sfx_play(SOUND_START, 0);
+
+						delay(4 * 0x18);
+
 						go_to_state(STATE_GAME);
 					}
+				}
+				else if (pad1_new & PAD_SELECT)
+				{
+					fade_to_black();
+					go_to_state(STATE_OPTIONS);
+					fade_from_black();
+				}
+				break;
+			}
+
+			case STATE_OPTIONS:
+			{
+				if (pad1_new & PAD_B)
+				{
+					fade_to_black();
+					go_to_state(STATE_MENU);
+					fade_from_black();
+				}
+				else if (pad1_new & PAD_RIGHT)
+				{
+					switch (cur_option)
+					{
+					
+					case 0: // Attack style
+
+						//attack_style = (attack_style + 1) % ATTACK_NUM;
+
+						if (attack_style < ATTACK_NUM - 1)
+						{
+							++attack_style;
+						}
+						break;
+
+					case 1: // Music off/on
+
+						//music_on = (music_on + 1) % 2;
+
+						if (music_on == 0)
+						{
+							music_on = 1;
+							music_play(MUSIC_TITLE);
+						}
+
+						// if (music_on == 0)
+						// {
+						// 	music_stop();
+						// }
+						// else
+						// {
+						// 	music_play(MUSIC_TITLE);
+						// }
+						break;
+
+					default:
+						break;
+					}
+
+					sfx_play(SOUND_MENU_HIGH, 0);
+					display_options();
+				}
+				else if (pad1_new & PAD_LEFT)
+				{
+					switch (cur_option)
+					{
+					
+					case 0: // Attack style
+						// if (attack_style == 0)
+						// {
+						// 	attack_style = ATTACK_NUM;
+						// }
+						// attack_style = (attack_style - 1) % ATTACK_NUM;
+
+						if (attack_style != 0)
+						{
+							--attack_style;
+						}
+
+						break;
+
+					case 1: // Music off/on
+						// if (music_on == 0)
+						// {
+						// 	music_on = 2;
+						// }
+						// music_on = (music_on - 1) % 2;
+
+						if (music_on != 0)
+						{
+							music_on = 0;
+							music_stop();
+						}
+
+						// if (music_on == 0)
+						// {
+						// 	music_stop();
+						// }
+						// else
+						// {
+						// 	music_play(MUSIC_TITLE);
+						// }
+
+						break;
+
+					default:
+						break;
+					}
+
+					sfx_play(SOUND_MENU_LOW, 0);
+					display_options();
+				}
+				else if (pad1_new & PAD_DOWN)
+				{
+					cur_option = (cur_option + 1) % NUM_OPTIONS;
+					sfx_play(SOUND_MENU_LOW, 0);
+					display_options();
+				}
+				else if (pad1_new & PAD_UP)
+				{
+					if (cur_option == 0)
+					{
+						cur_option = NUM_OPTIONS;
+					}
+					cur_option = (cur_option - 1) % NUM_OPTIONS;
+					sfx_play(SOUND_MENU_HIGH, 0);
+					display_options();
 				}
 				break;
 			}
@@ -707,7 +839,10 @@ void put_cur_cluster()
 		cur_block.y = 255;
 		draw_gameplay_sprites();
 
-		attack_queued = 1;
+		if (attack_style == ATTACK_ON_LAND)
+		{
+			attack_queued = 1;
+		}
 		clear_rows_in_data(max_y);
 	}
 	
@@ -839,6 +974,12 @@ void go_to_state(unsigned char new_state)
 			break;
 		}
 
+		case STATE_OPTIONS:
+		{
+			pal_bg(palette_bg);
+			break;
+		}
+
 		case STATE_PAUSE:
 		{
 			pal_bright(4);
@@ -855,7 +996,50 @@ void go_to_state(unsigned char new_state)
 	{
 		case STATE_MENU:
 		{
-			music_play(MUSIC_TITLE);
+			if (prev_state == STATE_OPTIONS)
+			{
+				oam_clear();
+
+				ppu_off();
+				vram_adr(NTADR_A(0,0));
+				vram_unrle(title_screen);
+				ppu_on_all();
+			}
+			else
+			{
+				if (music_on)
+				{
+					music_play(MUSIC_TITLE);
+				}
+			}
+			
+			break;
+		}
+
+		case STATE_OPTIONS:
+		{
+			oam_clear();
+
+			ppu_off();
+
+			pal_bg(palette_bg_options);
+
+			//go_to_state(STATE_SOUND_TEST);
+			vram_adr(NTADR_A(0,0));
+			vram_unrle(options_screen);
+
+			// vram_adr(NTADR_A(16,19));
+			// vram_write(attack_style_strings[attack_style], ATTACK_STRING_LEN);
+
+			// vram_adr(NTADR_A(16,21));
+			// vram_write(off_on_string[music_on], OFF_ON_STRING_LEN);
+
+			ppu_on_all();
+
+			cur_option = 0;
+
+			display_options();
+
 			break;
 		}
 
@@ -904,7 +1088,10 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_GAME:
 		{
-			music_play(MUSIC_GAMEPLAY);
+			if (music_on)
+			{
+				music_play(MUSIC_GAMEPLAY);
+			}
 
 			if (prev_state != STATE_PAUSE)
 			{
@@ -1012,7 +1199,10 @@ void go_to_state(unsigned char new_state)
 		case STATE_PAUSE:
 		{
 			pal_bright(2);
-			music_play(MUSIC_PAUSE);
+			if (music_on)
+			{
+				music_play(MUSIC_PAUSE);
+			}
 			break;
 		}
 		case STATE_OVER:
@@ -1471,6 +1661,43 @@ void display_sound()
         temp = temp / 10;
 		++i;
 	}
+}
+
+void display_options()
+{
+	unsigned char option_empty[] = {0x0, 0x0};
+	unsigned char option_icon[] = {0x25, 0x26};
+
+	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,16<<3,19<<3));
+	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,16<<3,21<<3));
+
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, (19 + ((1-cur_option)<<1))<<3));
+	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (19 + (cur_option<<1))<<3));
+}
+
+
+void fade_to_black()
+{
+	pal_bright(3);
+	delay(1);
+	pal_bright(2);
+	delay(1);
+	pal_bright(1);
+	delay(1);
+	pal_bright(0);
+	delay(1);
+}
+
+void fade_from_black()
+{
+	pal_bright(1);
+	delay(1);
+	pal_bright(2);
+	delay(1);
+	pal_bright(3);
+	delay(1);
+	pal_bright(4);
+	delay(1);
 }
 
 // DEBUG

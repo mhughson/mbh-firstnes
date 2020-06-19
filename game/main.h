@@ -55,9 +55,30 @@ unsigned char hit_reaction_remaining;
 unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
-//const unsigned char text[] = "- PRESS START -";
 
-enum { STATE_MENU, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
+#define NUM_OPTIONS 2
+unsigned char cur_option;
+
+//const unsigned char text[] = "- PRESS START -";
+enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
+unsigned char attack_style;
+#define ATTACK_STRING_LEN 8
+unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
+{
+    "FIXED",
+    "TIMED",
+    "CLASSIC"
+};
+
+unsigned char music_on;
+#define OFF_ON_STRING_LEN 4
+unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
+{
+    "OFF",
+    "ON"
+};
+
+enum { STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
 
 // The block operates in "logical space" from 0 -> w/h. The logical
@@ -220,24 +241,13 @@ char lines_cleared_y[4];
 
 unsigned char temp_pal[16];
 
-// const unsigned char palette_bg[]={
-// //1x0c, 0x14, 0x23, 0x37,
-// 0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
-// 0x0f, 0x07, 0x17, 0x27, // oranges
-// 0x0f, 0x02, 0x12, 0x22, // blues
-// 0x0f, 0x09, 0x19, 0x29, // greens
-// }; 
-
-// const unsigned char palette_bg[16]=
-// { 
-//     0x3C,0x01,0x21,0x30, // bricks
-//     0x3C,0x22,0x01,0x30, // water
-//     0x3C,0x0f,0x1d,0x22, // rocks
-//     0x3C,0x0f,0x26,0x29  // platforms
-// };
-
 const unsigned char palette_bg[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x00,0x17,0x28,0x0f,0x2a,0x16,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_sp[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x0f,0x26,0x37,0x0f,0x16,0x31,0x37,0x0f,0x22,0x26,0x37 };
+const unsigned char palette_bg_options[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x30,0x0f,0x26,0x0f,0x22,0x0f,0x26,0x0f,0x22,0x26,0x37 };
+
+
+
+
 const unsigned char pal_changes[20] = 
 {
     0x01, 0x21, // blues
@@ -362,6 +372,10 @@ void add_block_at_bottom();
 
 void display_song();
 void display_sound();
+void display_options();
+
+void fade_to_black();
+void fade_from_black();
 
 
 // DEBUG
