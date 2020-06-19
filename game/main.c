@@ -21,6 +21,7 @@ FEATURES:
 * Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
 * Multiple tentacles.
 * Last chance move on hard drop (maybe optional).
+* Number of rows that hit the tentacle adds a delay to next attack.
 
 COMPLETE:
 
@@ -368,7 +369,7 @@ void draw_gameplay_sprites(void)
 					BOARD_START_X_PX + (ix << 3), 
 					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
 					0xf9, 
-					3);
+					1);
 				}
 				else
 				{
@@ -376,7 +377,7 @@ void draw_gameplay_sprites(void)
 					BOARD_START_X_PX + (ix << 3), 
 					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
 					0xf8, 
-					3);
+					1);
 				}
 				
 			}
@@ -1373,14 +1374,19 @@ void add_block_at_bottom()
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
-	delay(1);
-	clear_vram_buffer();	
+	//delay(1);
+	//clear_vram_buffer();	
 
-	// Reveal from the center out.
 	for (ix = 0; ix < BOARD_WIDTH; ++ix)
 	{
 		if (attack_row_status[ix] > 0)
 		{
+			if (attack_row_status[ix] >= ATTACK_MAX)
+			{
+				// fake an attack so that we don't try to create a new tentacle.
+				++attacks;
+				break;
+			}
 			++attacks;
 			++attack_row_status[ix];
 
