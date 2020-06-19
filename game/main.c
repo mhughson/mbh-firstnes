@@ -7,11 +7,36 @@
 #include "BG/title_screen.h"
 #include "main.h"
 
+/*
+
+..::TODO::..
+
+FEATURES:
+
+* See if tentacles can be made to work with name tables.
+* Pal swap based on time of day/night.
+* Time based tentacle movement (rather than on landing).
+* Score.
+* Sound on hit tentacle.
+* Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
+* Multiple tentacles.
+* Last chance move on hard drop (maybe optional).
+
+COMPLETE:
+
+* Hard drop (up on d-pad).
+
+CUT:
+
+BUGS:
+
+* Sprites do not draw when transitioning between name tables.
+* Tentacles are not budgeted.
+
+*/
+
 void main (void) 
 {
-	unsigned char temp_pal[16];
-	unsigned char pal_id;
-
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -24,10 +49,6 @@ void main (void)
 
 	set_vram_buffer(); // do at least once, sets a pointer to a buffer
 	clear_vram_buffer();
-	
-	//load_room();
-
-	//debug_fill_nametables();
 	
 	// TODO: This is actually the gameplay setup.
 	off_nt = 0;
@@ -222,10 +243,7 @@ void main (void)
 
 void draw_menu_sprites(void)
 {
-	unsigned char start_x;
-	unsigned char start_y;
 	unsigned char ix;
-	unsigned char iy;
 	unsigned int t;
 
 	// clear all sprites from sprite buffer
@@ -274,7 +292,6 @@ void draw_gameplay_sprites(void)
 	unsigned char ix;
 	unsigned char iy;
 	unsigned int t;
-	char r;
 
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -541,7 +558,15 @@ void movement(void)
 	//		 this function so that it can be manipulated (eg. when release
 	//	     reset the tick count).
 	temp_fall_rate = fall_rate;
-	if (pad1_new & PAD_DOWN)
+	if (pad1_new & PAD_UP)
+	{
+		// TODO: Causes hitch.
+		while (!is_cluster_colliding())
+		{
+			cur_block.y += 1;
+		}
+	}
+	else if (pad1_new & PAD_DOWN)
 	{
 		require_new_down_button = 0;
 
@@ -793,7 +818,7 @@ void go_to_state(unsigned char new_state)
 {
 	int address;
 	unsigned char i;
-	unsigned char fade_from_bright;
+	unsigned char fade_from_bright = 0;
 	unsigned char fade_delay = 5;
 	unsigned char prev_state = state;
 
@@ -1105,7 +1130,6 @@ void clear_rows_in_data(unsigned char start_y)
 	unsigned char ix;
 	unsigned char iy;
 	unsigned char line_complete;
-	unsigned char z;
 	unsigned char i = 0;
 	unsigned char prev_level = cur_level;
 
@@ -1362,7 +1386,7 @@ void add_block_at_bottom()
 
 			if (attack_row_status[ix] > ATTACK_QUEUE_SIZE)
 			{
-				for (iy = BOARD_END_Y_PX_BOARD; iy >= 0; --iy)
+				for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
 				{
 					// travel till we hit the first empty spot, which is where we will copy up to.
 					if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == 0)
