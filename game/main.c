@@ -13,21 +13,23 @@
 
 FEATURES:
 
+* Time based tentacle movement (rather than on landing).
+* Sound on hit tentacle.
+
+* Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
 * Pal swap based on time of day/night.
-* Time based tentacle movement (rather than on landing).
 * Score.
-* Sound on hit tentacle.
 * Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
 * Multiple tentacles.
-* Last chance move on hard drop (maybe optional).
-* Number of rows that hit the tentacle adds a delay to next attack.
 
 COMPLETE:
 
 * Hard drop (up on d-pad).
 
 CUT:
+* Last chance move on hard drop (maybe optional).
+	* Feels weird. See commented out code in movement().
 
 BUGS:
 
@@ -566,6 +568,10 @@ void movement(void)
 		{
 			cur_block.y += 1;
 		}
+
+		// UNCOMMENT FOR LAST CHANCE MOVE ON HARD DROP
+		// cur_block.y -= 1;
+		// fall_frame_counter = 1;
 	}
 	else if (pad1_new & PAD_DOWN)
 	{
