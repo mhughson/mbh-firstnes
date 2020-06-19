@@ -51,6 +51,7 @@ struct cluster
 
 unsigned char tick_count;
 unsigned int tick_count_large;
+unsigned char hit_reaction_remaining;
 unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
@@ -216,6 +217,8 @@ unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
 char copy_board_data[BOARD_HEIGHT];
 char lines_cleared_y[4];
 
+unsigned char temp_pal[16];
+
 // const unsigned char palette_bg[]={
 // //1x0c, 0x14, 0x23, 0x37,
 // 0x0f, 0x00, 0x10, 0x30, // black, gray, lt gray, white
@@ -306,7 +309,8 @@ unsigned char fall_rates_per_level[] =
 };
 
 // PROTOTYPES
-void draw_sprites(void);
+void draw_menu_sprites(void);
+void draw_gameplay_sprites(void);
 void movement(void);
 
 // Set a block in x, y (board space)

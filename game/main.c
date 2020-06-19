@@ -67,6 +67,8 @@ void main (void)
 		{
 			case STATE_MENU:
 			{
+				draw_menu_sprites();
+
 				if (pad1_new & PAD_START)
 				{
 					seed_rng();
@@ -90,10 +92,14 @@ void main (void)
 
 			case STATE_GAME:
 			{
+				if (hit_reaction_remaining > 0)
+				{
+					--hit_reaction_remaining;
+				}
 
 				movement();
 
-				draw_sprites();
+				draw_gameplay_sprites();
 				//copy_board_to_nt();
 
 				if (attack_queued)
@@ -214,13 +220,61 @@ void main (void)
 	}
 }
 
-void draw_sprites(void)
+void draw_menu_sprites(void)
 {
 	unsigned char start_x;
 	unsigned char start_y;
 	unsigned char ix;
 	unsigned char iy;
 	unsigned int t;
+
+	// clear all sprites from sprite buffer
+	oam_clear();
+
+	// FLAGS
+	t = tick_count_large % 60;
+	if (t > 45)
+	{
+		ix = 0x69;
+	}
+	else if (t > 30)
+	{
+		ix = 0x68;
+	}
+	else if (t > 15)
+	{
+		ix = 0x67;
+	}
+	else
+	{
+		ix = 0x66;
+	}
+
+	oam_spr(10 << 3, 23 << 3, ix, 0);
+	oam_spr(22 << 3, 23 << 3, ix, 0);
+
+	// TENTACLES
+	oam_spr(19 << 3, 14 << 3, 0x60, 1);
+	oam_spr(20 << 3, 14 << 3, 0x61, 1);
+
+	oam_spr(19 << 3, 15 << 3, 0x70, 1);
+	oam_spr(20 << 3, 15 << 3, 0x71, 1);
+
+	oam_spr(19 << 3, 16 << 3, 0x80, 1);
+	oam_spr(20 << 3, 16 << 3, 0x81, 1);
+
+	oam_spr(19 << 3, 17 << 3, 0x90, 1);
+	oam_spr(20 << 3, 17 << 3, 0x91, 1);
+}
+
+void draw_gameplay_sprites(void)
+{
+	unsigned char start_x;
+	unsigned char start_y;
+	unsigned char ix;
+	unsigned char iy;
+	unsigned int t;
+	char r;
 
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -312,23 +366,53 @@ void draw_sprites(void)
 		}
 	}
 
-	// BLINKING
-	t = tick_count_large % BLINK_LEN;
+	// HIT REACTION
+	if (hit_reaction_remaining > 0)
+	{
+		// -1, 0, 1
+		//r = (rand8() % 3) - 1;
+		oam_spr((3 << 3) /*+ r*/, (24 << 3), 0x65, 1);
+		oam_spr(3 << 3, 25 << 3, 0x64, 1);
+		oam_spr(3 << 3, 26 << 3, 0x74, 1);
 
-	if (t > BLINK_LEN - 5)
-	{
-		oam_spr(3 << 3, 25 << 3, 0x62, 1);
-		oam_spr(3 << 3, 26 << 3, 0x72, 1);
+		// memcpy(temp_pal, palette_sp, sizeof(palette_sp));
+		// // blocks
+		// //temp_pal[4] = 0x15;
+		// //temp_pal[5] = 0x15;
+		// temp_pal[6] = 0x16;
+		// //temp_pal[7] = 0x16;
+		// pal_spr(temp_pal);		
+
+		// memcpy(temp_pal, palette_bg, sizeof(palette_bg));
+		// // blocks
+		// //temp_pal[12] = 0x15;
+		// //temp_pal[13] = 0x15;
+		// temp_pal[14] = 0x16;
+		// //temp_pal[15] = 0x16;
+		// pal_bg(temp_pal);		
 	}
-	else if (t > (BLINK_LEN - 10))
+	// BLINKING
+	else
 	{
-		oam_spr(3 << 3, 25 << 3, 0x63, 1);
-		oam_spr(3 << 3, 26 << 3, 0x73, 1);
-	}
-	else if (t > BLINK_LEN - 15)
-	{
-		oam_spr(3 << 3, 25 << 3, 0x62, 1);
-		oam_spr(3 << 3, 26 << 3, 0x72, 1);
+		//pal_spr(palette_sp);
+		//pal_bg(palette_bg);
+		t = tick_count_large % BLINK_LEN;
+
+		if (t > BLINK_LEN - 5)
+		{
+			oam_spr(3 << 3, 25 << 3, 0x62, 1);
+			oam_spr(3 << 3, 26 << 3, 0x72, 1);
+		}
+		else if (t > (BLINK_LEN - 10))
+		{
+			oam_spr(3 << 3, 25 << 3, 0x63, 1);
+			oam_spr(3 << 3, 26 << 3, 0x73, 1);
+		}
+		else if (t > BLINK_LEN - 15)
+		{
+			oam_spr(3 << 3, 25 << 3, 0x62, 1);
+			oam_spr(3 << 3, 26 << 3, 0x72, 1);
+		}
 	}
 
 	// FLAGS
@@ -366,9 +450,9 @@ void movement(void)
 
 	++fall_frame_counter;
 
-#if DEBUG_ENABLED
 	if (pad1_new & PAD_SELECT)
 	{
+		//hit_reaction_remaining = 60;
 		// inc_lines_cleared();
 		// inc_lines_cleared();
 		// inc_lines_cleared();
@@ -382,7 +466,6 @@ void movement(void)
 		add_block_at_bottom();
 		//spawn_new_cluster();
 	}
-#endif // DEBUG_ENABLED
 
 	// INPUT
 
@@ -590,7 +673,7 @@ void put_cur_cluster()
 	{
 		// hide the sprite while we work.
 		cur_block.y = 255;
-		draw_sprites();
+		draw_gameplay_sprites();
 
 		attack_queued = 1;
 		clear_rows_in_data(max_y);
@@ -853,6 +936,7 @@ void go_to_state(unsigned char new_state)
 				//debug_display_number(45, 1);
 				//debug_display_number(6, 2);
 
+				oam_clear();
 				while (scroll_y < 240)				
 				{
 					scroll(0, scroll_y);
@@ -940,7 +1024,6 @@ void go_to_state(unsigned char new_state)
 
 void inc_lines_cleared()
 {
-	unsigned char temp_pal[16];
 	unsigned char pal_id;
 
 	++lines_cleared_one;
@@ -1060,6 +1143,16 @@ void clear_rows_in_data(unsigned char start_y)
 			// 	}
 			// }
 
+			// early detection for hit, so that we can play hit reaction during clear animation.
+			for (ix = 0; ix < BOARD_WIDTH; ++ix)
+			{
+				if (attack_row_status[ix] > ATTACK_QUEUE_SIZE && attack_row_status[ix] - (ATTACK_QUEUE_SIZE+1) >= (BOARD_END_Y_PX_BOARD - iy))
+				{
+					hit_reaction_remaining = 60;
+					//debug_display_number(hit_reaction_remaining, 1);
+				}
+			}
+
 			inc_lines_cleared();
 
 			// Fill the row will empty data.
@@ -1090,6 +1183,11 @@ void clear_rows_in_data(unsigned char start_y)
 			sfx_play(SOUND_ROW, 0);
 		}
 		
+		// potential hit reaction.
+		if (hit_reaction_remaining > 0)
+		{
+			draw_gameplay_sprites();
+		}
 		reveal_empty_rows_to_nt();
 	}
 }
@@ -1163,7 +1261,7 @@ void try_collapse_empty_row_data(void)
 	// TODO: Off by one?
 	iy = BOARD_END_Y_PX_BOARD - lines_cleared_y[0];
 
-	debug_display_number(iy, 0);
+	//debug_display_number(iy, 0);
 
 	for (ix = 0; ix < BOARD_WIDTH; ++ix)
 	{
@@ -1171,9 +1269,10 @@ void try_collapse_empty_row_data(void)
 		{
 			while (attack_row_status[ix] > 0)
 			{
+				//hit_reaction_remaining = 60;
 				--attack_row_status[ix];
 				delay(1);
-				draw_sprites();
+				draw_gameplay_sprites();
 				clear_vram_buffer();	
 			}
 			
