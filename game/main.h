@@ -23,6 +23,8 @@
 
 #define TILE_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
 
+#define BLINK_LEN (60 * 5)
+
 #pragma bss-name(push, "ZEROPAGE")
 
 // GLOBAL VARIABLES
@@ -48,6 +50,7 @@ struct cluster
 };
 
 unsigned char tick_count;
+unsigned int tick_count_large;
 unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
@@ -244,13 +247,9 @@ const unsigned char pal_changes[20] =
     0x0f, 0x15, // bright reds
 };
 
-const unsigned char palette_sp[]={
-0x0f, 0x00, 0x10, 0x30, // grey bricks
-//0x3C,0x01,0x21,0x30, // bricks
-0x0f, 0x09, 0x19, 0x29, // greens
-0x0f, 0x07, 0x28, 0x38, // dk brown, yellow, white yellow
-0x0f,0x22,0x31,0x30 // blocks
-}; 
+const unsigned char palette_sp[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x0f,0x26,0x37,0x0f,0x16,0x31,0x37,0x0f,0x22,0x26,0x37 };
+
+
 
 /*
 Level	Frames per Gridcell

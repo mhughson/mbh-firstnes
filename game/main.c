@@ -55,7 +55,8 @@ void main (void)
 
 		//set_music_speed(1);
 
-		tick_count++;
+		++tick_count;
+		++tick_count_large;
 		
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
@@ -219,6 +220,7 @@ void draw_sprites(void)
 	unsigned char start_y;
 	unsigned char ix;
 	unsigned char iy;
+	unsigned int t;
 
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -310,6 +312,49 @@ void draw_sprites(void)
 		}
 	}
 
+	// BLINKING
+	t = tick_count_large % BLINK_LEN;
+
+	if (t > BLINK_LEN - 5)
+	{
+		oam_spr(3 << 3, 25 << 3, 0x62, 1);
+		oam_spr(3 << 3, 26 << 3, 0x72, 1);
+	}
+	else if (t > (BLINK_LEN - 10))
+	{
+		oam_spr(3 << 3, 25 << 3, 0x63, 1);
+		oam_spr(3 << 3, 26 << 3, 0x73, 1);
+	}
+	else if (t > BLINK_LEN - 15)
+	{
+		oam_spr(3 << 3, 25 << 3, 0x62, 1);
+		oam_spr(3 << 3, 26 << 3, 0x72, 1);
+	}
+
+	// FLAGS
+	t = tick_count_large % 60;
+	if (t > 45)
+	{
+		ix = 0x69;
+	}
+	else if (t > 30)
+	{
+		ix = 0x68;
+	}
+	else if (t > 15)
+	{
+		ix = 0x67;
+	}
+	else
+	{
+		ix = 0x66;
+	}
+
+	oam_spr(8 << 3, 1 << 3, ix, 2);
+	oam_spr(24 << 3, 1 << 3, ix, 2);
+	oam_spr(3 << 3, 10 << 3, ix, 0);
+	oam_spr(27 << 3, 10 << 3, ix, 0);
+
 	//debug_draw_board_area();
 }
 
@@ -324,6 +369,16 @@ void movement(void)
 #if DEBUG_ENABLED
 	if (pad1_new & PAD_SELECT)
 	{
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
+		// inc_lines_cleared();
 		add_block_at_bottom();
 		//spawn_new_cluster();
 	}
@@ -905,6 +960,15 @@ void inc_lines_cleared()
 		temp_pal[13] = pal_changes[pal_id];
 		//temp_pal[14] = pal_changes[pal_id + 1];
 		pal_bg(temp_pal);
+
+		memcpy(temp_pal, palette_sp, sizeof(palette_sp));
+		// blocks
+		temp_pal[1] = pal_changes[pal_id];
+		temp_pal[2] = pal_changes[pal_id + 1];
+		// flag bg
+		temp_pal[10] = pal_changes[pal_id + 1];
+		//temp_pal[14] = pal_changes[pal_id + 1];
+		pal_spr(temp_pal);		
 		
 #if DEBUG_ENABLED
 		//debug_display_number(fall_rate, 0);
