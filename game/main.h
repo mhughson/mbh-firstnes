@@ -63,20 +63,10 @@ unsigned char cur_option;
 enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
 unsigned char attack_style;
 #define ATTACK_STRING_LEN 7
-unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
-{
-    "FIXED",
-    "TIMED",
-    "CLASSIC"
-};
 
 unsigned char music_on;
 #define OFF_ON_STRING_LEN 4
-unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
-{
-    "OFF",
-    "ON"
-};
+
 
 enum { STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
@@ -227,6 +217,15 @@ enum
 
 unsigned char attack_queued;
 
+
+
+
+
+
+
+
+
+
 #pragma bss-name(push, "BSS")
 
 unsigned char game_board[BOARD_SIZE];
@@ -244,9 +243,6 @@ unsigned char temp_pal[16];
 const unsigned char palette_bg[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x00,0x17,0x28,0x0f,0x2a,0x16,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_sp[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x0f,0x26,0x37,0x0f,0x16,0x31,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_bg_options[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x30,0x0f,0x26,0x0f,0x22,0x0f,0x26,0x0f,0x22,0x26,0x37 };
-
-
-
 
 const unsigned char pal_changes[20] = 
 {
@@ -317,6 +313,21 @@ unsigned char fall_rates_per_level[] =
     2, // 19–28
     1, // 29+
 };
+
+unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
+{
+    "FIXED",
+    "TIMED",
+    "CLASSIC"
+};
+unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
+{
+    "OFF",
+    "ON"
+};
+
+unsigned char text_push_start[] = { "PUSH START" };
+unsigned char clear_push_start[] = { "          " };
 
 // PROTOTYPES
 void draw_menu_sprites(void);

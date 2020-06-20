@@ -38,9 +38,14 @@ CUT:
 * Last chance move on hard drop (maybe optional).
 	* Feels weird. See commented out code in movement().
 
+--
+
 BUGS:
 
 * Sprites do not draw when transitioning between name tables.
+
+COMPLETE:
+
 * Tentacles are not budgeted.
 
 */
@@ -102,6 +107,15 @@ void main (void)
 			case STATE_MENU:
 			{
 				draw_menu_sprites();
+
+				if (tick_count % 128 == 0)
+				{
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+				}
+				else if (tick_count % 128 == 96)
+				{
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+				}
 
 				if (pad1_new & PAD_START)
 				{
