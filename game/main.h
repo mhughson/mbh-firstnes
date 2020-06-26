@@ -1,6 +1,6 @@
 /** (C) Matt Hughson 2020 */
 
-#define DEBUG_ENABLED 0
+#define DEBUG_ENABLED 1
 
 // Nametable A: 	2400-2000 = 400
 // Attributes: 		2400-23c0 = 0x40
@@ -43,8 +43,8 @@ struct cluster
         0 0 0 0
         0 0 0 0
     */
-    unsigned short layout;
-    const unsigned short* def;
+    unsigned int layout;
+    const unsigned int def[4];
     unsigned char sprite;
     unsigned char id;
 };
@@ -52,6 +52,8 @@ struct cluster
 unsigned char tick_count;
 unsigned int tick_count_large;
 unsigned char hit_reaction_remaining;
+unsigned int attack_queue_ticks_remaining;
+const unsigned int attack_delay = 240;
 unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
@@ -95,7 +97,7 @@ unsigned char cur_level = 0;
     0 1 0 0
     0 0 0 0
 */
-const unsigned short def_z_clust[4] = 
+const unsigned int def_z_clust[4] = 
 { 
     0xc60,
     0x264,
@@ -104,7 +106,7 @@ const unsigned short def_z_clust[4] =
 };
 
 
-const unsigned short def_z_rev_clust[4] = 
+const unsigned int def_z_rev_clust[4] = 
 { 
     0x6C0,
     0x8C40,
@@ -112,7 +114,7 @@ const unsigned short def_z_rev_clust[4] =
     0x8C40, // dupe.
 };
 
-const unsigned short def_line_clust[4] =
+const unsigned int def_line_clust[4] =
 {
     0xf0,
     0x4444,
@@ -120,7 +122,7 @@ const unsigned short def_line_clust[4] =
     0x4444 // dupe.
 };
 
-const unsigned short def_box_clust[4] =
+const unsigned int def_box_clust[4] =
 {
     0x660,    
     0x660,    
@@ -128,7 +130,7 @@ const unsigned short def_box_clust[4] =
     0x660,
 };
 
-const unsigned short def_tee_clust[4] =
+const unsigned int def_tee_clust[4] =
 {
     0x4e00,    
     0x4640,    
@@ -136,7 +138,7 @@ const unsigned short def_tee_clust[4] =
     0x4c40,
 };
 
-const unsigned short def_L_clust[4] =
+const unsigned int def_L_clust[4] =
 {
     0xe80,    
     0xc440,    
@@ -144,7 +146,7 @@ const unsigned short def_L_clust[4] =
     0x4460,
 };
 
-const unsigned short def_L_rev_clust[4] =
+const unsigned int def_L_rev_clust[4] =
 {
     0xe20,    
     0x44c0,    
@@ -153,7 +155,7 @@ const unsigned short def_L_rev_clust[4] =
 };
 
 #define NUM_CLUSTERS 7
-const unsigned short* cluster_defs [NUM_CLUSTERS] =
+const unsigned int* cluster_defs [NUM_CLUSTERS] =
 {
     def_z_clust,
     def_z_rev_clust,
@@ -203,6 +205,19 @@ unsigned char id;
 // put_cur_cluster()
 unsigned char min_y;
 unsigned char max_y;
+// set_block()
+unsigned char in_x; 
+unsigned char in_y; 
+unsigned char in_id;
+// draw_gameplay_sprites()
+unsigned char local_start_x;
+unsigned char local_start_y;
+unsigned char local_ix;
+unsigned char local_iy;
+unsigned int local_t;
+unsigned char local_bit;
+unsigned char local_row_status;
+const unsigned char OOB_TOP = (BOARD_START_Y_PX + (BOARD_OOB_END << 3));
 
 unsigned char test_song;
 unsigned char test_song_active;
@@ -233,6 +248,8 @@ unsigned char game_board_temp[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+const unsigned char option_empty[] = {0x0, 0x0};
+const unsigned char option_icon[] = {0x25, 0x26};
 
 // copy_board_to_nt()
 char copy_board_data[BOARD_HEIGHT];
@@ -335,7 +352,7 @@ void draw_gameplay_sprites(void);
 void movement(void);
 
 // Set a block in x, y (board space)
-void set_block(unsigned char x, unsigned char y, unsigned char id);
+void set_block(/*unsigned char x, unsigned char y, unsigned char id*/);
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt);
 // x, y in board space.
 void clear_block(unsigned char x, unsigned char y);

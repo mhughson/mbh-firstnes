@@ -14,25 +14,27 @@
 
 FEATURES:
 
-* Time based tentacle movement (rather than on landing).
 * Sound on hit tentacle.
 * Option to return to main menu on game over.
-* Game over screen.
-* Push start flashing text.
+* Game over screen (polished).
 
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
 * Pal swap based on time of day/night.
 * Score.
-* Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
 * Multiple tentacles.
 * Fast music when tentacle is maxed out.
+* Hard drop trails
+* Store blocks.
 
 COMPLETE:
 
 * Hard drop (up on d-pad).
 * Option screen.
 * Credits screen.
+* Time based tentacle movement (rather than on landing).
+* Option to choose between Kraken and Klassic gameplay. (classic may require score, ability to go back to main menu).
+* Push start flashing text.
 
 CUT:
 * Last chance move on hard drop (maybe optional).
@@ -43,10 +45,15 @@ CUT:
 BUGS:
 
 * Sprites do not draw when transitioning between name tables.
+* Sprite flicker when blocks land.
+* Horz input has to be pressed again if line is cleared.
+* When hitting game over, final sprite switches.
 
 COMPLETE:
 
 * Tentacles are not budgeted.
+* Graphical corruption on Game Over (rarely)
+* Hard drop puts blocks 1 tile too far (rarely).
 
 */
 
@@ -91,7 +98,6 @@ void main (void)
 	{
 		ppu_wait_nmi(); // wait till beginning of the frame
 
-
 		//set_music_speed(1);
 
 		++tick_count;
@@ -106,7 +112,7 @@ void main (void)
 		{
 			case STATE_MENU:
 			{
-				draw_menu_sprites();
+				draw_menu_sprites();			
 
 				if (tick_count % 128 == 0)
 				{
@@ -271,16 +277,33 @@ void main (void)
 					--hit_reaction_remaining;
 				}
 
-				movement();
-
-				draw_gameplay_sprites();
-				//copy_board_to_nt();
-
+				
+				// delay a frame for perf.
 				if (attack_queued)
 				{
+					// TODO: Perf - Very expensive.
 					add_block_at_bottom();
+					
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
+				}
+
+//POKE(0x2001,0x9f); //blue
+				movement();
+//POKE(0x2001,0x3f); // red
+				draw_gameplay_sprites();
+//POKE(0x2001,0x1e); // white
+
+//POKE(0x2001,0x9f); // blue
+				if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
+				{
+					--attack_queue_ticks_remaining;
+
+					if (attack_queue_ticks_remaining == 0)
+					{
+						attack_queued = 1;
+						attack_queue_ticks_remaining = attack_delay;
+					}
 				}
 
 				if (pad1_new & PAD_START)
@@ -304,7 +327,7 @@ void main (void)
 				// 	//go_to_state(STATE_OVER);
 				// }
 #endif
-
+				//POKE(0x2001,0x1e);//0x3E);
 				break;
 			}
 
@@ -396,8 +419,8 @@ void main (void)
 
 void draw_menu_sprites(void)
 {
-	unsigned char ix;
-	unsigned int t;
+	static unsigned char ix;
+	static unsigned int t;
 
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -440,94 +463,73 @@ void draw_menu_sprites(void)
 
 void draw_gameplay_sprites(void)
 {
-	unsigned char start_x;
-	unsigned char start_y;
-	unsigned char ix;
-	unsigned char iy;
-	unsigned int t;
-
+	static unsigned int mask;
+//POKE(0x2001,0x5f); // green
 	// clear all sprites from sprite buffer
 	oam_clear();
-
+//POKE(0x2001,0x9f); // blue
 	// push a single sprite
 	// oam_spr(unsigned char x,unsigned char y,unsigned char chrnum,unsigned char attr);
 	// use tile #0, palette #0
 
-	start_x = (cur_block.x << 3) + BOARD_START_X_PX;
-	start_y = (cur_block.y << 3) + BOARD_START_Y_PX;
+	local_start_x = (cur_block.x << 3) + BOARD_START_X_PX;
+	local_start_y = (cur_block.y << 3) + BOARD_START_Y_PX;
 
-	// 255 means hide.
-	if (cur_block.y != 255)
+	local_iy = 0;
+	local_ix = 0;
+	for (mask = 0x8000; mask; mask >>= 1)
 	{
-		for (iy = 0; iy < 4; ++iy)
-		{	
-			for (ix = 0; ix < 4; ++ix)
+		// 255 means hide.
+		if (cur_block.y != 255)
+		{
+			if (cur_cluster.layout & mask)
 			{
-				// essentially an index into a bit array.
-				unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
-
-				if (cur_cluster.layout & (0x8000 >> bit))
+				// Don't draw the current cluster if it is above the top of the board.
+				// We want it to be able to function and move up there, but should not
+				// be visible.
+				if (local_start_y + (local_iy << 3) > OOB_TOP)
 				{
-					// Don't draw the current cluster if it is above the top of the board.
-					// We want it to be able to function and move up there, but should not
-					// be visible.
-					if (start_y + (iy << 3) > (BOARD_START_Y_PX + (BOARD_OOB_END << 3)))
-					{
-						oam_spr(start_x + (ix << 3), start_y + (iy << 3), cur_cluster.sprite, 0);
-					}
+					oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				}
-				// else
-				// {
-				// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
-				// }
-				
 			}
 		}
-	}
 
-	start_x = 15 << 3;
-	start_y = 1 << 3;
-
-	for (iy = 0; iy < 4; ++iy)
-	{	
-		for (ix = 0; ix < 4; ++ix)
+		if (next_cluster.layout & mask)
 		{
-			// essentially an index into a bit array.
-			unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
+			oam_spr((15 << 3) + (local_ix << 3), (1 << 3) + (local_iy << 3), next_cluster.sprite, 0);
+		}
 
-			if (next_cluster.layout & (0x8000 >> bit))
-			{
-				oam_spr(start_x + (ix << 3), start_y + (iy << 3), next_cluster.sprite, 0);
-			}
-			// else
-			// {
-			// 	oam_spr(start_x + (ix << 3), start_y + (iy << 3), 0x01, 0);
-			// }
-			
+		++local_ix;
+		if (local_ix >= 4)
+		{
+			local_ix = 0;
+			++local_iy;
 		}
 	}
 
+//POKE(0x2001,0x1f); // white
 	// Loop through the attack columns and draw the off board portion as sprites.
-	for (ix = 0; ix < BOARD_WIDTH; ++ix)
+	for (local_ix = 0; local_ix < BOARD_WIDTH; ++local_ix)
 	{
-		if (attack_row_status[ix] > 0)
+		local_row_status = attack_row_status[local_ix];
+		if (local_row_status > 0)
 		{
-			for (iy = 0; iy < attack_row_status[ix] /*&& iy < ATTACK_QUEUE_SIZE*/; ++iy)
+			for (local_iy = 0; local_iy < local_row_status /*&& local_iy < ATTACK_QUEUE_SIZE*/; ++local_iy)
 			{
 				// gross. Try to detect if this is the last piece, and also the end of the arm.
-				if (iy == attack_row_status[ix] - 1)
+				if (local_iy == local_row_status - 1)
 				{
 				oam_spr(
-					BOARD_START_X_PX + (ix << 3), 
-					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
+					BOARD_START_X_PX + (local_ix << 3), 
+					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
 					0xf9, 
 					1);
 				}
 				else
 				{
 				oam_spr(
-					BOARD_START_X_PX + (ix << 3), 
-					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (iy << 3),
+					BOARD_START_X_PX + (local_ix << 3), 
+					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
 					0xf8, 
 					1);
 				}
@@ -535,6 +537,8 @@ void draw_gameplay_sprites(void)
 			}
 		}
 	}
+
+//POKE(0x2001,0x3f); // red
 
 	// HIT REACTION
 	if (hit_reaction_remaining > 0)
@@ -566,19 +570,19 @@ void draw_gameplay_sprites(void)
 	{
 		//pal_spr(palette_sp);
 		//pal_bg(palette_bg);
-		t = tick_count_large % BLINK_LEN;
+		local_t = tick_count_large % BLINK_LEN;
 
-		if (t > BLINK_LEN - 5)
+		if (local_t > BLINK_LEN - 5)
 		{
 			oam_spr(3 << 3, 25 << 3, 0x62, 1);
 			oam_spr(3 << 3, 26 << 3, 0x72, 1);
 		}
-		else if (t > (BLINK_LEN - 10))
+		else if (local_t > (BLINK_LEN - 10))
 		{
 			oam_spr(3 << 3, 25 << 3, 0x63, 1);
 			oam_spr(3 << 3, 26 << 3, 0x73, 1);
 		}
-		else if (t > BLINK_LEN - 15)
+		else if (local_t > BLINK_LEN - 15)
 		{
 			oam_spr(3 << 3, 25 << 3, 0x62, 1);
 			oam_spr(3 << 3, 26 << 3, 0x72, 1);
@@ -586,28 +590,28 @@ void draw_gameplay_sprites(void)
 	}
 
 	// FLAGS
-	t = tick_count_large % 60;
-	if (t > 45)
+	local_t = tick_count & 63;
+	if (local_t > 48)
 	{
-		ix = 0x69;
+		local_ix = 0x69;
 	}
-	else if (t > 30)
+	else if (local_t > 32)
 	{
-		ix = 0x68;
+		local_ix = 0x68;
 	}
-	else if (t > 15)
+	else if (local_t > 16)
 	{
-		ix = 0x67;
+		local_ix = 0x67;
 	}
 	else
 	{
-		ix = 0x66;
+		local_ix = 0x66;
 	}
 
-	oam_spr(8 << 3, 1 << 3, ix, 2);
-	oam_spr(24 << 3, 1 << 3, ix, 2);
-	oam_spr(3 << 3, 10 << 3, ix, 0);
-	oam_spr(27 << 3, 10 << 3, ix, 0);
+	oam_spr(8 << 3, 1 << 3, local_ix, 2);
+	oam_spr(24 << 3, 1 << 3, local_ix, 2);
+	oam_spr(3 << 3, 10 << 3, local_ix, 0);
+	oam_spr(27 << 3, 10 << 3, local_ix, 0);
 
 	//debug_draw_board_area();
 }
@@ -716,31 +720,36 @@ void movement(void)
 		// TODO: Causes hitch.
 		while (!is_cluster_colliding())
 		{
-			cur_block.y += 1;
+			++cur_block.y;
 		}
 
 		// UNCOMMENT FOR LAST CHANCE MOVE ON HARD DROP
 		// cur_block.y -= 1;
 		// fall_frame_counter = 1;
 	}
-	else if (pad1_new & PAD_DOWN)
+	else
 	{
-		require_new_down_button = 0;
+		// Hard drop skips all this to avoid dropping to the bottom
+		// and then dropping again because it happens to be
+		// the natural fall frame.
+		if (pad1_new & PAD_DOWN)
+		{
+			require_new_down_button = 0;
 
-		// fall this frame.
-		temp_fall_rate = fall_frame_counter;
-	}
-	else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
-	{
-		// fall every other frame.
-		temp_fall_rate = MIN(temp_fall_rate, 2);
-	}
+			// fall this frame.
+			temp_fall_rate = fall_frame_counter;
+		}
+		else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
+		{
+			// fall every other frame.
+			temp_fall_rate = MIN(temp_fall_rate, 2);
+		}
 
-	if (fall_frame_counter % temp_fall_rate == 0 || temp_fall_rate == 0)
-	{
-		cur_block.y += 1;
+		if (fall_frame_counter % temp_fall_rate == 0 || temp_fall_rate == 0)
+		{
+			cur_block.y += 1;
+		}
 	}
-
 
 	hit = 0;
 	
@@ -767,27 +776,26 @@ void movement(void)
 
 }
 
-void set_block(unsigned char x, unsigned char y, unsigned char id)
+void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 {
-	int address;
+	static int address;
 
 	// w = 10 tiles,  80 px
 	// h = 20 tiles, 160 px
 
 	// Update the logic array as well as the nametable to reflect it.
 
-	if (y <= BOARD_OOB_END)
+	if (in_y <= BOARD_OOB_END)
 	{
 		// Don't place stuff out of bounds.
 		return;
 	}
 
-	address = get_ppu_addr(cur_nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
-	one_vram_buffer(id, address);	
-
+	address = get_ppu_addr(cur_nt, (in_x << 3) + BOARD_START_X_PX, (in_y << 3) + BOARD_START_Y_PX);
+	one_vram_buffer(in_id, address);
 
 	// TODO: Is this too slow?
-	game_board[TILE_TO_BOARD_INDEX(x,y)] = id;
+	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;	
 }
 
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
@@ -807,40 +815,55 @@ void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned c
 
 void clear_block(unsigned char x, unsigned char y)
 {
-	set_block(x, y, 0);
+	in_x = x;
+	in_y = y;
+	in_id = 0;
+	set_block();
 }
 
 void put_cur_cluster()
 {
-	unsigned char ix;
-	unsigned char iy;
-
+	static unsigned char ix;
+	static unsigned char iy;
+	static unsigned int bit;
+	static unsigned int res;
 
 	max_y = 0;
 	min_y = 0xff; // max
 
-	for (iy = 0; iy < 4; ++iy)
-	{	
-		for (ix = 0; ix < 4; ++ix)
+	ix = 0;
+	iy = 0;
+	for (bit = 0x8000; bit; bit >>= 1)
+	{		
+		res = cur_cluster.layout & bit;
+	
+		// solid bit.
+		if (res)
 		{
-			// essentially an index into a bit array.
-			unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
 
-			// solid bit.
-			if (cur_cluster.layout & (0x8000 >> bit))
+			in_x = cur_block.x + ix;
+			in_y = cur_block.y + iy;
+			in_id = cur_cluster.sprite;
+
+			// This is basically always going to be the first thing drawn,
+			// but i couldn't think of a clever way to do this once.
+			if (in_y < min_y)
 			{
-				// This is basically always going to be the first thing drawn,
-				// but i couldn't think of a clever way to do this once.
-				if (cur_block.y + iy < min_y)
-				{
-					min_y = cur_block.y + iy;
-				}
-				if (cur_block.y + iy > max_y)
-				{
-					max_y = cur_block.y + iy;
-				}
-				set_block(cur_block.x + ix, cur_block.y + iy, cur_cluster.sprite);
-			}			
+				min_y = in_y;
+			}
+			if (in_y > max_y)
+			{
+				max_y = in_y;
+			}
+
+			set_block( );	
+		}
+
+		++ix;
+		if (ix >= 4)
+		{
+			ix = 0;
+			++iy;
 		}
 	}
 
@@ -855,20 +878,19 @@ void put_cur_cluster()
 	{
 		// hide the sprite while we work.
 		cur_block.y = 255;
+		// draw sprites again so newly hidden sprite vanishes. expensive for something
+		// so small.
 		draw_gameplay_sprites();
 
 		if (attack_style == ATTACK_ON_LAND)
 		{
 			attack_queued = 1;
 		}
+		
 		clear_rows_in_data(max_y);
+		
 	}
 	
-}
-
-unsigned char get_block(unsigned char x, unsigned char y)
-{
-	return game_board[TILE_TO_BOARD_INDEX(x,y)];
 }
 
 unsigned char is_block_free(unsigned char x, unsigned char y)
@@ -879,31 +901,50 @@ unsigned char is_block_free(unsigned char x, unsigned char y)
 		return 0;
 	}
 
-	return get_block(x, y) == 0;
+	//return get_block(x, y) == 0;
+	return game_board[TILE_TO_BOARD_INDEX(x,y)] == 0;
 }
 
 unsigned char is_cluster_colliding()
 {
-	unsigned char ix;
-	unsigned char iy;
+	static unsigned char ix;
+	static unsigned char iy;
+	static unsigned int bit;
 
-	for (iy = 0; iy < 4; ++iy)
+	static unsigned char x;
+	static unsigned char y;
+
+	ix = 0;
+	iy = 0;
+	for (bit = 0x8000; bit; bit >>= 1)
 	{	
-		for (ix = 0; ix < 4; ++ix)
+		// solid bit.
+		if (cur_cluster.layout & bit)
 		{
-			// essentially an index into a bit array.
-			unsigned char bit = ((iy * 4) + (ix & 3)); // &3 = %4
+			
+			x = cur_block.x + ix;
+			y = cur_block.y + iy;
 
-			// solid bit.
-			if (cur_cluster.layout & (0x8000 >> bit))
+			if (y > BOARD_END_Y_PX_BOARD || x > BOARD_END_X_PX_BOARD)
 			{
-				if (!is_block_free(cur_block.x + ix, cur_block.y + iy))
-				{ 
-					return 1;
-				}
-			}			
+				// consider this blocked.
+				return 1;
+			}
+
+			//return get_block(x, y) == 0;
+			if(game_board[TILE_TO_BOARD_INDEX(x,y)])
+			{ 
+				return 1;
+			}
 		}
-	}
+
+		++ix;
+		if (ix >= 4)
+		{
+			ix = 0;
+			++iy;
+		}
+	}	
 
 	return 0;
 }
@@ -918,7 +959,8 @@ void spawn_new_cluster()
 	cur_rot = 0;
 
 	// Copy the next cluster to the current one.
-	cur_cluster.def = next_cluster.def;
+	memcpy(cur_cluster.def, next_cluster.def, 4 * 2);
+	//cur_cluster.def = next_cluster.def;
 	cur_cluster.layout = cur_cluster.def[0];
 	cur_cluster.sprite = next_cluster.sprite;
 	cur_cluster.id = next_cluster.id;
@@ -929,10 +971,7 @@ void spawn_new_cluster()
 
 	// If the block is colliding right out of the game, move it up so that
 	// we get a cleaner game over.
-	if (is_cluster_colliding())
-	{
-		--cur_block.y;
-	}
+	// REMOVED FOR PERF
 	// if (is_cluster_colliding())
 	// {
 	// 	--cur_block.y;
@@ -946,14 +985,15 @@ void spawn_new_cluster()
 		id = rand8() % NUM_CLUSTERS;
 	}
 	next_cluster.id = id;
-	next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
+	memcpy(next_cluster.def, cluster_defs[id], 4 * 2);
+	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
 }
 
 void rotate_cur_cluster(char dir)
 {
-	unsigned char old_rot;
+	static unsigned char old_rot;
 
 	old_rot = cur_rot;
 
@@ -976,11 +1016,15 @@ void rotate_cur_cluster(char dir)
 
 void go_to_state(unsigned char new_state)
 {
-	int address;
-	unsigned char i;
-	unsigned char fade_from_bright = 0;
-	unsigned char fade_delay = 5;
-	unsigned char prev_state = state;
+	static int address;
+	static unsigned char i;
+	static unsigned char fade_from_bright;
+	static unsigned char fade_delay;
+	static unsigned char prev_state;
+
+	fade_from_bright = 0;
+	fade_delay = 5;
+	prev_state = state;
 
 	switch (state)
 	{
@@ -1209,6 +1253,10 @@ void go_to_state(unsigned char new_state)
 				}
 
 				require_new_down_button = 1;
+				if (attack_style == ATTACK_ON_TIME)
+				{
+					attack_queue_ticks_remaining = attack_delay;
+				}
 			}
 
 			break;
@@ -1225,6 +1273,9 @@ void go_to_state(unsigned char new_state)
 		}
 		case STATE_OVER:
 		{
+			// fix bug where mashing up/down to quickly hit gamover would case nametable coruption.
+			clear_vram_buffer();
+
 			music_stop();
 			sfx_play(SOUND_GAMEOVER, 0);
 
@@ -1242,7 +1293,14 @@ void go_to_state(unsigned char new_state)
 			delay(fade_delay);
 			pal_bright(8);
 			delay(fade_delay);
-			address = get_ppu_addr(cur_nt, 96, 112);
+
+			for (i = 0; i < 3; ++i)
+			{
+				address = get_ppu_addr(cur_nt, BOARD_START_X_PX, (14+i)<<3);
+				multi_vram_buffer_horz(empty_row, 10, address);
+			}
+
+			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("GAME OVER!", 10, address);
 			pal_bright(7);
 			delay(fade_delay);
@@ -1264,7 +1322,7 @@ void go_to_state(unsigned char new_state)
 
 void inc_lines_cleared()
 {
-	unsigned char pal_id;
+	static unsigned char pal_id;
 
 	++lines_cleared_one;
 
@@ -1320,8 +1378,11 @@ void display_level()
 {
 	// We let level be displayed as zero based because it makes more sense when
 	// comparing it to lines (eg. lines is 80, level is 8).
-	unsigned char temp_level = cur_level;
-	unsigned char i = 0;
+	static unsigned char temp_level;
+	static unsigned char i;
+
+	temp_level = cur_level;
+	i = 0;
 
 	if (cur_level < 100)
 	{
@@ -1342,11 +1403,14 @@ void display_level()
 
 void clear_rows_in_data(unsigned char start_y)
 {
-	unsigned char ix;
-	unsigned char iy;
-	unsigned char line_complete;
-	unsigned char i = 0;
-	unsigned char prev_level = cur_level;
+	static unsigned char ix;
+	static unsigned char iy;
+	static unsigned char line_complete;
+	static unsigned char i;
+	static unsigned char prev_level;
+
+	i = 0;
+	prev_level = cur_level;
 
 	// 0xff used to indicate unused.
 	memfill(lines_cleared_y, 0xff, 4);
@@ -1437,8 +1501,8 @@ void reveal_empty_rows_to_nt()
 	
 	// Start in the middle of th board, and reveal outwards:
 	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
-	signed char ix = 4;
-	unsigned char iy;
+	static signed char ix;
+	static unsigned char iy;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -1446,7 +1510,7 @@ void reveal_empty_rows_to_nt()
 	clear_vram_buffer();	
 
 	// Reveal from the center out.
-	for (; ix >= 0; --ix)
+	for (ix = 4; ix >= 0; --ix)
 	{
 		// LEFT SIDE
 
@@ -1492,9 +1556,9 @@ void reveal_empty_rows_to_nt()
 
 void try_collapse_empty_row_data(void)
 {
-	unsigned char ix;
-	unsigned char iy;
-	signed char i;
+	static unsigned char ix;
+	static unsigned char iy;
+	static signed char i;
 
 	// first one is the bottom.
 	// TODO: Off by one?
@@ -1545,14 +1609,16 @@ void try_collapse_empty_row_data(void)
 
 void copy_board_to_nt()
 {
-	unsigned char ix;
-	unsigned char iy;
+	static unsigned char ix;
+	static unsigned char iy;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 
-	delay(1);
-	clear_vram_buffer();	
+	draw_gameplay_sprites();
+	//delay(1);
+	//clear_vram_buffer();
+	//return;
 
 	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 	{
@@ -1573,6 +1639,9 @@ void copy_board_to_nt()
 		// delay often enough to avoid buffer overrun.
 		if (ix % 4 == 0)
 		{
+			// calling this again here isn't needed, as time will not have advanced, so
+			// drawing the sprites again will do nothing.
+			//draw_gameplay_sprites();
 			delay(1);
 			clear_vram_buffer();				
 		}
@@ -1581,10 +1650,11 @@ void copy_board_to_nt()
 
 void add_block_at_bottom()
 {
-	signed char ix;
-	unsigned char iy;
+	static signed char ix;
+	static unsigned char iy;
+	static unsigned char attacks;
 
-	unsigned char attacks = 0;
+	attacks = 0;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -1642,8 +1712,11 @@ void add_block_at_bottom()
 
 void display_song()
 {
-	unsigned char temp = test_song;
-	unsigned char i = 0;
+	static unsigned char temp;
+	static unsigned char i;
+
+	temp = test_song;
+	i = 0;
 
 	if (test_song < 100)
 	{
@@ -1663,8 +1736,11 @@ void display_song()
 void display_sound()
 {
 
-	unsigned char temp = test_sound;
-	unsigned char i = 0;
+	static unsigned char temp;
+	static unsigned char i;
+
+	temp = test_sound;
+	i = 0;
 
 	if (test_song < 100)
 	{
@@ -1683,9 +1759,6 @@ void display_sound()
 
 void display_options()
 {
-	unsigned char option_empty[] = {0x0, 0x0};
-	unsigned char option_icon[] = {0x25, 0x26};
-
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
 
@@ -1744,8 +1817,8 @@ void debug_copy_board_data_to_nt(void)
 {
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
 	
-	unsigned char ix;
-	unsigned char iy;
+	static unsigned char ix;
+	static unsigned char iy;
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -1782,8 +1855,11 @@ void debug_display_number(unsigned char num, unsigned char index)
 {
 	// We let level be displayed as zero based because it makes more sense when
 	// comparing it to lines (eg. lines is 80, level is 8).
-	unsigned char temp = num;
-	unsigned char i = 0;
+	static unsigned char temp;
+	static unsigned char i;
+
+	temp = num;
+	i = 0;
 
 	if (temp < 100)
 	{
