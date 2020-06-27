@@ -17,15 +17,20 @@ FEATURES:
 * Sound on hit tentacle.
 * Option to return to main menu on game over.
 * Game over screen (polished).
+* Screen shake on hit.
 
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
 * Pal swap based on time of day/night.
 * Score.
-* Multiple tentacles.
+* Multiple tentacles. - possibly if when reaching top they go into name table.
 * Fast music when tentacle is maxed out.
 * Hard drop trails
 * Store blocks.
+
+* Moving tentacle:
+ - stop moving at top - maybe a chance to move to name table, and start more attacks.
+ - 
 
 COMPLETE:
 
@@ -54,6 +59,34 @@ COMPLETE:
 * Tentacles are not budgeted.
 * Graphical corruption on Game Over (rarely)
 * Hard drop puts blocks 1 tile too far (rarely).
+
+SCRIPT IDEAS:
+
+* LAND - Make every move count! Rewards deliberate play. Punishes sloppy.
+* TIME - Race to get as much done as possible before the Kraken attacks. Rewards fast play. Punishes overthinking.
+* CLASSIC - The traditional block dropping puzzle mechanics you know and love.
+
+* Story - 
+
+The Kraken cometh...
+
+From the deepest trenches of the ocean, the Kraken has come to lay waste to your city!
+
+The archers have slung every arrow.
+The burning tar has run dry.
+Every piece of military weaponary has been dispatch.
+
+And yet... the Kraken moves forward, climbing the towering walls of your seaside fortress.
+
+With no ammunition left, the city itself moves from a barricade, to weapon!
+
+The stones of the walls are broken off, and hurdled down at hidious creature. And it just might be enough to
+slow it down till morning, when surely help will arrive...
+
+* Manual:
+- Have a page with text book lore about the Kraken, with some cool pictures.
+- A page for each mode.
+- A making of section about how the game was created.
 
 */
 
@@ -286,6 +319,7 @@ PROFILE_POKE(0x5f); // green
 					
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
+					attack_queue_ticks_remaining = attack_delay;
 				}
 
 PROFILE_POKE(0x9f); //blue
@@ -462,6 +496,8 @@ void draw_menu_sprites(void)
 void draw_gameplay_sprites(void)
 {
 	static unsigned int mask;
+	static char shake_offset;
+	static unsigned char speed;
 //PROFILE_POKE(0x5f); // green
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -506,32 +542,67 @@ void draw_gameplay_sprites(void)
 	}
 
 //PROFILE_POKE(0x1f); // white
-	// Loop through the attack columns and draw the off board portion as sprites.
-	for (local_ix = 0; local_ix < BOARD_WIDTH; ++local_ix)
+
+	if (attack_style != ATTACK_NEVER)
 	{
-		local_row_status = attack_row_status[local_ix];
-		if (local_row_status > 0)
+		shake_offset = 0;
+		if (attack_style == ATTACK_ON_TIME)
 		{
-			for (local_iy = 0; local_iy < local_row_status /*&& local_iy < ATTACK_QUEUE_SIZE*/; ++local_iy)
+			if (attack_queue_ticks_remaining < 120)
 			{
-				// gross. Try to detect if this is the last piece, and also the end of the arm.
-				if (local_iy == local_row_status - 1)
+				speed = tick_count >> 2;
+			}
+			else if (attack_queue_ticks_remaining < 300)
+			{
+				speed = tick_count >> 3;
+			}
+			else
+			{
+				speed = tick_count >> 5;
+			}
+		}
+		else
+		{
+			speed = tick_count >> 4;
+		}
+
+		// Loop through the attack columns and draw the off board portion as sprites.
+		for (local_ix = 0; local_ix < BOARD_WIDTH; ++local_ix)
+		{
+			local_row_status = attack_row_status[local_ix];
+			if (local_row_status > 0)
+			{
+				for (local_iy = 0; local_iy < local_row_status /*&& local_iy < ATTACK_QUEUE_SIZE*/; ++local_iy)
 				{
-				oam_spr(
-					BOARD_START_X_PX + (local_ix << 3), 
-					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-					0xf9, 
-					1);
+					//if (attack_queue_ticks_remaining < 120)
+					{
+						//if (attack_queue_ticks_remaining % 8 == 0) // %8
+						{
+							//shake_offset = ((local_iy + (attack_queue_ticks_remaining << 4)) % 3) - 1;
+						}
+					}
+
+					shake_offset = tenatcle_offsets[((local_iy + speed) & 3)]; // &3 = %4 = number of entries in array.
+
+					// gross. Try to detect if this is the last piece, and also the end of the arm.
+					if (local_iy == local_row_status - 1)
+					{
+					oam_spr(
+						BOARD_START_X_PX + (local_ix << 3) + shake_offset, 
+						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
+						0xf9, 
+						1);
+					}
+					else
+					{
+					oam_spr(
+						BOARD_START_X_PX + (local_ix << 3) + shake_offset, 
+						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
+						0xf8, 
+						1);
+					}
+					
 				}
-				else
-				{
-				oam_spr(
-					BOARD_START_X_PX + (local_ix << 3), 
-					(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-					0xf8, 
-					1);
-				}
-				
 			}
 		}
 	}
@@ -566,24 +637,33 @@ void draw_gameplay_sprites(void)
 	// BLINKING
 	else
 	{
-		//pal_spr(palette_sp);
-		//pal_bg(palette_bg);
-		local_t = tick_count_large % BLINK_LEN;
-
-		if (local_t > BLINK_LEN - 5)
+		if (attack_style == ATTACK_NEVER)
 		{
-			oam_spr(3 << 3, 25 << 3, 0x62, 1);
-			oam_spr(3 << 3, 26 << 3, 0x72, 1);
-		}
-		else if (local_t > (BLINK_LEN - 10))
-		{
+			// sleeping
 			oam_spr(3 << 3, 25 << 3, 0x63, 1);
 			oam_spr(3 << 3, 26 << 3, 0x73, 1);
 		}
-		else if (local_t > BLINK_LEN - 15)
+		else
 		{
-			oam_spr(3 << 3, 25 << 3, 0x62, 1);
-			oam_spr(3 << 3, 26 << 3, 0x72, 1);
+			//pal_spr(palette_sp);
+			//pal_bg(palette_bg);
+			local_t = tick_count_large % BLINK_LEN;
+
+			if (local_t > BLINK_LEN - 5)
+			{
+				oam_spr(3 << 3, 25 << 3, 0x62, 1);
+				oam_spr(3 << 3, 26 << 3, 0x72, 1);
+			}
+			else if (local_t > (BLINK_LEN - 10))
+			{
+				oam_spr(3 << 3, 25 << 3, 0x63, 1);
+				oam_spr(3 << 3, 26 << 3, 0x73, 1);
+			}
+			else if (local_t > BLINK_LEN - 15)
+			{
+				oam_spr(3 << 3, 25 << 3, 0x62, 1);
+				oam_spr(3 << 3, 26 << 3, 0x72, 1);
+			}
 		}
 	}
 
@@ -635,8 +715,9 @@ void movement(void)
 		// inc_lines_cleared();
 		// inc_lines_cleared();
 		// inc_lines_cleared();
-		add_block_at_bottom();
+		//add_block_at_bottom();
 		//spawn_new_cluster();
+		attack_queued = 1;
 	}
 
 	// INPUT

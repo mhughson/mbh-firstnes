@@ -59,7 +59,7 @@ unsigned char tick_count;
 unsigned int tick_count_large;
 unsigned char hit_reaction_remaining;
 unsigned int attack_queue_ticks_remaining;
-const unsigned int attack_delay = 240;
+const unsigned int attack_delay = 600;
 unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
@@ -238,7 +238,7 @@ enum
 
 unsigned char attack_queued;
 
-
+char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 
 
 
