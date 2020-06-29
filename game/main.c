@@ -15,7 +15,6 @@
 FEATURES:
 
 //must have
-* Non-Nintendo blocks.
 * Option to return to main menu on game over.
 * Pal swap based on time of day/night.
 
@@ -32,6 +31,7 @@ FEATURES:
 * Hard drop trails
 * Faster start.
 * More clear path out of options.
+* Description of modes in option screen.
 
 //investigate
 * Multiple tentacles. - possibly if when reaching top they go into name table.
@@ -42,6 +42,7 @@ FEATURES:
 
 COMPLETE:
 
+* Non-Nintendo blocks. (not fun :()
 * Hard drop (up on d-pad).
 * Option screen.
 * Credits screen.
@@ -131,6 +132,7 @@ void main (void)
 
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
+	block_style = 1;
 
 	go_to_state(STATE_MENU);
 
@@ -204,8 +206,16 @@ void main (void)
 				{
 					switch (cur_option)
 					{
+
+					case 0: // Block style
+
+						if (block_style == 0)
+						{
+							++block_style;
+						}
+						break;
 					
-					case 0: // Attack style
+					case 1: // Attack style
 
 						//attack_style = (attack_style + 1) % ATTACK_NUM;
 
@@ -215,7 +225,7 @@ void main (void)
 						}
 						break;
 
-					case 1: // Music off/on
+					case 2: // Music off/on
 
 						//music_on = (music_on + 1) % 2;
 
@@ -246,8 +256,16 @@ void main (void)
 				{
 					switch (cur_option)
 					{
+
+					case 0: // Block style:
+						
+						if (block_style != 0)
+						{
+							--block_style;
+						}
+						break;						
 					
-					case 0: // Attack style
+					case 1: // Attack style
 						// if (attack_style == 0)
 						// {
 						// 	attack_style = ATTACK_NUM;
@@ -261,7 +279,7 @@ void main (void)
 
 						break;
 
-					case 1: // Music off/on
+					case 2: // Music off/on
 						// if (music_on == 0)
 						// {
 						// 	music_on = 2;
@@ -1095,7 +1113,15 @@ void spawn_new_cluster()
 		id = rand8() % NUM_CLUSTERS;
 	}
 	next_cluster.id = id;
-	memcpy(next_cluster.def, cluster_defs[id], 4 * 2);
+	if (block_style == BLOCK_STYLE_MODERN)
+	{
+		memcpy(next_cluster.def, cluster_defs_modern[id], 4 * 2);
+	}
+	else
+	{
+		memcpy(next_cluster.def, cluster_defs_classic[id], 4 * 2);
+	}
+	
 	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
@@ -1874,11 +1900,16 @@ void display_sound()
 
 void display_options()
 {
+	multi_vram_buffer_horz(block_style_strings[block_style], BLOCK_STYLE_STRING_LEN, get_ppu_addr(0,17<<3,17<<3));
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
 
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, (19 + ((1-cur_option)<<1))<<3));
-	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (19 + (cur_option<<1))<<3));
+	// NOTE: One redundant call.
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 17<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 19<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 21<<3));
+
+	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (17 + (cur_option<<1))<<3));
 }
 
 

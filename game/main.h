@@ -64,7 +64,7 @@ unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
 
-#define NUM_OPTIONS 2
+#define NUM_OPTIONS 3
 unsigned char cur_option;
 
 //const unsigned char text[] = "- PRESS START -";
@@ -75,6 +75,9 @@ unsigned char attack_style;
 unsigned char music_on;
 #define OFF_ON_STRING_LEN 4
 
+enum {BLOCK_STYLE_MODERN, BLOCK_STYLE_CLASSIC};
+unsigned char block_style;
+#define BLOCK_STYLE_STRING_LEN 7
 
 enum { STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_MENU;
@@ -103,6 +106,10 @@ unsigned char cur_level = 0;
     0 1 0 0
     0 0 0 0
 */
+
+
+// CLASSIC
+
 const unsigned int def_z_clust[4] = 
 { 
     0xc60,
@@ -160,8 +167,79 @@ const unsigned int def_L_rev_clust[4] =
     0x6440,
 };
 
+// MODERN
+
+const unsigned int def_elbow_clust[4] =
+{
+    0x4600,    
+    0x0640,    
+    0xc40,
+    0x4c00,
+};
+
+const unsigned int def_short_line_clust[4] =
+{
+    0xe0,
+    0x4440,
+    0xe0, // dupe.
+    0x4440 // dupe.
+};
+
+
+const unsigned int def_triangle_clust[4] =
+{
+    0x4a00,    
+    0x4240,    
+    0xa40,
+    0x4840,
+};
+
+const unsigned int def_Y_clust[4] =
+{
+    0x4c44,    
+    0x2f00,    
+    0x2232,
+    0xf4,
+};
+
+const unsigned int def_Y_rev_clust[4] =
+{
+    0x4644,    
+    0xf20,    
+    0x2262,
+    0x4f0,
+};
+
+const unsigned int def_cross_clust[4] =
+{
+    0x4e40,
+    0x4e40,
+    0x4e40,
+    0x4e40,
+};
+
+const unsigned int def_steps_clust[4] =
+{
+    0x4630,
+    0x364,
+    0xc62,
+    0x26c0,
+};
+
+
 #define NUM_CLUSTERS 7
-const unsigned int* cluster_defs [NUM_CLUSTERS] =
+const unsigned int* cluster_defs_modern [NUM_CLUSTERS] =
+{
+    def_cross_clust, // def_z_clust,
+    def_steps_clust, // def_z_rev_clust,
+    def_short_line_clust, // def_line_clust,
+    def_triangle_clust, // def_box_clust,
+    def_elbow_clust, // def_tee_clust,
+    def_Y_clust, // def_L_clust,
+    def_Y_rev_clust, // def_L_rev_clust,
+};
+
+const unsigned int* cluster_defs_classic [NUM_CLUSTERS] =
 {
     def_z_clust,
     def_z_rev_clust,
@@ -347,6 +425,11 @@ unsigned char off_on_string[2][OFF_ON_STRING_LEN] =
 {
     "OFF",
     "ON"
+};
+unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
+{
+    "MODERN",
+    "CLASSIC"
 };
 
 unsigned char text_push_start[] = { "PUSH START" };
