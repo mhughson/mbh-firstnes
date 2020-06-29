@@ -14,23 +14,31 @@
 
 FEATURES:
 
-* Sound on hit tentacle.
+//must have
+* Non-Nintendo blocks.
 * Option to return to main menu on game over.
-* Game over screen (polished).
-* Screen shake on hit.
+* Pal swap based on time of day/night.
 
+//should have
+* Store blocks.
+* Game over screen (polished).
+* Fast music when tentacle is maxed out.
+* Sound on hit tentacle.
+
+//nice to have
+* Screen shake on hit.
+* Score for Classic mode.
+* Option to turn of SFX.
+* Hard drop trails
+* Faster start.
+* More clear path out of options.
+
+//investigate
+* Multiple tentacles. - possibly if when reaching top they go into name table.
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
-* Pal swap based on time of day/night.
-* Score.
-* Multiple tentacles. - possibly if when reaching top they go into name table.
-* Fast music when tentacle is maxed out.
-* Hard drop trails
-* Store blocks.
+* Safe zone issues.
 
-* Moving tentacle:
- - stop moving at top - maybe a chance to move to name table, and start more attacks.
- - 
 
 COMPLETE:
 
@@ -44,21 +52,21 @@ COMPLETE:
 CUT:
 * Last chance move on hard drop (maybe optional).
 	* Feels weird. See commented out code in movement().
-
 --
 
 BUGS:
 
 * Sprites do not draw when transitioning between name tables.
-* Sprite flicker when blocks land.
 * Horz input has to be pressed again if line is cleared.
 * When hitting game over, final sprite switches.
+* Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
 
 COMPLETE:
 
 * Tentacles are not budgeted.
 * Graphical corruption on Game Over (rarely)
 * Hard drop puts blocks 1 tile too far (rarely).
+* Sprite flicker when blocks land.
 
 SCRIPT IDEAS:
 
@@ -121,7 +129,7 @@ void main (void)
 
 	//music_play(0);
 
-	attack_style = ATTACK_ON_LAND;
+	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
 
 	go_to_state(STATE_MENU);
