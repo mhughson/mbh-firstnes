@@ -182,8 +182,6 @@ void main (void)
 						music_stop();
 						sfx_play(SOUND_START, 0);
 
-						delay(4 * 0x18);
-
 						go_to_state(STATE_GAME);
 					}
 				}
@@ -1313,10 +1311,7 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_GAME:
 		{
-			if (music_on)
-			{
-				music_play(MUSIC_GAMEPLAY);
-			}
+
 
 			// This gets done in the main menu too.
 			if (prev_state == STATE_OVER)
@@ -1352,6 +1347,14 @@ void go_to_state(unsigned char new_state)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
+			}
+
+			// Do this at the end of the state change so that
+			// the up beat music doesn't kick in until after
+			// everything transitions in.
+			if (music_on)
+			{
+				music_play(MUSIC_GAMEPLAY);
 			}
 
 			break;
