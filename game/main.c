@@ -76,7 +76,7 @@ SCRIPT IDEAS:
 * TIME - Race to get as much done as possible before the Kraken attacks. Rewards fast play. Punishes overthinking.
 * CLASSIC - The traditional block dropping puzzle mechanics you know and love.
 
-* Story - 
+* Story -
 
 The Kraken cometh...
 
@@ -100,21 +100,21 @@ slow it down till morning, when surely help will arrive...
 
 */
 
-void main (void) 
+void main (void)
 {
 	ppu_off(); // screen off
-	
+
 	// load the palettes
-	pal_bg(palette_bg);
-	pal_spr(palette_sp);
-	
+	//pal_bg(palette_bg);
+	//pal_spr(palette_sp);
+
 	// use the second set of tiles for sprites
 	// both bg and sprites are set to 0 by default
 	bank_spr(1);
 
 	set_vram_buffer(); // do at least once, sets a pointer to a buffer
 	clear_vram_buffer();
-	
+
 	// TODO: This is actually the gameplay setup.
 	off_nt = 0;
 	cur_nt = 2;
@@ -123,10 +123,10 @@ void main (void)
 	vram_unrle(title_screen);
 	vram_adr(NTADR_C(0,0));
 	vram_unrle(game_area);
-	
+
 	scroll(0, 0x1df); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
-	
+
 	ppu_on_all(); // turn on screen
 
 	//music_play(0);
@@ -147,17 +147,17 @@ void main (void)
 
 		++tick_count;
 		++tick_count_large;
-		
+
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
-		
+
 		clear_vram_buffer(); // do at the beginning of each frame
 
 		switch(state)
 		{
 			case STATE_MENU:
 			{
-				draw_menu_sprites();			
+				draw_menu_sprites();
 
 				if (tick_count % 128 == 0)
 				{
@@ -216,7 +216,7 @@ void main (void)
 							++block_style;
 						}
 						break;
-					
+
 					case 1: // Attack style
 
 						//attack_style = (attack_style + 1) % ATTACK_NUM;
@@ -260,13 +260,13 @@ void main (void)
 					{
 
 					case 0: // Block style:
-						
+
 						if (block_style != 0)
 						{
 							--block_style;
 						}
-						break;						
-					
+						break;
+
 					case 1: // Attack style
 						// if (attack_style == 0)
 						// {
@@ -344,7 +344,7 @@ PROFILE_POKE(0x5f); // green
 				{
 					// TODO: Perf - Very expensive.
 					add_block_at_bottom();
-					
+
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
 					attack_queue_ticks_remaining = attack_delay;
@@ -403,7 +403,7 @@ PROFILE_POKE(0x1e); // white
 				// {
 				// 	oam_clear();
 				// }
-				
+
 
 				if (pad1_new & PAD_START)
 				{
@@ -457,7 +457,7 @@ PROFILE_POKE(0x1e); // white
 					}
 				}
 
-				
+
 				// SOUND
 				//
 
@@ -622,20 +622,20 @@ void draw_gameplay_sprites(void)
 					if (local_iy == local_row_status - 1)
 					{
 					oam_spr(
-						BOARD_START_X_PX + (local_ix << 3) + shake_offset, 
+						BOARD_START_X_PX + (local_ix << 3) + shake_offset,
 						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-						0xf9, 
+						0xf9,
 						1);
 					}
 					else
 					{
 					oam_spr(
-						BOARD_START_X_PX + (local_ix << 3) + shake_offset, 
+						BOARD_START_X_PX + (local_ix << 3) + shake_offset,
 						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-						0xf8, 
+						0xf8,
 						1);
 					}
-					
+
 				}
 			}
 		}
@@ -658,7 +658,7 @@ void draw_gameplay_sprites(void)
 		// //temp_pal[5] = 0x15;
 		// temp_pal[6] = 0x16;
 		// //temp_pal[7] = 0x16;
-		// pal_spr(temp_pal);		
+		// pal_spr(temp_pal);
 
 		// memcpy(temp_pal, palette_bg, sizeof(palette_bg));
 		// // blocks
@@ -666,7 +666,7 @@ void draw_gameplay_sprites(void)
 		// //temp_pal[13] = 0x15;
 		// temp_pal[14] = 0x16;
 		// //temp_pal[15] = 0x16;
-		// pal_bg(temp_pal);		
+		// pal_bg(temp_pal);
 	}
 	// BLINKING
 	else
@@ -739,18 +739,31 @@ void movement(void)
 	if (pad1_new & PAD_SELECT)
 	{
 		//hit_reaction_remaining = 60;
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
-		// inc_lines_cleared();
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
+		//  inc_lines_cleared();
+		//  delay(1);
 		// inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
+
+
+
+
 		attack_queued = 1;
 	}
 
@@ -785,7 +798,7 @@ void movement(void)
 		// {
 		// 	cur_block.x = BOARD_END_X_PX_BOARD;
 		// }
-		
+
 	}
 	else if (((pad1 & PAD_LEFT) && horz_button_delay == 0) || pad1_new & PAD_LEFT)
 	{
@@ -804,7 +817,7 @@ void movement(void)
 		// {
 		// 	cur_block.x = 0;
 		// }
-		
+
 	}
 
 	// Only check for collision if we actually moved horz.
@@ -865,8 +878,8 @@ void movement(void)
 	}
 
 	hit = 0;
-	
-PROFILE_POKE(0x3f); //red	
+
+PROFILE_POKE(0x3f); //red
 	// Offset from the bottom.
 	if (is_cluster_colliding())
 	{
@@ -882,13 +895,13 @@ PROFILE_POKE(0x3f); //red
 
 	if (hit)
 	{
-PROFILE_POKE(0x5f); //green	
+PROFILE_POKE(0x5f); //green
 		put_cur_cluster();
-PROFILE_POKE(0x9f); //blue	
+PROFILE_POKE(0x9f); //blue
 		// Spawn a new block.
 		spawn_new_cluster();
 	}
-PROFILE_POKE(0x1e); //none	
+PROFILE_POKE(0x1e); //none
 }
 
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
@@ -910,7 +923,7 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 	one_vram_buffer(in_id, address);
 
 	// TODO: Is this too slow?
-	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;	
+	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;
 }
 
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
@@ -924,7 +937,7 @@ void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned c
 
 	address = get_ppu_addr(nt, (x << 3) + BOARD_START_X_PX, (y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(id, address);
-	
+
 	game_board[TILE_TO_BOARD_INDEX(x,y)] = id;
 }
 
@@ -943,7 +956,7 @@ void put_cur_cluster()
 	static unsigned int bit;
 	static unsigned int res;
 
-PROFILE_POKE(0x5f); //green	
+PROFILE_POKE(0x5f); //green
 
 	max_y = 0;
 	min_y = 0xff; // max
@@ -951,9 +964,9 @@ PROFILE_POKE(0x5f); //green
 	ix = 0;
 	iy = 0;
 	for (bit = 0x8000; bit; bit >>= 1)
-	{		
+	{
 		res = cur_cluster.layout & bit;
-	
+
 		// solid bit.
 		if (res)
 		{
@@ -985,7 +998,7 @@ PROFILE_POKE(0x5f); //green
 		}
 	}
 
-PROFILE_POKE(0x9f); //blue	
+PROFILE_POKE(0x9f); //blue
 	sfx_play(SOUND_LAND, 0);
 
 	if (min_y <= BOARD_OOB_END)
@@ -995,7 +1008,7 @@ PROFILE_POKE(0x9f); //blue
 	}
 	else
 	{
-PROFILE_POKE(0x3f); //red		
+PROFILE_POKE(0x3f); //red
 		// hide the sprite while we work.
 		cur_block.y = 255;
 
@@ -1017,16 +1030,16 @@ PROFILE_POKE(0x3f); //red
 		oam_spr(0, 0, 0, 0);
 		oam_spr(0, 0, 0, 0);
 		oam_spr(0, 0, 0, 0);
-PROFILE_POKE(0x9f); //blue	
+PROFILE_POKE(0x9f); //blue
 		if (attack_style == ATTACK_ON_LAND)
 		{
 			attack_queued = 1;
 		}
-		
+
 		clear_rows_in_data(max_y);
-		
+
 	}
-PROFILE_POKE(0x3f); //green	
+PROFILE_POKE(0x3f); //green
 }
 
 unsigned char is_block_free(unsigned char x, unsigned char y)
@@ -1053,11 +1066,11 @@ unsigned char is_cluster_colliding()
 	ix = 0;
 	iy = 0;
 	for (bit = 0x8000; bit; bit >>= 1)
-	{	
+	{
 		// solid bit.
 		if (cur_cluster.layout & bit)
 		{
-			
+
 			x = cur_block.x + ix;
 			y = cur_block.y + iy;
 
@@ -1069,7 +1082,7 @@ unsigned char is_cluster_colliding()
 
 			//return get_block(x, y) == 0;
 			if(game_board[TILE_TO_BOARD_INDEX(x,y)])
-			{ 
+			{
 				return 1;
 			}
 		}
@@ -1080,15 +1093,15 @@ unsigned char is_cluster_colliding()
 			ix = 0;
 			++iy;
 		}
-	}	
+	}
 
 	return 0;
 }
 
 void spawn_new_cluster()
-{	
+{
 	id = 0;
-	
+
 	require_new_down_button = 1;
 	fall_frame_counter = 0;
 
@@ -1129,7 +1142,7 @@ void spawn_new_cluster()
 	{
 		memcpy(next_cluster.def, cluster_defs_classic[id], 4 * 2);
 	}
-	
+
 	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
@@ -1155,7 +1168,7 @@ void rotate_cur_cluster(char dir)
 	{
 		sfx_play(SOUND_ROTATE, 0);
 	}
-	
+
 }
 
 void go_to_state(unsigned char new_state)
@@ -1181,7 +1194,7 @@ void go_to_state(unsigned char new_state)
 			pal_bright(4);
 			break;
 		}
-	
+
 	default:
 		break;
 	}
@@ -1193,6 +1206,7 @@ void go_to_state(unsigned char new_state)
 		case STATE_MENU:
 		{
 			scroll_y = 0;
+			time_of_day = 0;
 
 			if (prev_state == STATE_OPTIONS)
 			{
@@ -1223,7 +1237,7 @@ void go_to_state(unsigned char new_state)
 					fade_from_black();
 				}
 			}
-			
+
 			break;
 		}
 
@@ -1284,13 +1298,13 @@ void go_to_state(unsigned char new_state)
 			vram_write("UP/DOWN", sizeof("UP/DOWN")-1); // -1 null term
 
 			vram_adr(NTADR_A(24-(sizeof("LEFT/RIGHT")>>1),i));
-			vram_write("LEFT/RIGHT", sizeof("LEFT/RIGHT")-1); // -1 null term			
+			vram_write("LEFT/RIGHT", sizeof("LEFT/RIGHT")-1); // -1 null term
 
 			ppu_on_all(); // turn on screen
 
 			test_song = test_sound = 0;
 			test_song_active = 0xff;
-			
+
 			display_song();
 			display_sound();
 
@@ -1314,7 +1328,7 @@ void go_to_state(unsigned char new_state)
 			{
 				oam_clear();
 
-				while (scroll_y < 240)				
+				while (scroll_y < 240)
 				{
 					scroll(0, scroll_y);
 					delay(1);
@@ -1417,6 +1431,7 @@ void inc_lines_cleared()
 
 		fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
+/*
 		memcpy(temp_pal, palette_bg, sizeof(palette_bg));
 		pal_id = (cur_level % 10) << 1; // array is pairs of 2
 		// blocks
@@ -1434,8 +1449,30 @@ void inc_lines_cleared()
 		// flag bg
 		temp_pal[10] = pal_changes[pal_id + 1];
 		//temp_pal[14] = pal_changes[pal_id + 1];
-		pal_spr(temp_pal);		
-		
+		pal_spr(temp_pal);
+*/
+
+		++time_of_day;
+		if (time_of_day >= NUM_TIMES_OF_DAY)
+		{
+			time_of_day = 0;
+		}
+
+		pal_bg(palette_bg_list[time_of_day]);
+
+		// TODO: Use pal_col()
+		memcpy(temp_pal, palette_sp, sizeof(palette_sp));
+		// blocks
+		temp_pal[1] = palette_bg_list[time_of_day][1];
+		temp_pal[2] = palette_bg_list[time_of_day][2];
+		// kraken
+		temp_pal[6] = palette_bg_list[time_of_day][14];
+		temp_pal[7] = palette_bg_list[time_of_day][15];
+		// flag bg
+		temp_pal[10] = palette_bg_list[time_of_day][2];
+		//temp_pal[14] = pal_changes[pal_id + 1];
+		pal_spr(temp_pal);
+
 #if DEBUG_ENABLED
 		//debug_display_number(fall_rate, 0);
 #endif //DEBUG_ENABLED
@@ -1493,7 +1530,7 @@ void clear_rows_in_data(unsigned char start_y)
 	static unsigned char line_complete;
 	static unsigned char i;
 	static unsigned char prev_level;
-PROFILE_POKE(0x9f); //blue	
+PROFILE_POKE(0x9f); //blue
 	i = 0;
 	prev_level = cur_level;
 
@@ -1573,7 +1610,7 @@ PROFILE_POKE(0x3f); //red
 		{
 			sfx_play(SOUND_ROW, 0);
 		}
-		
+
 		// potential hit reaction.
 		if (hit_reaction_remaining > 0)
 		{
@@ -1587,7 +1624,7 @@ PROFILE_POKE(0x1e); //none
 void reveal_empty_rows_to_nt()
 {
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
-	
+
 	// Start in the middle of th board, and reveal outwards:
 	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
 	static signed char ix;
@@ -1596,7 +1633,7 @@ void reveal_empty_rows_to_nt()
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 	delay(1);
-	clear_vram_buffer();	
+	clear_vram_buffer();
 
 	// Reveal from the center out.
 	for (ix = 4; ix >= 0; --ix)
@@ -1610,14 +1647,14 @@ void reveal_empty_rows_to_nt()
 		}
 
 		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
+			copy_board_data,
+			BOARD_HEIGHT,
 			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + (ix << 3), 
+				cur_nt,
+				BOARD_START_X_PX + (ix << 3),
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
-		
+
 		// RIGHT SIDE
 
 
@@ -1627,16 +1664,16 @@ void reveal_empty_rows_to_nt()
 		}
 
 		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
+			copy_board_data,
+			BOARD_HEIGHT,
 			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3), 
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));				
+				cur_nt,
+				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3),
+				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// Reveal these 2 new columns, and then move to the next one.
 		delay(5);
-		clear_vram_buffer();				
+		clear_vram_buffer();
 	}
 
 	// Move on to the next phase...
@@ -1665,9 +1702,9 @@ void try_collapse_empty_row_data(void)
 				--attack_row_status[ix];
 				delay(1);
 				draw_gameplay_sprites();
-				clear_vram_buffer();	
+				clear_vram_buffer();
 			}
-			
+
 		}
 	}
 
@@ -1722,11 +1759,11 @@ void copy_board_to_nt()
 		}
 
 		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
+			copy_board_data,
+			BOARD_HEIGHT,
 			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + (ix << 3), 
+				cur_nt,
+				BOARD_START_X_PX + (ix << 3),
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
@@ -1737,7 +1774,7 @@ void copy_board_to_nt()
 			//draw_gameplay_sprites();
 PROFILE_POKE(0x1e); //clear so we don't screw up the visualization.
 			delay(1);
-			clear_vram_buffer();				
+			clear_vram_buffer();
 		}
 	}
 }
@@ -1753,7 +1790,7 @@ void add_block_at_bottom()
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 	//delay(1);
-	//clear_vram_buffer();	
+	//clear_vram_buffer();
 
 	for (ix = 0; ix < BOARD_WIDTH; ++ix)
 	{
@@ -1811,9 +1848,10 @@ void reset_gameplay_area()
 	// Reset stats.
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
-	
+
 	// load the palettes
-	pal_bg(palette_bg);
+	time_of_day = 0;
+	pal_bg(palette_bg_list[time_of_day]);
 	pal_spr(palette_sp);
 
 	display_lines_cleared();
@@ -1845,7 +1883,7 @@ void display_song()
 
         temp = temp / 10;
 		++i;
-    }	
+    }
 }
 
 void display_sound()
@@ -1936,7 +1974,7 @@ void debug_draw_board_area(void)
 void debug_copy_board_data_to_nt(void)
 {
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
-	
+
 	static unsigned char ix;
 	static unsigned char iy;
 
@@ -1944,7 +1982,7 @@ void debug_copy_board_data_to_nt(void)
 	// of work in this function.
 
 	delay(1);
-	clear_vram_buffer();	
+	clear_vram_buffer();
 
 	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 	{
@@ -1955,18 +1993,18 @@ void debug_copy_board_data_to_nt(void)
 		}
 
 		multi_vram_buffer_vert(
-			copy_board_data, 
-			BOARD_HEIGHT, 
+			copy_board_data,
+			BOARD_HEIGHT,
 			get_ppu_addr(
-				cur_nt, 
-				BOARD_START_X_PX + (ix << 3), 
+				cur_nt,
+				BOARD_START_X_PX + (ix << 3),
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
 		if (ix % 4 == 0)
 		{
 			delay(1);
-			clear_vram_buffer();				
+			clear_vram_buffer();
 		}
 	}
 }
