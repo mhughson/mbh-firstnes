@@ -487,6 +487,8 @@ void copy_board_to_nt();
 
 void add_block_at_bottom();
 
+void reset_gameplay_area();
+
 void display_song();
 void display_sound();
 void display_options();

@@ -15,7 +15,6 @@
 FEATURES:
 
 //must have
-* Option to return to main menu on game over.
 * Pal swap based on time of day/night.
 
 //should have
@@ -38,10 +37,12 @@ FEATURES:
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
 * Safe zone issues.
+* Change flow to go through options on the way to gameplay state.
 
 
 COMPLETE:
 
+* Option to return to main menu on game over.
 * Non-Nintendo blocks. (not fun :()
 * Hard drop (up on d-pad).
 * Option screen.
@@ -133,6 +134,7 @@ void main (void)
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
 	block_style = 1;
+	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 
 	go_to_state(STATE_MENU);
 
@@ -412,8 +414,14 @@ PROFILE_POKE(0x1e); // white
 
 			case STATE_OVER:
 			{
-				if (pad1_new & PAD_START)
+				if (pad1_new & PAD_B)
 				{
+					//go_to_state(STATE_GAME);
+					go_to_state(STATE_MENU);
+				}
+				if (pad1_new & PAD_A)
+				{
+					//go_to_state(STATE_GAME);
 					go_to_state(STATE_GAME);
 				}
 				break;
@@ -1154,24 +1162,14 @@ void go_to_state(unsigned char new_state)
 {
 	static int address;
 	static unsigned char i;
-	static unsigned char fade_from_bright;
 	static unsigned char fade_delay;
 	static unsigned char prev_state;
 
-	fade_from_bright = 0;
 	fade_delay = 5;
 	prev_state = state;
 
 	switch (state)
 	{
-		case STATE_OVER:
-		{
-			// We would have faded up to white entering game over, so now
-			// we need to fade back down.
-			fade_from_bright = 1;
-			break;
-		}
-
 		case STATE_OPTIONS:
 		{
 			pal_bg(palette_bg);
@@ -1194,6 +1192,8 @@ void go_to_state(unsigned char new_state)
 	{
 		case STATE_MENU:
 		{
+			scroll_y = 0;
+
 			if (prev_state == STATE_OPTIONS)
 			{
 				oam_clear();
@@ -1205,9 +1205,22 @@ void go_to_state(unsigned char new_state)
 			}
 			else
 			{
+				if (prev_state == STATE_OVER)
+				{
+					fade_to_black();
+				}
+
+				reset_gameplay_area();
+
+				scroll(0, 0x1df); // shift the bg down 1 pixel
 				if (music_on)
 				{
 					music_play(MUSIC_TITLE);
+				}
+
+				if (prev_state == STATE_OVER)
+				{
+					fade_from_black();
 				}
 			}
 			
@@ -1291,69 +1304,16 @@ void go_to_state(unsigned char new_state)
 				music_play(MUSIC_GAMEPLAY);
 			}
 
+			// This gets done in the main menu too.
+			if (prev_state == STATE_OVER)
+			{
+				reset_gameplay_area();
+			}
+
 			if (prev_state != STATE_PAUSE)
 			{
-				//ppu_off(); // screen off
-
-				// clear the nametable and attributes.
-				//vram_adr(NTADR_A(0,0));
-				//vram_fill(0, NAMETABLE_SIZE);
-				//vram_adr(NTADR_A(0,0));
-				//vram_unrle(game_area);
-
-				// TODO: Use get_ppu functions with nt id.
-				//vram_adr(NTADR_C(0,0));
-				//vram_unrle(game_area);
-
-				//ppu_on_all(); // turn on screen
-
-				// for (iy = 0; iy <= BOARD_END_Y_PX_BOARD; ++iy)
-				// {
-				// 	vram_adr(NTADR_A(BOARD_START_X_PX >> 3, (BOARD_START_Y_PX >> 3) + iy));
-				// 	vram_fill(0, 10);
-				// }
-
-				memfill(game_board, 0, BOARD_SIZE);
-
-				// Reset stats.
-				lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
-				fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
-				
-				// load the palettes
-				pal_bg(palette_bg);
-				pal_spr(palette_sp);
-
-				//cur_level = 99;
-				//fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
-
-				// shift up 1
-				//scroll(0, 255 - 16);
-
-				display_lines_cleared();
-				display_level();
-#if DEBUG_ENABLED
-				// leave a spot open.
-				// for (i=0; i < BOARD_END_X_PX_BOARD; ++i)
-				// {
-				// 	set_block(i, BOARD_END_Y_PX_BOARD, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 1, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 2, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 3, 1);
-				// 	delay(1);
-				// 	clear_vram_buffer();
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 4, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 5, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 6, 1);
-				// 	set_block(i, BOARD_END_Y_PX_BOARD - 7, 1);
-				// 	delay(1);
-				// 	clear_vram_buffer();
-				// }
-#endif //DEBUG_ENABLED
-				//debug_display_number(123, 0);
-				//debug_display_number(45, 1);
-				//debug_display_number(6, 2);
-
 				oam_clear();
+
 				while (scroll_y < 240)				
 				{
 					scroll(0, scroll_y);
@@ -1372,21 +1332,6 @@ void go_to_state(unsigned char new_state)
 				// where to start the attack!
 				i = rand8() % BOARD_WIDTH;
 				attack_row_status[i] = 1;
-
-				// Reset the ppu for gameover case.
-				copy_board_to_nt();
-
-				if (fade_from_bright)
-				{
-					pal_bright(7);
-					delay(fade_delay);
-					pal_bright(6);
-					delay(fade_delay);
-					pal_bright(5);
-					delay(fade_delay);
-					pal_bright(4);
-					delay(fade_delay);
-				}
 
 				require_new_down_button = 1;
 				if (attack_style == ATTACK_ON_TIME)
@@ -1430,14 +1375,18 @@ void go_to_state(unsigned char new_state)
 			pal_bright(8);
 			delay(fade_delay);
 
-			for (i = 0; i < 3; ++i)
-			{
-				address = get_ppu_addr(cur_nt, BOARD_START_X_PX, (14+i)<<3);
-				multi_vram_buffer_horz(empty_row, 10, address);
-			}
+			// for (i = 0; i < 3; ++i)
+			// {
+			// 	address = get_ppu_addr(cur_nt, BOARD_START_X_PX, (14+i)<<3);
+			// 	multi_vram_buffer_horz(empty_row, 10, address);
+			// }
 
+			address = get_ppu_addr(cur_nt, 96, 14<<3);
+			multi_vram_buffer_horz( "GAME OVER!", sizeof("GAME OVER!"), address);
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
-			multi_vram_buffer_horz("GAME OVER!", 10, address);
+			multi_vram_buffer_horz("A-RESTART ", sizeof("A-RESTART "), address);
+			address = get_ppu_addr(cur_nt, 96, 16<<3);
+			multi_vram_buffer_horz("B-QUIT    ", sizeof("B-QUIT    "), address);
 			pal_bright(7);
 			delay(fade_delay);
 			pal_bright(6);
@@ -1755,7 +1704,11 @@ void copy_board_to_nt()
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 
-	draw_gameplay_sprites();
+	// This also gets called when going back to the main menu.
+	if (state == STATE_GAME)
+	{
+		draw_gameplay_sprites();
+	}
 	//delay(1);
 	//clear_vram_buffer();
 	//return;
@@ -1848,6 +1801,27 @@ void add_block_at_bottom()
 	}
 
 	// TODO: Only if changed above.
+	copy_board_to_nt();
+}
+
+void reset_gameplay_area()
+{
+	memfill(game_board, 0, BOARD_SIZE);
+
+	// Reset stats.
+	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
+	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+	
+	// load the palettes
+	pal_bg(palette_bg);
+	pal_spr(palette_sp);
+
+	display_lines_cleared();
+	display_level();
+
+	oam_clear();
+
+	// Reset the ppu for gameover case.
 	copy_board_to_nt();
 }
 
