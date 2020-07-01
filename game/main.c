@@ -755,7 +755,7 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		// inc_lines_cleared();
+		//inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
