@@ -15,12 +15,13 @@
 FEATURES:
 
 //must have
+* Better lock delay (consistent).
 
 //should have
-* Store blocks.
 * Game over screen (polished).
 * Fast music when tentacle is maxed out.
 * Sound on hit tentacle.
+* Store blocks. (classic only?)
 
 //nice to have
 * Screen shake on hit.
@@ -30,9 +31,10 @@ FEATURES:
 * Faster start.
 * More clear path out of options.
 * Description of modes in option screen.
+* Update to use NES block layouts.
+* Update to have all blocks start face down.
 
 //investigate
-* Multiple tentacles. - possibly if when reaching top they go into name table.
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
 * Safe zone issues.
@@ -40,6 +42,7 @@ FEATURES:
 
 
 COMPLETE:
+* Multiple tentacles. - possibly if when reaching top they go into name table.
 * Pal swap based on time of day/night.
 * Option to return to main menu on game over.
 * Non-Nintendo blocks. (not fun :()
@@ -1424,8 +1427,6 @@ void go_to_state(unsigned char new_state)
 
 void inc_lines_cleared()
 {
-	static unsigned char pal_id;
-
 	++lines_cleared_one;
 
 	if (lines_cleared_one == 10)
@@ -1494,9 +1495,9 @@ void inc_lines_cleared()
 
 void display_lines_cleared()
 {
-	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,3<<3,2<<3));
-	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,4<<3,2<<3));
-	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,5<<3,2<<3));
+	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,3<<3,3<<3));
+	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,4<<3,3<<3));
+	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,5<<3,3<<3));
 }
 
 void display_level()
@@ -1511,13 +1512,13 @@ void display_level()
 
 	if (cur_level < 100)
 	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,28<<3,2<<3));
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,28<<3,3<<3));
 	}
 
 	while(temp_level != 0)
     {
         unsigned char digit = temp_level % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (30<<3) - (i << 3), 2<<3 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (30<<3) - (i << 3), 3<<3 ));
 
         temp_level = temp_level / 10;
 		++i;
