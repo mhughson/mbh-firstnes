@@ -16,6 +16,7 @@ FEATURES:
 
 //must have
 * Better lock delay (consistent).
+* Wall kicks
 
 //should have
 * Game over screen (polished).
@@ -1161,14 +1162,31 @@ void rotate_cur_cluster(char dir)
 	// if after rotating, we are now colliding we something, revert the rotation.
 	if (is_cluster_colliding())
 	{
-		cur_rot = old_rot;
-		cur_cluster.layout = cur_cluster.def[cur_rot];
-		sfx_play(SOUND_BLOCKED, 0);
+		++cur_block.x;
+		if (is_cluster_colliding())
+		{
+			cur_block.x -= 2;
+			if (is_cluster_colliding())
+			{
+				// Special case for line piece :(
+				// TODO: May be to change side that gets checked, after updating block layouts.
+				--cur_block.x;
+				if (is_cluster_colliding())
+				{
+					// Officially no where to go. Revert back to original position
+					// and rotation, and play a whaa-whaa sound.
+					cur_block.x += 2;
+					cur_rot = old_rot;
+					cur_cluster.layout = cur_cluster.def[cur_rot];
+					sfx_play(SOUND_BLOCKED, 0);
+					return;
+				}
+			}
+		}
 	}
-	else
-	{
-		sfx_play(SOUND_ROTATE, 0);
-	}
+
+
+	sfx_play(SOUND_ROTATE, 0);
 
 }
 
@@ -1469,6 +1487,7 @@ void inc_lines_cleared()
 		// blocks
 		temp_pal[1] = palette_bg_list[time_of_day][1];
 		temp_pal[2] = palette_bg_list[time_of_day][2];
+		temp_pal[3] = palette_bg_list[time_of_day][3];
 		// kraken
 		temp_pal[6] = palette_bg_list[time_of_day][14];
 		temp_pal[7] = palette_bg_list[time_of_day][15];
