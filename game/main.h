@@ -318,7 +318,9 @@ unsigned char attack_queued;
 
 char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 
-
+#define NUM_GARBAGE_TYPES 3
+unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+unsigned char cur_garbage_type;
 
 
 

@@ -15,7 +15,6 @@
 FEATURES:
 
 //must have
-* Pal swap based on time of day/night.
 
 //should have
 * Store blocks.
@@ -41,7 +40,7 @@ FEATURES:
 
 
 COMPLETE:
-
+* Pal swap based on time of day/night.
 * Option to return to main menu on game over.
 * Non-Nintendo blocks. (not fun :()
 * Hard drop (up on d-pad).
@@ -135,6 +134,7 @@ void main (void)
 	music_on = 1;
 	block_style = 1;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
+	cur_garbage_type = 0;
 
 	go_to_state(STATE_MENU);
 
@@ -1787,6 +1787,7 @@ void add_block_at_bottom()
 	static signed char ix;
 	static unsigned char iy;
 	static unsigned char attacks;
+	//static unsigned char tentacle_fill[7];
 
 	attacks = 0;
 
@@ -1801,8 +1802,21 @@ void add_block_at_bottom()
 		{
 			if (attack_row_status[ix] >= ATTACK_MAX)
 			{
-				// fake an attack so that we don't try to create a new tentacle.
-				++attacks;
+				// This attack has maxed out, so remove it from the board (animated).
+				while (attack_row_status[ix] > 0)
+				{
+					//hit_reaction_remaining = 60;
+					--attack_row_status[ix];
+					delay(2);
+					draw_gameplay_sprites();
+					clear_vram_buffer();
+				}
+
+				// Assuming there is only one attack at a time, we can
+				// now exit this loop, and go to the part where it starts
+				// the next attack.
+				// Note: This assumes that the nametable does not need to
+				//		 be updated, since it gets updated as it goes.
 				break;
 			}
 			++attacks;
@@ -1825,8 +1839,12 @@ void add_block_at_bottom()
 					}
 				}
 
-				game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = 0xf7; //(attack_row_status[ix] == (ATTACK_QUEUE_SIZE + 1)) ? 0xf9 : 0xf8;
-
+				game_board[TILE_TO_BOARD_INDEX(ix, BOARD_END_Y_PX_BOARD)] = garbage_types[cur_garbage_type]; //     0x60; //0xf7; //(attack_row_status[ix] == (ATTACK_QUEUE_SIZE + 1)) ? 0xf9 : 0xf8;
+				++cur_garbage_type;
+				if (cur_garbage_type >= NUM_GARBAGE_TYPES)
+				{
+					cur_garbage_type = 0;
+				}
 				// stay at 1 larger than the queue size to avoid overrun.
 				//attack_row_status[ix] = ATTACK_QUEUE_SIZE + 1;
 			}
