@@ -1,9 +1,9 @@
 /** (C) Matt Hughson 2020 */
 
-#define DEBUG_ENABLED 0
+#define DEBUG_ENABLED 1
 
 #if DEBUG_ENABLED
-#define PROFILE_POKE(val) POKE((0x2001),(val));
+#define PROFILE_POKE(val) //POKE((0x2001),(val));
 #else
 #define PROFILE_POKE(val)
 #endif
@@ -321,6 +321,11 @@ char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 #define NUM_GARBAGE_TYPES 3
 unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
 unsigned char cur_garbage_type;
+
+#define DELAY_LOCK_LEN 20
+signed char delay_lock_remaining;
+unsigned char delay_lock_skip;
+
 
 
 

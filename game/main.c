@@ -41,6 +41,11 @@ FEATURES:
 * Safe zone issues.
 * Change flow to go through options on the way to gameplay state.
 
+//sound
+* Kraken hit.
+* Kraken hitx4
+* landing should be louder
+
 
 COMPLETE:
 * Multiple tentacles. - possibly if when reaching top they go into name table.
@@ -342,7 +347,7 @@ void main (void)
 
 PROFILE_POKE(0x5f); // green
 				// delay a frame for perf.
-				if (attack_queued)
+				if (attack_style != ATTACK_NEVER && attack_queued)
 				{
 					// TODO: Perf - Very expensive.
 					add_block_at_bottom();
@@ -735,6 +740,7 @@ void movement(void)
 	hit = 0;
 	temp_fall_rate = 0;
 	old_x = 0;
+	delay_lock_skip = 0;
 
 	++fall_frame_counter;
 
@@ -851,6 +857,9 @@ void movement(void)
 			++cur_block.y;
 		}
 
+		// No delay lock on hard drops.
+		delay_lock_skip = 1;
+
 		// UNCOMMENT FOR LAST CHANCE MOVE ON HARD DROP
 		// cur_block.y -= 1;
 		// fall_frame_counter = 1;
@@ -860,8 +869,13 @@ void movement(void)
 		// Hard drop skips all this to avoid dropping to the bottom
 		// and then dropping again because it happens to be
 		// the natural fall frame.
-		if (pad1_new & PAD_DOWN)
+		if (pad1_new & PAD_DOWN || delay_lock_remaining != -1)
 		{
+			if (pad1_new & PAD_DOWN)
+			{
+				// if a new press was made this frame, skip the delay lock.
+				delay_lock_skip = 1;
+			}
 			require_new_down_button = 0;
 
 			// fall this frame.
@@ -879,21 +893,43 @@ void movement(void)
 		}
 	}
 
+	// If the fall_rate is greater than the delay lock, the player has already waited
+	// long enough and doesn't need a delay lock.
+	if (fall_rate > DELAY_LOCK_LEN)
+	{
+		delay_lock_skip = 1;
+	}
+
+	//debug_display_number(delay_lock_remaining,0);
+
 	hit = 0;
 
 PROFILE_POKE(0x3f); //red
 	// Offset from the bottom.
 	if (is_cluster_colliding())
 	{
+		if (delay_lock_remaining == -1)
+		{
+			delay_lock_remaining = DELAY_LOCK_LEN;
+		}
+		--delay_lock_remaining;
 
 		// Clamped to tile space, then multiplied back to pixel space
 		//cur_block.y = (cur_block.y >> 3) << 3;
 
 		// Move it above the collided tile.
 		cur_block.y -= 1;
-
-		hit = 1;
+		if (delay_lock_remaining == 0 || delay_lock_skip)
+		{
+			hit = 1;
+			delay_lock_remaining = -1;
+		}
 	}
+	else
+	{
+		delay_lock_remaining = -1;
+	}
+	
 
 	if (hit)
 	{
@@ -1103,6 +1139,8 @@ unsigned char is_cluster_colliding()
 void spawn_new_cluster()
 {
 	id = 0;
+
+	delay_lock_remaining = -1;
 
 	require_new_down_button = 1;
 	fall_frame_counter = 0;
@@ -1888,6 +1926,7 @@ void reset_gameplay_area()
 
 	// Reset stats.
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
+	//cur_level = 9;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
 	// load the palettes
