@@ -1,6 +1,6 @@
 /** (C) Matt Hughson 2020 */
 
-#define DEBUG_ENABLED 1
+#define DEBUG_ENABLED 0
 
 #if DEBUG_ENABLED
 #define PROFILE_POKE(val) //POKE((0x2001),(val));
@@ -79,8 +79,11 @@ enum {BLOCK_STYLE_MODERN, BLOCK_STYLE_CLASSIC};
 unsigned char block_style;
 #define BLOCK_STYLE_STRING_LEN 7
 
-enum { STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
-unsigned char state = STATE_MENU;
+unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+unsigned char saved_starting_level;
+
+enum { STATE_BOOT, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
+unsigned char state = STATE_BOOT;
 
 // The block operates in "logical space" from 0 -> w/h. The logical
 // space is converted to screen space at time of render (or ppu get).
@@ -314,6 +317,8 @@ enum
     SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP, SOUND_LEVELUP_MULTI, 
     SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG};
 
+unsigned char cur_gameplay_music;
+#define STRESS_MUSIC_LEVEL 7 // 5 blocks down from the out of bounds area
 unsigned char attack_queued;
 
 char tenatcle_offsets[4] = { -1, 0, 1, 0 };

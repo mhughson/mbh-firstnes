@@ -6,6 +6,7 @@
 #include "BG/game_area.h"
 #include "BG/title_screen.h"
 #include "BG/options_screen.h"
+#include "BG/boot_screen.h"
 #include "main.h"
 
 /*
@@ -15,31 +16,30 @@
 FEATURES:
 
 //must have
-* Better lock delay (consistent).
-* Wall kicks
 
 //should have
-* Game over screen (polished).
-* Fast music when tentacle is maxed out.
-* Sound on hit tentacle.
-* Store blocks. (classic only?)
 
 //nice to have
-* Screen shake on hit.
 * Score for Classic mode.
-* Option to turn of SFX.
-* Hard drop trails
-* Faster start.
-* More clear path out of options.
-* Description of modes in option screen.
+	* 1 lines:		2 lines:		3 lines:		4 lines:
+	* 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
+	* + 1 point for ever row soft/hard dropped over.
 * Update to use NES block layouts.
-* Update to have all blocks start face down.
+	* Update to have all blocks start face down.
+* Update mode order and names to be (will require more space):
+	* Kraken, Classic, Kraken Alt
+* Option to turn off SFX.
+* Options on the Pause screen (quit, music, sfx).
+* Screen shake on hit.
+* Store blocks. (classic only?)
+* Description of modes in option screen.
+* Hard drop trails
+* Game over screen (polished).
+* When on Level 29, display MAX instead.
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
-* Safe zone issues.
-* Change flow to go through options on the way to gameplay state.
 
 //sound
 * Kraken hit.
@@ -48,6 +48,19 @@ FEATURES:
 
 
 COMPLETE:
+* Clean up options:
+	* Remove credits. [done]
+	* Remove "block type". [done]
+	* Re-add tower. [cut]
+	* Starting level. [done]
+* Credits on boot.
+* More clear path out of options.
+	* Change flow to go through options on the way to gameplay state.
+* Safe zone issues.
+* Faster start.
+* Fast music when tentacle is maxed out.
+* Better lock delay (consistent).
+* Wall kicks
 * Multiple tentacles. - possibly if when reaching top they go into name table.
 * Pal swap based on time of day/night.
 * Option to return to main menu on game over.
@@ -62,17 +75,21 @@ COMPLETE:
 CUT:
 * Last chance move on hard drop (maybe optional).
 	* Feels weird. See commented out code in movement().
---
+* Sound on hit tentacle.
+	* Really need mutliple sounds for 4 line hit too.
+* Sound on drop and then lock.
+	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-
+* Music isn't playing on main menu.
+* At level 29, the blocks never trigger game over.
+* Hitch when tentacle retracts on hitting max (because of delays).
 * Sprites do not draw when transitioning between name tables.
 * Horz input has to be pressed again if line is cleared.
 * When hitting game over, final sprite switches.
-* Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
 
 COMPLETE:
-
+* Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
 * Tentacles are not budgeted.
 * Graphical corruption on Game Over (rarely)
 * Hard drop puts blocks 1 tile too far (rarely).
@@ -141,11 +158,13 @@ void main (void)
 
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
-	block_style = 1;
+	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
 
-	go_to_state(STATE_MENU);
+	pal_bright(0);
+	go_to_state(STATE_BOOT);
+	fade_from_black();
 
 	// infinite loop
 	while (1)
@@ -164,6 +183,16 @@ void main (void)
 
 		switch(state)
 		{
+			case STATE_BOOT:
+			{
+				if (tick_count == 120 || pad1_new & PAD_START)
+				{
+					fade_to_black();
+					go_to_state(STATE_MENU);
+					fade_from_black();
+				}
+				break;
+			}
 			case STATE_MENU:
 			{
 				draw_menu_sprites();
@@ -188,23 +217,45 @@ void main (void)
 					}
 					else
 					{
-						music_stop();
-						sfx_play(SOUND_START, 0);
-
-						go_to_state(STATE_GAME);
+						fade_to_black();
+						go_to_state(STATE_OPTIONS);
+						fade_from_black();
 					}
-				}
-				else if (pad1_new & PAD_SELECT)
-				{
-					fade_to_black();
-					go_to_state(STATE_OPTIONS);
-					fade_from_black();
 				}
 				break;
 			}
 
 			case STATE_OPTIONS:
 			{
+				if (tick_count % 128 == 0)
+				{
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+				}
+				else if (tick_count % 128 == 96)
+				{
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+				}
+
+				if (pad1_new & PAD_START)
+				{
+					music_stop();
+					sfx_play(SOUND_START, 0);
+
+					fade_to_black();
+					ppu_off();
+					vram_adr(NTADR_A(0,0));
+					vram_unrle(title_screen);
+					ppu_on_all();
+					fade_from_black();
+
+					// little cheap to start at very high levels.
+					if (pad1 & PAD_A)
+					{
+						cur_level += 10;
+					}
+					go_to_state(STATE_GAME);
+				}
+
 				if (pad1_new & PAD_B)
 				{
 					fade_to_black();
@@ -216,11 +267,15 @@ void main (void)
 					switch (cur_option)
 					{
 
-					case 0: // Block style
+					case 0: // starting level
 
-						if (block_style == 0)
+						if (cur_level < 9 )
 						{
-							++block_style;
+							++cur_level;
+						}
+						else 
+						{
+							cur_level = 0;
 						}
 						break;
 
@@ -242,6 +297,7 @@ void main (void)
 						{
 							music_on = 1;
 							music_play(MUSIC_TITLE);
+							music_pause(0);
 						}
 
 						// if (music_on == 0)
@@ -266,11 +322,15 @@ void main (void)
 					switch (cur_option)
 					{
 
-					case 0: // Block style:
+					case 0: // starting level
 
-						if (block_style != 0)
+						if (cur_level != 0)
 						{
-							--block_style;
+							--cur_level;
+						}
+						else
+						{
+							cur_level = 9;
 						}
 						break;
 
@@ -298,6 +358,7 @@ void main (void)
 						if (music_on != 0)
 						{
 							music_on = 0;
+							music_pause(1);
 							music_stop();
 						}
 
@@ -371,6 +432,31 @@ PROFILE_POKE(0x1f); // white
 						attack_queued = 1;
 						attack_queue_ticks_remaining = attack_delay;
 					}
+				}
+
+				// STRESS MUSIC!
+
+				local_t = 0;
+				for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
+				{
+					if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
+					{
+						// music is stressed even if it doesn't start playing this frame.
+						local_t = 1;
+
+						if (cur_gameplay_music == MUSIC_GAMEPLAY)
+						{
+							cur_gameplay_music = MUSIC_STRESS;
+							music_play(MUSIC_STRESS);
+							break;
+						}
+					}
+				}
+
+				if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
+				{
+					cur_gameplay_music = MUSIC_GAMEPLAY;
+					music_play(MUSIC_GAMEPLAY);
 				}
 
 				if (pad1_new & PAD_START)
@@ -737,6 +823,11 @@ void draw_gameplay_sprites(void)
 
 void movement(void)
 {
+	// static unsigned char ix;
+	// static unsigned char iy;
+	// static unsigned int bit;
+	// static unsigned int res;
+
 	hit = 0;
 	temp_fall_rate = 0;
 	old_x = 0;
@@ -765,6 +856,7 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
+		//lines_cleared_one = 9;
 		//inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
@@ -854,7 +946,35 @@ void movement(void)
 		// TODO: Causes hitch.
 		while (!is_cluster_colliding())
 		{
+			
+			// ix = 0;
+			// iy = 0;
+			// for (bit = 0x8000; bit; bit >>= 1)
+			// {
+			// 	res = cur_cluster.layout & bit;
+
+			// 	// solid bit.
+			// 	if (res)
+			// 	{
+
+			// 		in_x = cur_block.x + ix;
+			// 		in_y = cur_block.y + iy;
+			// 		in_id = 5; //cur_cluster.sprite;
+			// 		set_block( );
+			// 	}
+
+			// 	++ix;
+			// 	if (ix >= 4)
+			// 	{
+			// 		ix = 0;
+			// 		++iy;
+			// 	}
+			// }
+
 			++cur_block.y;
+
+			// delay(1);
+			// clear_vram_buffer();
 		}
 
 		// No delay lock on hard drops.
@@ -1074,6 +1194,12 @@ PROFILE_POKE(0x9f); //blue
 			attack_queued = 1;
 		}
 
+		// if (min_y <= (BOARD_OOB_END + STRESS_MUSIC_LEVEL) && cur_gameplay_music != MUSIC_STRESS)
+		// {
+		// 	cur_gameplay_music = MUSIC_STRESS;
+		// 	music_play(MUSIC_STRESS);
+		// }
+
 		clear_rows_in_data(max_y);
 
 	}
@@ -1119,7 +1245,7 @@ unsigned char is_cluster_colliding()
 			}
 
 			//return get_block(x, y) == 0;
-			if(game_board[TILE_TO_BOARD_INDEX(x,y)])
+			if(game_board[TILE_TO_BOARD_INDEX(x,y)]) // != 5 && game_board[TILE_TO_BOARD_INDEX(x,y)] != 0)
 			{
 				return 1;
 			}
@@ -1243,6 +1369,9 @@ void go_to_state(unsigned char new_state)
 		case STATE_OPTIONS:
 		{
 			pal_bg(palette_bg);
+			saved_starting_level = cur_level;
+			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+			display_level();
 			break;
 		}
 
@@ -1260,12 +1389,24 @@ void go_to_state(unsigned char new_state)
 
 	switch (state)
 	{
+		case STATE_BOOT:
+		{
+			pal_bg(palette_bg_options);
+			ppu_off();
+			vram_adr(NTADR_A(0,0));
+			vram_unrle(boot_screen);
+			ppu_on_all();
+
+			break;
+		}
 		case STATE_MENU:
 		{
+			pal_bg(palette_bg);
+			pal_spr(palette_sp);
 			scroll_y = 0;
 			time_of_day = 0;
 
-			if (prev_state == STATE_OPTIONS)
+			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT)
 			{
 				oam_clear();
 
@@ -1318,6 +1459,9 @@ void go_to_state(unsigned char new_state)
 
 			ppu_on_all();
 
+			// handle case where player used cheat to jump 10 levels, and then quit back
+			// to the main menu.
+			cur_level %= 10;
 			cur_option = 0;
 
 			display_options();
@@ -1413,6 +1557,7 @@ void go_to_state(unsigned char new_state)
 			// everything transitions in.
 			if (music_on)
 			{
+				cur_gameplay_music = MUSIC_GAMEPLAY;
 				music_play(MUSIC_GAMEPLAY);
 			}
 
@@ -1487,30 +1632,15 @@ void inc_lines_cleared()
 
 	if (lines_cleared_one == 10)
 	{
-		++cur_level;
-
-		fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
-
-/*
-		memcpy(temp_pal, palette_bg, sizeof(palette_bg));
-		pal_id = (cur_level % 10) << 1; // array is pairs of 2
-		// blocks
-		temp_pal[1] = pal_changes[pal_id];
-		temp_pal[2] = pal_changes[pal_id + 1];
-		// kraken
-		temp_pal[13] = pal_changes[pal_id];
-		//temp_pal[14] = pal_changes[pal_id + 1];
-		pal_bg(temp_pal);
-
-		memcpy(temp_pal, palette_sp, sizeof(palette_sp));
-		// blocks
-		temp_pal[1] = pal_changes[pal_id];
-		temp_pal[2] = pal_changes[pal_id + 1];
-		// flag bg
-		temp_pal[10] = pal_changes[pal_id + 1];
-		//temp_pal[14] = pal_changes[pal_id + 1];
-		pal_spr(temp_pal);
-*/
+		if (lines_cleared_hundred > 0 || cur_level <= lines_cleared_ten)
+		{
+			// we only handle things up to level 29.
+			if (cur_level < 29 )
+			{
+				++cur_level;
+				fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+			}
+		}
 
 		++time_of_day;
 		if (time_of_day >= NUM_TIMES_OF_DAY)
@@ -1534,9 +1664,6 @@ void inc_lines_cleared()
 		//temp_pal[14] = pal_changes[pal_id + 1];
 		pal_spr(temp_pal);
 
-#if DEBUG_ENABLED
-		//debug_display_number(fall_rate, 0);
-#endif //DEBUG_ENABLED
 		display_level();
 
 		lines_cleared_one = 0;
@@ -1817,6 +1944,11 @@ void copy_board_to_nt()
 		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+
+			// if (iy <= STRESS_MUSIC_LEVEL && copy_board_data[iy] != 0)
+			// {
+			// 	fast_music = 1;
+			// }
 		}
 
 		multi_vram_buffer_vert(
@@ -1838,6 +1970,17 @@ PROFILE_POKE(0x1e); //clear so we don't screw up the visualization.
 			clear_vram_buffer();
 		}
 	}
+
+	// if (fast_music && cur_gameplay_music != MUSIC_STRESS)
+	// {
+	// 	cur_gameplay_music = MUSIC_STRESS;
+	// 	music_play(MUSIC_STRESS);
+	// }
+	// else if (!fast_music && cur_gameplay_music != MUSIC_GAMEPLAY)
+	// {
+	// 	cur_gameplay_music = MUSIC_GAMEPLAY;
+	// 	music_play(MUSIC_GAMEPLAY);
+	// }
 }
 
 void add_block_at_bottom()
@@ -1925,8 +2068,8 @@ void reset_gameplay_area()
 	memfill(game_board, 0, BOARD_SIZE);
 
 	// Reset stats.
-	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_level = 0;
-	//cur_level = 9;
+	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = 0;
+	cur_level = saved_starting_level;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
 	// load the palettes
@@ -1992,7 +2135,7 @@ void display_sound()
 
 void display_options()
 {
-	multi_vram_buffer_horz(block_style_strings[block_style], BLOCK_STYLE_STRING_LEN, get_ppu_addr(0,17<<3,17<<3));
+	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,17<<3));
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
 
@@ -2008,25 +2151,25 @@ void display_options()
 void fade_to_black()
 {
 	pal_bright(3);
-	delay(1);
+	delay(2);
 	pal_bright(2);
-	delay(1);
+	delay(2);
 	pal_bright(1);
-	delay(1);
+	delay(2);
 	pal_bright(0);
-	delay(1);
+	delay(2);
 }
 
 void fade_from_black()
 {
 	pal_bright(1);
-	delay(1);
+	delay(2);
 	pal_bright(2);
-	delay(1);
+	delay(2);
 	pal_bright(3);
-	delay(1);
+	delay(2);
 	pal_bright(4);
-	delay(1);
+	delay(2);
 }
 
 // DEBUG
