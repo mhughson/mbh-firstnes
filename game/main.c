@@ -20,10 +20,6 @@ FEATURES:
 //should have
 
 //nice to have
-* Score for Classic mode.
-	* 1 lines:		2 lines:		3 lines:		4 lines:
-	* 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
-	* + 1 point for ever row soft/hard dropped over.
 * Update to use NES block layouts.
 	* Update to have all blocks start face down.
 * Update mode order and names to be (will require more space):
@@ -36,6 +32,7 @@ FEATURES:
 * Hard drop trails
 * Game over screen (polished).
 * When on Level 29, display MAX instead.
+* Points kicker
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
@@ -48,6 +45,10 @@ FEATURES:
 
 
 COMPLETE:
+* Score for Classic mode.
+	* 1 lines:		2 lines:		3 lines:		4 lines:
+	* 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
+	* + 1 point for ever row soft/hard dropped over. [cut]
 * Clean up options:
 	* Remove credits. [done]
 	* Remove "block type". [done]
@@ -81,7 +82,6 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-* Music isn't playing on main menu.
 * At level 29, the blocks never trigger game over.
 * Hitch when tentacle retracts on hitting max (because of delays).
 * Sprites do not draw when transitioning between name tables.
@@ -89,6 +89,7 @@ BUGS:
 * When hitting game over, final sprite switches.
 
 COMPLETE:
+* Music isn't playing on main menu.
 * Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
 * Tentacles are not budgeted.
 * Graphical corruption on Game Over (rarely)
@@ -734,6 +735,12 @@ void draw_gameplay_sprites(void)
 		}
 	}
 
+	// oam_spr((22)<<3, 8<<3, 0x21, 3);
+	// for (local_ix = 0; local_ix < 6; ++local_ix)
+	// {
+	// 	oam_spr((23+local_ix)<<3, 8<<3, '1' + local_ix, 3);
+	// }
+
 //PROFILE_POKE(0x3f); // red
 
 	// HIT REACTION
@@ -1366,12 +1373,18 @@ void go_to_state(unsigned char new_state)
 
 	switch (state)
 	{
+		case STATE_BOOT:
+		{
+			music_play(MUSIC_TITLE);
+			break;
+		}
 		case STATE_OPTIONS:
 		{
 			pal_bg(palette_bg);
 			saved_starting_level = cur_level;
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			display_level();
+			display_score();
 			break;
 		}
 
@@ -1679,9 +1692,30 @@ void inc_lines_cleared()
 
 void display_lines_cleared()
 {
-	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,3<<3,3<<3));
-	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,4<<3,3<<3));
-	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,5<<3,3<<3));
+	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,4<<3,3<<3));
+	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,5<<3,3<<3));
+	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,6<<3,3<<3));
+}
+
+void display_score()
+{
+	static unsigned long temp_score;
+	static unsigned char i;
+
+	temp_score = cur_score;
+
+	// clear out any old score.
+	multi_vram_buffer_horz("      ", 6, get_ppu_addr(cur_nt, 0, 6<<3));
+
+	i = 0;
+	while(temp_score != 0)
+    {
+        unsigned char digit = temp_score % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 6<<3 ));
+
+        temp_score = temp_score / 10;
+		++i;
+    }
 }
 
 void display_level()
@@ -1694,15 +1728,15 @@ void display_level()
 	temp_level = cur_level;
 	i = 0;
 
-	if (cur_level < 100)
+	if (cur_level < 10)
 	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(cur_nt,28<<3,3<<3));
+		multi_vram_buffer_horz("00", 2, get_ppu_addr(cur_nt,5<<3,9<<3));
 	}
 
 	while(temp_level != 0)
     {
         unsigned char digit = temp_level % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (30<<3) - (i << 3), 3<<3 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 9<<3 ));
 
         temp_level = temp_level / 10;
 		++i;
@@ -1718,6 +1752,7 @@ void clear_rows_in_data(unsigned char start_y)
 	static unsigned char line_complete;
 	static unsigned char i;
 	static unsigned char prev_level;
+	static unsigned int line_score_mod;
 PROFILE_POKE(0x9f); //blue
 	i = 0;
 	prev_level = cur_level;
@@ -1798,6 +1833,37 @@ PROFILE_POKE(0x3f); //red
 		{
 			sfx_play(SOUND_ROW, 0);
 		}
+
+		// 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
+		switch (i)
+		{
+			case 1:
+			{
+				line_score_mod = 40;
+				break;
+			}
+
+			case 2:
+			{
+				line_score_mod = 100;
+				break;
+			}
+
+			case 3:
+			{
+				line_score_mod = 300;
+				break;
+			}
+			
+			case 4:
+			default:
+			{
+				line_score_mod = 1200;
+				break;
+			}
+		}
+		cur_score += (line_score_mod * (cur_level + 1));
+		display_score();
 
 		// potential hit reaction.
 		if (hit_reaction_remaining > 0)
@@ -2068,7 +2134,7 @@ void reset_gameplay_area()
 	memfill(game_board, 0, BOARD_SIZE);
 
 	// Reset stats.
-	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = 0;
+	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_score = 0;
 	cur_level = saved_starting_level;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 
@@ -2078,6 +2144,7 @@ void reset_gameplay_area()
 	pal_spr(palette_sp);
 
 	display_lines_cleared();
+	display_score();
 	display_level();
 
 	oam_clear();
