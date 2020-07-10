@@ -20,16 +20,12 @@ FEATURES:
 //should have
 
 //nice to have
-* Update to use NES block layouts.
-	* Update to have all blocks start face down.
 * Update mode order and names to be (will require more space):
 	* Kraken, Classic, Kraken Alt
 * Option to turn off SFX.
 * Options on the Pause screen (quit, music, sfx).
-* Screen shake on hit.
 * Store blocks. (classic only?)
 * Description of modes in option screen.
-* Hard drop trails
 * Game over screen (polished).
 * When on Level 29, display MAX instead.
 * Points kicker
@@ -37,6 +33,8 @@ FEATURES:
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
 * See if tentacles can be made to work with name tables.
+* Screen shake on hit. (others say this is annoying)
+* Hard drop trails. (likely too much cpu)
 
 //sound
 * Kraken hit.
@@ -45,6 +43,8 @@ FEATURES:
 
 
 COMPLETE:
+* Update to use NES block layouts.
+	* Update to have all blocks start face down. (was just T block actually).
 * Score for Classic mode.
 	* 1 lines:		2 lines:		3 lines:		4 lines:
 	* 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
@@ -84,9 +84,9 @@ CUT:
 BUGS:
 * At level 29, the blocks never trigger game over.
 * Hitch when tentacle retracts on hitting max (because of delays).
-* Sprites do not draw when transitioning between name tables.
 * Horz input has to be pressed again if line is cleared.
 * When hitting game over, final sprite switches.
+* Sprites do not draw when transitioning between name tables.
 
 COMPLETE:
 * Music isn't playing on main menu.

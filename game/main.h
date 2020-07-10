@@ -111,7 +111,7 @@ unsigned char cur_level = 0;
 */
 
 
-// CLASSIC
+// CLASSIC RIGHT-HANDED (NES)
 
 const unsigned int def_z_clust[4] = 
 { 
@@ -125,17 +125,17 @@ const unsigned int def_z_clust[4] =
 const unsigned int def_z_rev_clust[4] = 
 { 
     0x6C0,
-    0x8C40,
+    0x462,
     0x6C0, // dupe.
-    0x8C40, // dupe.
+    0x462, // dupe.
 };
 
 const unsigned int def_line_clust[4] =
 {
     0xf0,
-    0x4444,
+    0x2222,
     0xf0, // dupe.
-    0x4444 // dupe.
+    0x2222 // dupe.
 };
 
 const unsigned int def_box_clust[4] =
@@ -148,10 +148,10 @@ const unsigned int def_box_clust[4] =
 
 const unsigned int def_tee_clust[4] =
 {
-    0x4e00,    
-    0x4640,    
-    0xe40,
-    0x4c40,
+    0xe40, // 1
+    0x4c40, //2
+    0x4e00, // 3    
+    0x4640, // 4
 };
 
 const unsigned int def_L_clust[4] =
@@ -163,6 +163,65 @@ const unsigned int def_L_clust[4] =
 };
 
 const unsigned int def_L_rev_clust[4] =
+{
+    0xe20,    
+    0x44c0,    
+    0x8e00,
+    0x6440,
+};
+
+// CLASSIC LEFT-HANDED (GB)
+
+const unsigned int def_z_clust_gb[4] = 
+{ 
+    0xc60,
+    0x264,
+    0xc60, // dupe.
+    0x264, // dupe.
+};
+
+
+const unsigned int def_z_rev_clust_gb[4] = 
+{ 
+    0x6C0,
+    0x8C40,
+    0x6C0, // dupe.
+    0x8C40, // dupe.
+};
+
+const unsigned int def_line_clust_gb[4] =
+{
+    0xf0,
+    0x4444,
+    0xf0, // dupe.
+    0x4444 // dupe.
+};
+
+const unsigned int def_box_clust_gb[4] =
+{
+    0x660,    
+    0x660,    
+    0x660,
+    0x660,
+};
+
+const unsigned int def_tee_clust_gb[4] =
+{
+    0xe40, // 1
+    0x4c40, //2
+    0x4e00, // 3    
+    0x4640, // 4
+};
+
+const unsigned int def_L_clust_gb[4] =
+{
+    0xe80,    
+    0xc440,    
+    0x2e00,
+    0x4460,
+};
+
+const unsigned int def_L_rev_clust_gb[4] =
 {
     0xe20,    
     0x44c0,    
@@ -231,6 +290,7 @@ const unsigned int def_steps_clust[4] =
 
 
 #define NUM_CLUSTERS 7
+// unused.
 const unsigned int* cluster_defs_modern [NUM_CLUSTERS] =
 {
     def_cross_clust, // def_z_clust,
@@ -251,6 +311,18 @@ const unsigned int* cluster_defs_classic [NUM_CLUSTERS] =
     def_tee_clust,
     def_L_clust,
     def_L_rev_clust,
+};
+
+// unused.
+const unsigned int* cluster_defs_classic_gb [NUM_CLUSTERS] =
+{
+    def_z_clust_gb,
+    def_z_rev_clust_gb,
+    def_line_clust_gb,
+    def_box_clust_gb,
+    def_tee_clust_gb,
+    def_L_clust_gb,
+    def_L_rev_clust_gb,
 };
 
 unsigned char cur_rot;
