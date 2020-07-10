@@ -20,15 +20,15 @@ FEATURES:
 //should have
 
 //nice to have
-* Update mode order and names to be (will require more space):
-	* Kraken, Classic, Kraken Alt
-* Option to turn off SFX.
 * Options on the Pause screen (quit, music, sfx).
 * Store blocks. (classic only?)
-* Description of modes in option screen.
+* Update mode order and names to be (will require more space):
+	* Kraken, Classic, Kraken Alt* Description of modes in option screen.
 * Game over screen (polished).
 * When on Level 29, display MAX instead.
 * Points kicker
+* Clean up sound test.
+* Trigger sound test on Konami Code.
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
@@ -43,6 +43,7 @@ FEATURES:
 
 
 COMPLETE:
+* Option to turn off SFX.
 * Update to use NES block layouts.
 	* Update to have all blocks start face down. (was just T block actually).
 * Score for Classic mode.
@@ -159,6 +160,7 @@ void main (void)
 
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
+	sfx_on = 1;
 	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
@@ -240,7 +242,7 @@ void main (void)
 				if (pad1_new & PAD_START)
 				{
 					music_stop();
-					sfx_play(SOUND_START, 0);
+					SFX_PLAY_WRAPPER(SOUND_START);
 
 					fade_to_black();
 					ppu_off();
@@ -297,7 +299,7 @@ void main (void)
 						if (music_on == 0)
 						{
 							music_on = 1;
-							music_play(MUSIC_TITLE);
+							MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 							music_pause(0);
 						}
 
@@ -311,11 +313,20 @@ void main (void)
 						// }
 						break;
 
+					case 3: // sound fx on/off
+					{
+						if (sfx_on == 0)
+						{
+							sfx_on = 1;
+						}
+						break;
+					}
+
 					default:
 						break;
 					}
 
-					sfx_play(SOUND_MENU_HIGH, 0);
+					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					display_options();
 				}
 				else if (pad1_new & PAD_LEFT)
@@ -374,17 +385,26 @@ void main (void)
 
 						break;
 
+					case 3: // sound fx off/on
+					{
+						if (sfx_on != 0)
+						{
+							sfx_on = 0;
+						}
+						break;
+					}
+
 					default:
 						break;
 					}
 
-					sfx_play(SOUND_MENU_LOW, 0);
+					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 					display_options();
 				}
 				else if (pad1_new & PAD_DOWN)
 				{
 					cur_option = (cur_option + 1) % NUM_OPTIONS;
-					sfx_play(SOUND_MENU_LOW, 0);
+					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 					display_options();
 				}
 				else if (pad1_new & PAD_UP)
@@ -394,7 +414,7 @@ void main (void)
 						cur_option = NUM_OPTIONS;
 					}
 					cur_option = (cur_option - 1) % NUM_OPTIONS;
-					sfx_play(SOUND_MENU_HIGH, 0);
+					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					display_options();
 				}
 				break;
@@ -448,7 +468,7 @@ PROFILE_POKE(0x1f); // white
 						if (cur_gameplay_music == MUSIC_GAMEPLAY)
 						{
 							cur_gameplay_music = MUSIC_STRESS;
-							music_play(MUSIC_STRESS);
+							MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
 							break;
 						}
 					}
@@ -457,7 +477,7 @@ PROFILE_POKE(0x1f); // white
 				if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
 				{
 					cur_gameplay_music = MUSIC_GAMEPLAY;
-					music_play(MUSIC_GAMEPLAY);
+					MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
 				}
 
 				if (pad1_new & PAD_START)
@@ -547,6 +567,7 @@ PROFILE_POKE(0x1e); // white
 					else
 					{
 						test_song_active = test_song;
+						// ignore settings.
 						music_play(test_song);
 					}
 				}
@@ -568,7 +589,7 @@ PROFILE_POKE(0x1e); // white
 
 				if (pad1_new & PAD_A)
 				{
-					//sfx_play(unsigned char sound,unsigned char channel);
+					// Intentionally not using wrapper so this plays regardless of settings.
 					sfx_play(test_sound, 0);
 				}
 				break;
@@ -1164,7 +1185,7 @@ PROFILE_POKE(0x5f); //green
 	}
 
 PROFILE_POKE(0x9f); //blue
-	sfx_play(SOUND_LAND, 0);
+	SFX_PLAY_WRAPPER(SOUND_LAND);
 
 	if (min_y <= BOARD_OOB_END)
 	{
@@ -1349,7 +1370,7 @@ void rotate_cur_cluster(char dir)
 					cur_block.x += 2;
 					cur_rot = old_rot;
 					cur_cluster.layout = cur_cluster.def[cur_rot];
-					sfx_play(SOUND_BLOCKED, 0);
+					SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 					return;
 				}
 			}
@@ -1357,7 +1378,7 @@ void rotate_cur_cluster(char dir)
 	}
 
 
-	sfx_play(SOUND_ROTATE, 0);
+	SFX_PLAY_WRAPPER(SOUND_ROTATE);
 
 }
 
@@ -1375,7 +1396,7 @@ void go_to_state(unsigned char new_state)
 	{
 		case STATE_BOOT:
 		{
-			music_play(MUSIC_TITLE);
+			MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 			break;
 		}
 		case STATE_OPTIONS:
@@ -1438,10 +1459,7 @@ void go_to_state(unsigned char new_state)
 				reset_gameplay_area();
 
 				scroll(0, 0x1df); // shift the bg down 1 pixel
-				if (music_on)
-				{
-					music_play(MUSIC_TITLE);
-				}
+				MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 
 				if (prev_state == STATE_OVER)
 				{
@@ -1568,11 +1586,8 @@ void go_to_state(unsigned char new_state)
 			// Do this at the end of the state change so that
 			// the up beat music doesn't kick in until after
 			// everything transitions in.
-			if (music_on)
-			{
-				cur_gameplay_music = MUSIC_GAMEPLAY;
-				music_play(MUSIC_GAMEPLAY);
-			}
+			cur_gameplay_music = MUSIC_GAMEPLAY;
+			MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
 
 			break;
 		}
@@ -1580,10 +1595,7 @@ void go_to_state(unsigned char new_state)
 		case STATE_PAUSE:
 		{
 			pal_bright(2);
-			if (music_on)
-			{
-				music_play(MUSIC_PAUSE);
-			}
+			MUSIC_PLAY_WRAPPER(MUSIC_PAUSE);
 			break;
 		}
 		case STATE_OVER:
@@ -1592,11 +1604,12 @@ void go_to_state(unsigned char new_state)
 			clear_vram_buffer();
 
 			music_stop();
-			sfx_play(SOUND_GAMEOVER, 0);
+			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
 
 			delay(120);
 
-			sfx_play(SOUND_GAMEOVER_SONG, 0);
+			// treat this like music, since it is a jingle.
+			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER_SONG);
 
 			oam_clear();
 
@@ -1823,15 +1836,15 @@ PROFILE_POKE(0x3f); //red
 	{
 		if (prev_level != cur_level)
 		{
-			sfx_play(SOUND_LEVELUP, 0);
+			SFX_PLAY_WRAPPER(SOUND_LEVELUP);
 		}
 		else if (i == 4)
 		{
-			sfx_play(SOUND_MULTIROW, 0);
+			SFX_PLAY_WRAPPER(SOUND_MULTIROW);
 		}
 		else
 		{
-			sfx_play(SOUND_ROW, 0);
+			SFX_PLAY_WRAPPER(SOUND_ROW);
 		}
 
 		// 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
@@ -2205,11 +2218,13 @@ void display_options()
 	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,17<<3));
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
+	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,23<<3));
 
 	// NOTE: One redundant call.
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 17<<3));
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 19<<3));
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 21<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 23<<3));
 
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (17 + (cur_option<<1))<<3));
 }

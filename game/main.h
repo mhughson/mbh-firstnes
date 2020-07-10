@@ -31,6 +31,11 @@
 
 #define BLINK_LEN (60 * 5)
 
+#define SFX_PLAY_WRAPPER(id) if (sfx_on) { sfx_play((id), 0); }
+// play a sound effect that is treated like music to the user (jingles, etc).
+#define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
+#define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
+
 #pragma bss-name(push, "ZEROPAGE")
 
 // GLOBAL VARIABLES
@@ -64,7 +69,7 @@ unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
 
-#define NUM_OPTIONS 3
+#define NUM_OPTIONS 4
 unsigned char cur_option;
 
 //const unsigned char text[] = "- PRESS START -";
@@ -73,6 +78,7 @@ unsigned char attack_style;
 #define ATTACK_STRING_LEN 7
 
 unsigned char music_on;
+unsigned char sfx_on;
 #define OFF_ON_STRING_LEN 4
 
 enum {BLOCK_STYLE_MODERN, BLOCK_STYLE_CLASSIC};
