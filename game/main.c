@@ -18,8 +18,10 @@ FEATURES:
 //must have
 
 //should have
+* Hi score display (per mode).
 
 //nice to have
+* Deplay at start of match (maybe only high levels?)
 * Options on the Pause screen (quit, music, sfx).
 * Store blocks. (classic only?)
 * Update mode order and names to be (will require more space):
@@ -87,6 +89,8 @@ BUGS:
 * Hitch when tentacle retracts on hitting max (because of delays).
 * Horz input has to be pressed again if line is cleared.
 * When hitting game over, final sprite switches.
+	* I think this is because the vram buffer is cleared at the start of game over, 
+	  before it has a chance to copy over the new block to the nametable.
 * Sprites do not draw when transitioning between name tables.
 
 COMPLETE:
@@ -1060,6 +1064,10 @@ PROFILE_POKE(0x3f); //red
 		{
 			delay_lock_remaining = DELAY_LOCK_LEN;
 		}
+		// TODO: doesn't this mean that the delay lock is only decrementing every time that 
+		//		 the block tries to move down, meaning lower g levels will have a longer
+		//		 delay lock?
+		// No, because when delay_lock_remaing is != -1, it triggers a "down" press (see above).
 		--delay_lock_remaining;
 
 		// Clamped to tile space, then multiplied back to pixel space
@@ -1340,6 +1348,16 @@ void spawn_new_cluster()
 	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
+
+	// There is an edge case where a block moves down on the frame it is spawned, while
+	// at the top of the board.
+	// In such a case the block will be shifted back up to its starting point, which
+	// is not out of bounds, and so the game will not trigger game over.
+	if (state != STATE_OVER && is_cluster_colliding())
+	{
+		// trigger game over.
+		put_cur_cluster();
+	}
 }
 
 void rotate_cur_cluster(char dir)
@@ -1606,7 +1624,11 @@ void go_to_state(unsigned char new_state)
 			music_stop();
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
 
-			delay(120);
+			// Without music this delay feels really odd.
+			if (music_on)
+			{
+				delay(120);
+			}
 
 			// treat this like music, since it is a jingle.
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER_SONG);
