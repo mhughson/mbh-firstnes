@@ -19,6 +19,8 @@ FEATURES:
 
 //should have
 * Hi score display (per mode).
+* Lock-delay settings (off, 10 frames, 20 frames)
+* Option to disable hard-drop (or require a slight hold to trigger hard drop.)
 
 //nice to have
 * Deplay at start of match (maybe only high levels?)
@@ -85,7 +87,6 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-* At level 29, the blocks never trigger game over.
 * Hitch when tentacle retracts on hitting max (because of delays).
 * Horz input has to be pressed again if line is cleared.
 * When hitting game over, final sprite switches.
@@ -94,6 +95,7 @@ BUGS:
 * Sprites do not draw when transitioning between name tables.
 
 COMPLETE:
+* At level 29, the blocks never trigger game over.
 * Music isn't playing on main menu.
 * Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
 * Tentacles are not budgeted.
@@ -1062,7 +1064,7 @@ PROFILE_POKE(0x3f); //red
 	{
 		if (delay_lock_remaining == -1)
 		{
-			delay_lock_remaining = DELAY_LOCK_LEN;
+			delay_lock_remaining = DELAY_LOCK_LEN - fall_rate;
 		}
 		// TODO: doesn't this mean that the delay lock is only decrementing every time that 
 		//		 the block tries to move down, meaning lower g levels will have a longer
