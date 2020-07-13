@@ -347,7 +347,7 @@ unsigned char cluster_sprites[NUM_CLUSTERS] =
 
 unsigned char cluster_offsets[NUM_CLUSTERS] = 
 {
-    3, 3, 2, 3, 4, 3, 3,
+    3, 3, 2, 3, 3, 3, 3,
     //10,10,10,10,10,10,10
 };
 
@@ -410,7 +410,7 @@ unsigned char cur_garbage_type;
 signed char delay_lock_remaining;
 unsigned char delay_lock_skip;
 
-
+signed char row_to_clear;
 
 
 

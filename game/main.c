@@ -433,6 +433,16 @@ void main (void)
 					--hit_reaction_remaining;
 				}
 
+				if (row_to_clear >= 0)
+				{
+
+					--attack_row_status[row_to_clear];
+					if (attack_row_status[row_to_clear] == 0)
+					{
+						row_to_clear = -1;
+					}
+				}
+
 PROFILE_POKE(0x5f); // green
 				// delay a frame for perf.
 				if (attack_style != ATTACK_NEVER && attack_queued)
@@ -895,10 +905,13 @@ void movement(void)
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
-
-
-
-		attack_queued = 1;
+		// Don't allow forcing the tentacle up while it is on the way down.
+		// Not too serious, but looks weird when the height in increases 
+		// while the sprites are not moving up.
+		if (row_to_clear == -1)
+		{
+			attack_queued = 1;
+		}
 	}
 
 	// INPUT
@@ -1424,6 +1437,7 @@ void go_to_state(unsigned char new_state)
 			pal_bg(palette_bg);
 			saved_starting_level = cur_level;
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+			row_to_clear = -1;
 			display_level();
 			display_score();
 			break;
@@ -2106,15 +2120,17 @@ void add_block_at_bottom()
 		{
 			if (attack_row_status[ix] >= ATTACK_MAX)
 			{
-				// This attack has maxed out, so remove it from the board (animated).
-				while (attack_row_status[ix] > 0)
-				{
-					//hit_reaction_remaining = 60;
-					--attack_row_status[ix];
-					delay(2);
-					draw_gameplay_sprites();
-					clear_vram_buffer();
-				}
+				// // This attack has maxed out, so remove it from the board (animated).
+				// while (attack_row_status[ix] > 0)
+				// {
+				// 	//hit_reaction_remaining = 60;
+				// 	--attack_row_status[ix];
+				// 	delay(2);
+				// 	draw_gameplay_sprites();
+				// 	clear_vram_buffer();
+				// }
+
+				row_to_clear = ix;
 
 				// Assuming there is only one attack at a time, we can
 				// now exit this loop, and go to the part where it starts
@@ -2174,6 +2190,7 @@ void reset_gameplay_area()
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_score = 0;
 	cur_level = saved_starting_level;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
+	row_to_clear = -1;
 
 	// load the palettes
 	time_of_day = 0;
