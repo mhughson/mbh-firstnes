@@ -87,14 +87,15 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-* Hitch when tentacle retracts on hitting max (because of delays).
-* Horz input has to be pressed again if line is cleared.
-* When hitting game over, final sprite switches.
-	* I think this is because the vram buffer is cleared at the start of game over, 
-	  before it has a chance to copy over the new block to the nametable.
+
 * Sprites do not draw when transitioning between name tables.
 
 COMPLETE:
+* When hitting game over, final sprite switches.
+	* I think this is because the vram buffer is cleared at the start of game over, 
+	  before it has a chance to copy over the new block to the nametable.
+* CNR - Horz input has to be pressed again if line is cleared.
+* Hitch when tentacle retracts on hitting max (because of delays).
 * At level 29, the blocks never trigger game over.
 * Music isn't playing on main menu.
 * Moving tentacle keeps moving after reaching max (possibly fixed with multi-tentacle attack).
@@ -1370,8 +1371,10 @@ void spawn_new_cluster()
 	// is not out of bounds, and so the game will not trigger game over.
 	if (state != STATE_OVER && is_cluster_colliding())
 	{
-		// trigger game over.
+		// trigger game over. First place the new block in nt, then
+		// move the the game over state.
 		put_cur_cluster();
+		go_to_state(STATE_OVER);
 	}
 }
 
@@ -1635,7 +1638,11 @@ void go_to_state(unsigned char new_state)
 		case STATE_OVER:
 		{
 			// fix bug where mashing up/down to quickly hit gamover would case nametable coruption.
+			delay(1);
 			clear_vram_buffer();
+
+			// Without this, the "next" block won't appear for the first half of the sequence.
+			draw_gameplay_sprites();
 
 			music_stop();
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
@@ -1649,7 +1656,9 @@ void go_to_state(unsigned char new_state)
 			// treat this like music, since it is a jingle.
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER_SONG);
 
-			oam_clear();
+			// Not sure why this was here. It causes the next block to
+			// vanish.
+			//oam_clear();
 
 			pal_bright(5);
 			delay(fade_delay);
