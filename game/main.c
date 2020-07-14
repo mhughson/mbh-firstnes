@@ -2,7 +2,6 @@
 
 #include "LIB/neslib.h"
 #include "LIB/nesdoug.h"
-#include "Sprites.h" // holds our metasprite data
 #include "BG/game_area.h"
 #include "BG/title_screen.h"
 #include "BG/options_screen.h"
@@ -87,8 +86,7 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-
-* Sprites do not draw when transitioning between name tables.
+---
 
 COMPLETE:
 * When hitting game over, final sprite switches.
@@ -103,6 +101,10 @@ COMPLETE:
 * Graphical corruption on Game Over (rarely)
 * Hard drop puts blocks 1 tile too far (rarely).
 * Sprite flicker when blocks land.
+
+CUT:
+* Sprites do not draw when transitioning between name tables.
+	* Don't care enough to redo how transitions work.
 
 SCRIPT IDEAS:
 
