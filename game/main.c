@@ -17,12 +17,12 @@ FEATURES:
 //must have
 
 //should have
-* Hi score display (per mode).
+* Hi-score display (per mode).
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
 
 //nice to have
-* Deplay at start of match (maybe only high levels?)
+* Delay at start of match (maybe only high levels?)
 * Options on the Pause screen (quit, music, sfx).
 * Store blocks. (classic only?)
 * Update mode order and names to be (will require more space):
