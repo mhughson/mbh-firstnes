@@ -77,6 +77,8 @@ enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
 unsigned char attack_style;
 #define ATTACK_STRING_LEN 7
 
+unsigned long high_scores[ATTACK_NUM] = { 0, 0, 0}; // NOTE: long!
+
 unsigned char music_on;
 unsigned char sfx_on;
 #define OFF_ON_STRING_LEN 4
@@ -574,6 +576,7 @@ void go_to_state(unsigned char new_state);
 void inc_lines_cleared();
 void display_lines_cleared();
 void display_score();
+void display_highscore();
 void display_level();
 
 // CLEAR PHASES

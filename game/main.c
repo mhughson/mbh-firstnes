@@ -17,7 +17,6 @@ FEATURES:
 //must have
 
 //should have
-* Hi-score display (per mode).
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
 
@@ -46,6 +45,8 @@ FEATURES:
 
 
 COMPLETE:
+* Hi-score display (per mode).
+	* Couldn't find a good spot during gameplay, so currently only in the options.
 * Option to turn off SFX.
 * Update to use NES block layouts.
 	* Update to have all blocks start face down. (was just T block actually).
@@ -298,6 +299,7 @@ void main (void)
 						if (attack_style < ATTACK_NUM - 1)
 						{
 							++attack_style;
+							display_highscore();
 						}
 						break;
 
@@ -365,6 +367,7 @@ void main (void)
 						if (attack_style != 0)
 						{
 							--attack_style;
+							display_highscore();
 						}
 
 						break;
@@ -1453,6 +1456,17 @@ void go_to_state(unsigned char new_state)
 			pal_bright(4);
 			break;
 		}
+		
+		case STATE_GAME:
+		{
+			// Little bit of future proofing in case we add other ways
+			// to exit the game (eg. from pause).
+			if (cur_score > high_scores[attack_style])
+			{
+				high_scores[attack_style] = cur_score;
+			}
+			break;
+		}
 
 	default:
 		break;
@@ -1527,14 +1541,18 @@ void go_to_state(unsigned char new_state)
 			// vram_adr(NTADR_A(16,21));
 			// vram_write(off_on_string[music_on], OFF_ON_STRING_LEN);
 
-			ppu_on_all();
-
 			// handle case where player used cheat to jump 10 levels, and then quit back
 			// to the main menu.
 			cur_level %= 10;
 			cur_option = 0;
 
+			ppu_on_all();
+
 			display_options();
+			// too much for 1 frame.
+			delay(1);
+			clear_vram_buffer();
+			display_highscore();
 
 			break;
 		}
@@ -1774,6 +1792,27 @@ void display_score()
     {
         unsigned char digit = temp_score % 10;
         one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 6<<3 ));
+
+        temp_score = temp_score / 10;
+		++i;
+    }
+}
+
+void display_highscore()
+{
+	static unsigned long temp_score;
+	static unsigned char i;
+
+	temp_score = high_scores[attack_style];
+
+	// clear out any old score.
+	multi_vram_buffer_horz("0000000", 7, get_ppu_addr(0, 17<<3, 27<<3));
+
+	i = 0;
+	while(temp_score != 0)
+    {
+        unsigned char digit = temp_score % 10;
+        one_vram_buffer('0' + digit, get_ppu_addr(0, ((17+7)<<3) - (i << 3), 27<<3 ));
 
         temp_score = temp_score / 10;
 		++i;
