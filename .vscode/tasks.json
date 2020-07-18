@@ -9,10 +9,11 @@
             "group": "build",
             "options": {
                 "env": {
-                    "code" : "true",
+                    "code": "true"
                 }
             },
             "command": ".\\game\\compile_bootstrap.bat",
+            "problemMatcher": []
         },
         {
             "label": "Build Code & Run",
@@ -20,11 +21,12 @@
             "group": "build",
             "options": {
                 "env": {
-                    "code" : "true",
-                    "run" : "true",
+                    "code": "true",
+                    "run": "true"
                 }
             },
             "command": ".\\game\\compile_bootstrap.bat",
+            "problemMatcher": []
         },
         {
             "label": "Build Audio",
@@ -32,10 +34,10 @@
             "group": "build",
             "options": {
                 "env": {
-                    "audio" : "true",
+                    "audio": "true"
                 }
             },
-            "command": ".\\game\\compile_bootstrap.bat",
+            "command": ".\\game\\compile_bootstrap.bat"
         },
         {
             "label": "Build Audio & Run",
@@ -43,11 +45,11 @@
             "group": "build",
             "options": {
                 "env": {
-                    "audio" : "true",
-                    "run" : "true",
+                    "audio": "true",
+                    "run": "true"
                 }
             },
-            "command": ".\\game\\compile_bootstrap.bat",
+            "command": ".\\game\\compile_bootstrap.bat"
         },
         {
             "label": "Build All",
@@ -55,11 +57,11 @@
             "group": "build",
             "options": {
                 "env": {
-                    "audio" : "true",
-                    "code" : "true",
+                    "audio": "true",
+                    "code": "true"
                 }
             },
-            "command": ".\\game\\compile_bootstrap.bat",
+            "command": ".\\game\\compile_bootstrap.bat"
         },
         {
             "label": "Build All & Run",
@@ -67,13 +69,12 @@
             "group": "build",
             "options": {
                 "env": {
-                    "audio" : "true",
-                    "code" : "true",
-                    "run" : "true",
+                    "audio": "true",
+                    "code": "true",
+                    "run": "true"
                 }
             },
-            "command": ".\\game\\compile_bootstrap.bat",
-        },
-
+            "command": ".\\game\\compile_bootstrap.bat"
+        }
     ]
 }

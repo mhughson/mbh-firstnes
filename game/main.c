@@ -90,6 +90,7 @@ BUGS:
 ---
 
 COMPLETE:
+* Next block is hidden during line clear.
 * When hitting game over, final sprite switches.
 	* I think this is because the vram buffer is cleared at the start of game over, 
 	  before it has a chance to copy over the new block to the nametable.
@@ -449,7 +450,7 @@ void main (void)
 					}
 				}
 
-PROFILE_POKE(0x5f); // green
+//PROFILE_POKE(0x5f); // green
 				// delay a frame for perf.
 				if (attack_style != ATTACK_NEVER && attack_queued)
 				{
@@ -461,11 +462,11 @@ PROFILE_POKE(0x5f); // green
 					attack_queue_ticks_remaining = attack_delay;
 				}
 
-PROFILE_POKE(0x9f); //blue
+//PROFILE_POKE(0x9f); //blue
 				movement();
-PROFILE_POKE(0x3f); // red
+//PROFILE_POKE(0x3f); // red
 				draw_gameplay_sprites();
-PROFILE_POKE(0x1f); // white
+//PROFILE_POKE(0x1f); // white
 				if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
 				{
 					--attack_queue_ticks_remaining;
@@ -523,7 +524,7 @@ PROFILE_POKE(0x1f); // white
 				// 	//go_to_state(STATE_OVER);
 				// }
 #endif
-PROFILE_POKE(0x1e); // white
+//PROFILE_POKE(0x1e); // white
 				break;
 			}
 
@@ -699,10 +700,11 @@ void draw_gameplay_sprites(void)
 			}
 		}
 
-		if (next_cluster.layout & mask)
-		{
-			oam_spr((15 << 3) + (local_ix << 3), (1 << 3) + (local_iy << 3), next_cluster.sprite, 0);
-		}
+		// Next is now in NameTable.
+		// if (next_cluster.layout & mask)
+		// {
+		// 	oam_spr((15 << 3) + (local_ix << 3), (1 << 3) + (local_iy << 3), next_cluster.sprite, 0);
+		// }
 
 		++local_ix;
 		if (local_ix >= 4)
@@ -1077,7 +1079,7 @@ void movement(void)
 
 	hit = 0;
 
-PROFILE_POKE(0x3f); //red
+//PROFILE_POKE(0x3f); //red
 	// Offset from the bottom.
 	if (is_cluster_colliding())
 	{
@@ -1110,13 +1112,13 @@ PROFILE_POKE(0x3f); //red
 
 	if (hit)
 	{
-PROFILE_POKE(0x5f); //green
+//PROFILE_POKE(0x5f); //green
 		put_cur_cluster();
-PROFILE_POKE(0x9f); //blue
+//PROFILE_POKE(0x9f); //blue
 		// Spawn a new block.
 		spawn_new_cluster();
 	}
-PROFILE_POKE(0x1e); //none
+//PROFILE_POKE(0x1e); //none
 }
 
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
@@ -1171,7 +1173,7 @@ void put_cur_cluster()
 	static unsigned int bit;
 	static unsigned int res;
 
-PROFILE_POKE(0x5f); //green
+//PROFILE_POKE(0x5f); //green
 
 	max_y = 0;
 	min_y = 0xff; // max
@@ -1200,9 +1202,9 @@ PROFILE_POKE(0x5f); //green
 			{
 				max_y = in_y;
 			}
-PROFILE_POKE(0x3f); //red
+//PROFILE_POKE(0x3f); //red
 			set_block( );
-PROFILE_POKE(0x5f); //green
+//PROFILE_POKE(0x5f); //green
 		}
 
 		++ix;
@@ -1213,7 +1215,7 @@ PROFILE_POKE(0x5f); //green
 		}
 	}
 
-PROFILE_POKE(0x9f); //blue
+//PROFILE_POKE(0x9f); //blue
 	SFX_PLAY_WRAPPER(SOUND_LAND);
 
 	if (min_y <= BOARD_OOB_END)
@@ -1223,16 +1225,11 @@ PROFILE_POKE(0x9f); //blue
 	}
 	else
 	{
-PROFILE_POKE(0x3f); //red
+//PROFILE_POKE(0x3f); //red
 		// hide the sprite while we work.
 		cur_block.y = 255;
 
-		//draw_gameplay_sprites();
-		// We want to hid the sprite that just landed. This is slightly complicated because
-		// the cur sprite and the next sprite and draw interlaced, in a inconsistant order.
-		// For example, sprite 0 might be cur sprite, and then sprite 1 is next sprite.
-		// What is consistent though is that the first 8 sprites are always the blocks,
-		// so we just hide it all!
+		// We want to hid the sprite that just landed.
 		// TODO: Shouldn't this only be if we clear a line?
 		oam_set(0);
 		//
@@ -1240,12 +1237,8 @@ PROFILE_POKE(0x3f); //red
 		oam_spr(0, 0, 0, 0);
 		oam_spr(0, 0, 0, 0);
 		oam_spr(0, 0, 0, 0);
-		//
-		oam_spr(0, 0, 0, 0);
-		oam_spr(0, 0, 0, 0);
-		oam_spr(0, 0, 0, 0);
-		oam_spr(0, 0, 0, 0);
-PROFILE_POKE(0x9f); //blue
+
+//PROFILE_POKE(0x9f); //blue
 		if (attack_style == ATTACK_ON_LAND)
 		{
 			attack_queued = 1;
@@ -1260,7 +1253,7 @@ PROFILE_POKE(0x9f); //blue
 		clear_rows_in_data(max_y);
 
 	}
-PROFILE_POKE(0x3f); //green
+//PROFILE_POKE(0x3f); //green
 }
 
 unsigned char is_block_free(unsigned char x, unsigned char y)
@@ -1321,6 +1314,9 @@ unsigned char is_cluster_colliding()
 
 void spawn_new_cluster()
 {
+	static unsigned int mask;
+	static unsigned char next_block_vram[4];
+
 	id = 0;
 
 	delay_lock_remaining = -1;
@@ -1369,6 +1365,35 @@ void spawn_new_cluster()
 	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
 	next_cluster.layout = next_cluster.def[0];
 	next_cluster.sprite = cluster_sprites[id];
+
+//PROFILE_POKE(0x9f); //blue
+	// Put the next block into the nametable.
+	local_iy = 0;
+	local_ix = 0;
+	local_t = next_cluster.sprite;
+	// We need only check the middle 2 rows because all clusters spawn horizontal which 
+	// means the top and bottom rows are empty.
+	for (mask = 0x800; mask > 8; mask >>= 1)
+	{
+		if (next_cluster.layout & mask)
+		{
+			next_block_vram[local_ix] = local_t;
+		}
+		else
+		{
+			next_block_vram[local_ix] = 0;
+		}
+		
+
+		++local_ix;
+		if (local_ix >= 4)
+		{
+			multi_vram_buffer_horz(next_block_vram, 4, get_ppu_addr(cur_nt, 120, 16 + (local_iy << 3)));
+			local_ix = 0;
+			++local_iy;
+		}
+	}	
+//PROFILE_POKE(0x1e); //none
 
 	// There is an edge case where a block moves down on the frame it is spawned, while
 	// at the top of the board.
@@ -1854,13 +1879,13 @@ void clear_rows_in_data(unsigned char start_y)
 	static unsigned char i;
 	static unsigned char prev_level;
 	static unsigned int line_score_mod;
-PROFILE_POKE(0x9f); //blue
+//PROFILE_POKE(0x9f); //blue
 	i = 0;
 	prev_level = cur_level;
 
 	// 0xff used to indicate unused.
 	memfill(lines_cleared_y, 0xff, 4);
-PROFILE_POKE(0x3f); //red
+//PROFILE_POKE(0x3f); //red
 	// Start at the bottom of the board, and work our way up.
 	for (iy = start_y; iy > BOARD_OOB_END; --iy)
 	{
@@ -1869,7 +1894,7 @@ PROFILE_POKE(0x3f); //red
 		line_complete = 1;
 		for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 		{
-PROFILE_POKE(0x5f); //green
+//PROFILE_POKE(0x5f); //green
 			if (game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 0)
 			//if (is_block_free(ix, iy))
 			{
@@ -1877,7 +1902,7 @@ PROFILE_POKE(0x5f); //green
 				line_complete = 0;
 				break;
 			}
-PROFILE_POKE(0x3f); //red
+//PROFILE_POKE(0x3f); //red
 		}
 
 		// If this row was filled, we need to remove it and crush
@@ -1973,7 +1998,7 @@ PROFILE_POKE(0x3f); //red
 		}
 		reveal_empty_rows_to_nt();
 	}
-PROFILE_POKE(0x1e); //none
+//PROFILE_POKE(0x1e); //none
 }
 
 void reveal_empty_rows_to_nt()
@@ -2132,7 +2157,7 @@ void copy_board_to_nt()
 			// calling this again here isn't needed, as time will not have advanced, so
 			// drawing the sprites again will do nothing.
 			//draw_gameplay_sprites();
-PROFILE_POKE(0x1e); //clear so we don't screw up the visualization.
+//PROFILE_POKE(0x1e); //clear so we don't screw up the visualization.
 			delay(1);
 			clear_vram_buffer();
 		}
