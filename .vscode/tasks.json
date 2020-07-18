@@ -74,7 +74,8 @@
                     "run": "true"
                 }
             },
-            "command": ".\\game\\compile_bootstrap.bat"
+            "command": ".\\game\\compile_bootstrap.bat",
+            "problemMatcher": []
         }
     ]
 }
