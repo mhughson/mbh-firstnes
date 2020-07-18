@@ -6,6 +6,7 @@
 #include "BG/title_screen.h"
 #include "BG/options_screen.h"
 #include "BG/boot_screen.h"
+#include "BG/sound_screen.h"
 #include "main.h"
 
 /*
@@ -29,7 +30,6 @@ FEATURES:
 * Game over screen (polished).
 * When on Level 29, display MAX instead.
 * Points kicker
-* Clean up sound test.
 * Trigger sound test on Konami Code.
 
 //investigate
@@ -45,6 +45,7 @@ FEATURES:
 
 
 COMPLETE:
+* Clean up sound test.
 * Hi-score display (per mode).
 	* Couldn't find a good spot during gameplay, so currently only in the options.
 * Option to turn off SFX.
@@ -565,7 +566,7 @@ void main (void)
 			}
 
 			case STATE_SOUND_TEST:
-			{
+			{				
 				// MUSIC
 				//
 
@@ -614,6 +615,14 @@ void main (void)
 				{
 					// Intentionally not using wrapper so this plays regardless of settings.
 					sfx_play(test_sound, 0);
+				}
+
+				// EXIT
+				//
+
+				if (pad1_new & PAD_SELECT || pad1_new & PAD_START)
+				{
+					go_to_state(STATE_MENU);
 				}
 				break;
 			}
@@ -1461,6 +1470,7 @@ void go_to_state(unsigned char new_state)
 	switch (state)
 	{
 		case STATE_BOOT:
+		case STATE_SOUND_TEST:
 		{
 			MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 			break;
@@ -1518,7 +1528,7 @@ void go_to_state(unsigned char new_state)
 			scroll_y = 0;
 			time_of_day = 0;
 
-			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT)
+			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_SOUND_TEST)
 			{
 				oam_clear();
 
@@ -1584,35 +1594,12 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_SOUND_TEST:
 		{
+			oam_clear();
 			ppu_off(); // screen off
+
+			pal_bg(palette_bg_options);
 			vram_adr(NTADR_A(0,0));
-			vram_fill(0, NAMETABLE_SIZE);
-
-			i = 4;
-			vram_adr(NTADR_A(16-(sizeof("SOUND TEST")>>1),i));
-			vram_write("SOUND TEST", sizeof("SOUND TEST")-1); // -1 null term
-
-			i += 2;
-			vram_adr(NTADR_A(16-(sizeof("B - PLAY/STOP SONG")>>1),i));
-			vram_write("B - PLAY/STOP SONG", sizeof("B - PLAY/STOP SONG")-1); // -1 null term
-
-			++i;
-			vram_adr(NTADR_A(16-(sizeof("A - PLAY SFX")>>1),i));
-			vram_write("A - PLAY SFX", sizeof("A - PLAY SFX")-1); // -1 null term
-
-			i += 4;
-			vram_adr(NTADR_A(8-(sizeof("SONG #")>>1),i));
-			vram_write("SONG #", sizeof("SONG #")-1); // -1 null term
-
-			vram_adr(NTADR_A(24-(sizeof("SFX #")>>1),i));
-			vram_write("SFX #", sizeof("SFX #")-1); // -1 null term
-
-			i += 10;
-			vram_adr(NTADR_A(8-(sizeof("UP/DOWN")>>1),i));
-			vram_write("UP/DOWN", sizeof("UP/DOWN")-1); // -1 null term
-
-			vram_adr(NTADR_A(24-(sizeof("LEFT/RIGHT")>>1),i));
-			vram_write("LEFT/RIGHT", sizeof("LEFT/RIGHT")-1); // -1 null term
+			vram_unrle(sound_screen);
 
 			ppu_on_all(); // turn on screen
 
@@ -2292,13 +2279,13 @@ void display_song()
 
 	if (test_song < 100)
 	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,56-(2<<3),112));
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,(4<<3),(14<<3)));
 	}
 
 	while(temp != 0)
     {
         unsigned char digit = temp % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(0, 56 - (i << 3), 112 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(0, (6<<3) - (i << 3), (14<<3) ));
 
         temp = temp / 10;
 		++i;
@@ -2316,13 +2303,13 @@ void display_sound()
 
 	if (test_song < 100)
 	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,200-(2<<3),112));
+		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,(25<<3),(14<<3)));
 	}
 
 	while(temp != 0)
     {
         unsigned char digit = temp % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(0, 200 - (i << 3), 112 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(0, (27<<3) - (i << 3), (14<<3) ));
 
         temp = temp / 10;
 		++i;
