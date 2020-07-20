@@ -20,6 +20,7 @@ FEATURES:
 //should have
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
+* Add ADD (spawn delay) Maybe 5 frames, and switch lock delay to 15.
 
 //nice to have
 * Delay at start of match (maybe only high levels?)
@@ -88,9 +89,12 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
----
+* S and Z are too high when flat (or too low when vert)
+* Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
 
 COMPLETE:
+* If starting on level 10+, level up is happening on wrong level (happens as
+  soon as player hits 110 lines, regardles of starting level).
 * Next block is hidden during line clear.
 * When hitting game over, final sprite switches.
 	* I think this is because the vram buffer is cleared at the start of game over, 
@@ -917,8 +921,8 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		//lines_cleared_one = 9;
-		//inc_lines_cleared();
+		lines_cleared_one = 9;
+		inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
@@ -1733,11 +1737,15 @@ void go_to_state(unsigned char new_state)
 
 void inc_lines_cleared()
 {
+	static unsigned char lines_total;
 	++lines_cleared_one;
 
 	if (lines_cleared_one == 10)
 	{
-		if (lines_cleared_hundred > 0 || cur_level <= lines_cleared_ten)
+		// Basically the level we should be on, by truncating the ones.
+		lines_total = (lines_cleared_hundred * 10) + lines_cleared_ten;
+
+		if (cur_level <= lines_total)
 		{
 			// we only handle things up to level 29.
 			if (cur_level < 29 )
