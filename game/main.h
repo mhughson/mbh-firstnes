@@ -124,18 +124,18 @@ unsigned char cur_level = 0;
 const unsigned int def_z_clust[4] = 
 { 
     0xc60,
-    0x264,
+    0x2640,
     0xc60, // dupe.
-    0x264, // dupe.
+    0x2640, // dupe.
 };
 
 
 const unsigned int def_z_rev_clust[4] = 
 { 
     0x6C0,
-    0x462,
+    0x4620,
     0x6C0, // dupe.
-    0x462, // dupe.
+    0x4620, // dupe.
 };
 
 const unsigned int def_line_clust[4] =
