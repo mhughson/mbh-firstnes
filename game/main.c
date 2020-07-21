@@ -19,8 +19,6 @@ FEATURES:
 
 //should have
 * Lock-delay settings (off, 10 frames, 20 frames)
-* Option to disable hard-drop (or require a slight hold to trigger hard drop.)
-* Reset on A+B+SEL+START
 
 //nice to have
 * Delay at start of match (maybe only high levels?)
@@ -46,6 +44,9 @@ FEATURES:
 
 
 COMPLETE:
+* Reset on A+B+SEL+START
+* Option to disable hard-drop (or require a slight hold to trigger hard drop.)
+	* No hold setting, just on or off.
 * Add ARE (spawn delay) Maybe 5 frames, and switch lock delay to 15.
 * Clean up sound test.
 * Hi-score display (per mode).
@@ -179,6 +180,7 @@ void main (void)
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
 	music_on = 1;
 	sfx_on = 1;
+	hard_drops_on = 1;
 	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
@@ -201,6 +203,15 @@ void main (void)
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 
 		clear_vram_buffer(); // do at the beginning of each frame
+
+		// Quick reset.
+		if (state != STATE_MENU)
+		{
+			if (pad1 & PAD_A && pad1 & PAD_B && pad1 & PAD_SELECT && pad1 & PAD_START)
+			{
+				go_to_state(STATE_MENU);
+			}
+		}
 
 		switch(state)
 		{
@@ -341,6 +352,14 @@ void main (void)
 						break;
 					}
 
+					case 4: // hard drops
+					{
+						if (hard_drops_on == 0)
+						{
+							hard_drops_on = 1;
+						}
+					}
+
 					default:
 						break;
 					}
@@ -410,6 +429,14 @@ void main (void)
 						if (sfx_on != 0)
 						{
 							sfx_on = 0;
+						}
+						break;
+					}
+					case 4: // hard drops
+					{
+						if (hard_drops_on != 0)
+						{
+							hard_drops_on = 0;
 						}
 						break;
 					}
@@ -1036,7 +1063,7 @@ void movement(void)
 	//		 this function so that it can be manipulated (eg. when release
 	//	     reset the tick count).
 	temp_fall_rate = fall_rate;
-	if (pad1_new & PAD_UP)
+	if (hard_drops_on && pad1_new & PAD_UP)
 	{
 		// TODO: Causes hitch.
 		while (!is_cluster_colliding())
@@ -2359,14 +2386,16 @@ void display_options()
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
 	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,23<<3));
+	multi_vram_buffer_horz(off_on_string[hard_drops_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,25<<3));
 
 	// NOTE: One redundant call.
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 17<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 19<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 21<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 8<<3, 23<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 17<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 19<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 21<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 23<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 25<<3));
 
-	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 8<<3, (17 + (cur_option<<1))<<3));
+	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (17 + (cur_option<<1))<<3));
 }
 
 

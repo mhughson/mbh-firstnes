@@ -69,7 +69,7 @@ unsigned char pad1;
 unsigned char pad1_new;
 unsigned int scroll_y;
 
-#define NUM_OPTIONS 4
+#define NUM_OPTIONS 5
 unsigned char cur_option;
 
 //const unsigned char text[] = "- PRESS START -";
@@ -90,8 +90,12 @@ unsigned char block_style;
 unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 unsigned char saved_starting_level;
 
+unsigned char hard_drops_on;
+
 enum { STATE_BOOT, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_BOOT;
+
+
 
 // The block operates in "logical space" from 0 -> w/h. The logical
 // space is converted to screen space at time of render (or ppu get).
