@@ -92,9 +92,9 @@ CUT:
 
 BUGS:
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
-* After quiting to main menu, previous match "next" block continues to show.
 
 COMPLETE:
+* After quiting to main menu, previous match "next" block continues to show.
 * S and Z are too high when flat (or too low when vert)
 * If starting on level 10+, level up is happening on wrong level (happens as
   soon as player hits 110 lines, regardles of starting level).
@@ -2328,6 +2328,10 @@ void reset_gameplay_area()
 	display_level();
 
 	oam_clear();
+
+	// clear the "next" block for cases of restarting.
+	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 16));
+	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 24));
 
 	// Reset the ppu for gameover case.
 	copy_board_to_nt();
