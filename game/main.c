@@ -20,7 +20,7 @@ FEATURES:
 //should have
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
-* Add ADD (spawn delay) Maybe 5 frames, and switch lock delay to 15.
+* Reset on A+B+SEL+START
 
 //nice to have
 * Delay at start of match (maybe only high levels?)
@@ -46,6 +46,7 @@ FEATURES:
 
 
 COMPLETE:
+* Add ARE (spawn delay) Maybe 5 frames, and switch lock delay to 15.
 * Clean up sound test.
 * Hi-score display (per mode).
 	* Couldn't find a good spot during gameplay, so currently only in the options.
@@ -89,10 +90,11 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-* S and Z are too high when flat (or too low when vert)
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
+* After quiting to main menu, previous match "next" block continues to show.
 
 COMPLETE:
+* S and Z are too high when flat (or too low when vert)
 * If starting on level 10+, level up is happening on wrong level (happens as
   soon as player hits 110 lines, regardles of starting level).
 * Next block is hidden during line clear.
@@ -468,7 +470,28 @@ void main (void)
 				}
 
 //PROFILE_POKE(0x9f); //blue
-				movement();
+
+				if (delay_spawn_remaining != -1)
+				{
+					// This would normally be done in movement(), but since that isn't being
+					// called we want to make sure charge DAS works.
+					if (horz_button_delay > 0)
+					{
+						--horz_button_delay;
+					}
+					--delay_spawn_remaining;
+					if (delay_spawn_remaining == 0)
+					{
+						spawn_new_cluster();
+						delay_lock_remaining = -1;
+					}
+				}
+				else
+				{
+					movement();
+				}
+				
+
 //PROFILE_POKE(0x3f); // red
 				draw_gameplay_sprites();
 //PROFILE_POKE(0x1f); // white
@@ -921,8 +944,8 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		lines_cleared_one = 9;
-		inc_lines_cleared();
+		//lines_cleared_one = 9;
+		//inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
@@ -946,7 +969,10 @@ void movement(void)
 		rotate_cur_cluster(-1);
 	}
 
-	--horz_button_delay;
+	if (horz_button_delay > 0)
+	{
+		--horz_button_delay;
+	}
 
 	old_x = cur_block.x;
 	if (((pad1 & PAD_RIGHT) && horz_button_delay == 0) || (pad1_new & PAD_RIGHT))
@@ -973,6 +999,7 @@ void movement(void)
 		horz_button_delay = button_delay;
 		if ((pad1_new & PAD_LEFT))
 		{
+			// normal delay * 8
 			horz_button_delay <<= 1;
 		}
 		// handle here since x is unsigned.
@@ -1129,7 +1156,8 @@ void movement(void)
 		put_cur_cluster();
 //PROFILE_POKE(0x9f); //blue
 		// Spawn a new block.
-		spawn_new_cluster();
+		//spawn_new_cluster();
+		delay_spawn_remaining = DELAY_SPAWN_LEN;
 	}
 //PROFILE_POKE(0x1e); //none
 }
@@ -2261,6 +2289,7 @@ void reset_gameplay_area()
 	cur_level = saved_starting_level;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 	row_to_clear = -1;
+	delay_lock_remaining = -1;
 
 	// load the palettes
 	time_of_day = 0;

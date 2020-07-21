@@ -408,9 +408,14 @@ char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
 unsigned char cur_garbage_type;
 
-#define DELAY_LOCK_LEN 20
+#define DELAY_LOCK_LEN 15
 signed char delay_lock_remaining;
 unsigned char delay_lock_skip;
+
+// The amount of time before another block is spawned after the previous one lands.
+#define DELAY_SPAWN_LEN 5
+signed char delay_spawn_remaining;
+unsigned char spawn_queued;
 
 signed char row_to_clear;
 
