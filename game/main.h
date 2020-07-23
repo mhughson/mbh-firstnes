@@ -91,6 +91,8 @@ unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8
 unsigned char saved_starting_level;
 
 unsigned char hard_drops_on;
+unsigned char hard_drop_hold_remaining;
+unsigned char hard_drop_tap_required;
 
 enum { STATE_BOOT, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_BOOT;
@@ -421,9 +423,11 @@ unsigned char delay_lock_skip;
 signed char delay_spawn_remaining;
 unsigned char spawn_queued;
 
+#define HARD_DROP_HOLD_TIME 2
+
 signed char row_to_clear;
 
-
+unsigned char kill_row_cur;
 
 
 
@@ -603,6 +607,7 @@ void try_collapse_empty_row_data(void);
 void copy_board_to_nt();
 
 void add_block_at_bottom();
+void add_row_at_bottom();
 
 void reset_gameplay_area();
 

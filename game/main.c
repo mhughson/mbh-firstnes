@@ -16,6 +16,10 @@
 FEATURES:
 
 //must have
+* Kill screen ideas:
+- Remove lock delay.
+- Shrink the play area.
+- 2 block drops.
 
 //should have
 * Lock-delay settings (off, 10 frames, 20 frames)
@@ -28,8 +32,11 @@ FEATURES:
 	* Kraken, Classic, Kraken Alt* Description of modes in option screen.
 * Game over screen (polished).
 * When on Level 29, display MAX instead.
+	* Doge suggested showing levels beyond 29.
 * Points kicker
 * Trigger sound test on Konami Code.
+* Special Thanks screen
+* Allow players to start on any level up to 29.
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
@@ -44,6 +51,7 @@ FEATURES:
 
 
 COMPLETE:
+* Hard drop on HOLD.
 * Reset on A+B+SEL+START
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
 	* No hold setting, just on or off.
@@ -94,6 +102,7 @@ BUGS:
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
 
 COMPLETE:
+* Quick fall rate sometimes: https://clips.twitch.tv/FuriousIntelligentClipzMau5
 * After quiting to main menu, previous match "next" block continues to show.
 * S and Z are too high when flat (or too low when vert)
 * If starting on level 10+, level up is happening on wrong level (happens as
@@ -942,13 +951,14 @@ void movement(void)
 	// static unsigned char iy;
 	// static unsigned int bit;
 	// static unsigned int res;
+	static unsigned char hard_drop_performed;
 
 	hit = 0;
 	temp_fall_rate = 0;
 	old_x = 0;
 	delay_lock_skip = 0;
 
-	++fall_frame_counter;
+	--fall_frame_counter;
 
 	if (pad1_new & PAD_SELECT)
 	{
@@ -983,6 +993,8 @@ void movement(void)
 		{
 			attack_queued = 1;
 		}
+
+		add_row_at_bottom();
 	}
 
 	// INPUT
@@ -1062,51 +1074,73 @@ void movement(void)
 	//		 To fix, I think tick_count should be tracked seperate for
 	//		 this function so that it can be manipulated (eg. when release
 	//	     reset the tick count).
-	temp_fall_rate = fall_rate;
-	if (hard_drops_on && pad1_new & PAD_UP)
+	temp_fall_rate = fall_frame_counter;
+
+	hard_drop_performed = 0;
+	if (hard_drops_on && pad1 & PAD_UP && (pad1 & (PAD_LEFT|PAD_RIGHT)) == 0)
 	{
-		// TODO: Causes hitch.
-		while (!is_cluster_colliding())
+		if ((pad1 & PAD_UP && hard_drop_tap_required == 0) || pad1_new & PAD_UP)
 		{
-			
-			// ix = 0;
-			// iy = 0;
-			// for (bit = 0x8000; bit; bit >>= 1)
-			// {
-			// 	res = cur_cluster.layout & bit;
+			--hard_drop_hold_remaining;	
 
-			// 	// solid bit.
-			// 	if (res)
-			// 	{
+			if (hard_drop_hold_remaining == 0)
+			{
+				hard_drop_performed = 1;
+				hard_drop_tap_required = 1;
+				// TODO: Causes hitch.
+				while (!is_cluster_colliding())
+				{
+					
+					// ix = 0;
+					// iy = 0;
+					// for (bit = 0x8000; bit; bit >>= 1)
+					// {
+					// 	res = cur_cluster.layout & bit;
 
-			// 		in_x = cur_block.x + ix;
-			// 		in_y = cur_block.y + iy;
-			// 		in_id = 5; //cur_cluster.sprite;
-			// 		set_block( );
-			// 	}
+					// 	// solid bit.
+					// 	if (res)
+					// 	{
 
-			// 	++ix;
-			// 	if (ix >= 4)
-			// 	{
-			// 		ix = 0;
-			// 		++iy;
-			// 	}
-			// }
+					// 		in_x = cur_block.x + ix;
+					// 		in_y = cur_block.y + iy;
+					// 		in_id = 5; //cur_cluster.sprite;
+					// 		set_block( );
+					// 	}
 
-			++cur_block.y;
+					// 	++ix;
+					// 	if (ix >= 4)
+					// 	{
+					// 		ix = 0;
+					// 		++iy;
+					// 	}
+					// }
 
-			// delay(1);
-			// clear_vram_buffer();
+					++cur_block.y;
+
+					// delay(1);
+					// clear_vram_buffer();
+				}
+
+				// No delay lock on hard drops.
+				delay_lock_skip = 1;
+
+				// UNCOMMENT FOR LAST CHANCE MOVE ON HARD DROP
+				// cur_block.y -= 1;
+				// fall_frame_counter = 1;
+			}
 		}
-
-		// No delay lock on hard drops.
-		delay_lock_skip = 1;
-
-		// UNCOMMENT FOR LAST CHANCE MOVE ON HARD DROP
-		// cur_block.y -= 1;
-		// fall_frame_counter = 1;
 	}
 	else
+	{
+		if ((pad1 & (PAD_LEFT|PAD_RIGHT)) == 0)
+		{
+			hard_drop_tap_required = 0;
+		}
+		hard_drop_hold_remaining = HARD_DROP_HOLD_TIME;
+	}
+	
+	
+	if (hard_drop_performed == 0)
 	{
 		// Hard drop skips all this to avoid dropping to the bottom
 		// and then dropping again because it happens to be
@@ -1121,17 +1155,18 @@ void movement(void)
 			require_new_down_button = 0;
 
 			// fall this frame.
-			temp_fall_rate = fall_frame_counter;
+			fall_frame_counter = 0;
 		}
 		else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 		{
 			// fall every other frame.
-			temp_fall_rate = MIN(temp_fall_rate, 2);
+			fall_frame_counter = MIN(fall_frame_counter, 2);
 		}
 
-		if (fall_frame_counter % temp_fall_rate == 0 || temp_fall_rate == 0)
+		if (fall_frame_counter == 0)
 		{
 			cur_block.y += 1;
+			fall_frame_counter = fall_rate;
 		}
 	}
 
@@ -1390,7 +1425,7 @@ void spawn_new_cluster()
 	delay_lock_remaining = -1;
 
 	require_new_down_button = 1;
-	fall_frame_counter = 0;
+	fall_frame_counter = fall_rate;
 
 	cur_rot = 0;
 
@@ -1709,6 +1744,36 @@ void go_to_state(unsigned char new_state)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
+				add_row_at_bottom();
+				delay(1);
+				clear_vram_buffer();
 			}
 
 			// Do this at the end of the state change so that
@@ -1945,7 +2010,7 @@ void clear_rows_in_data(unsigned char start_y)
 		for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
 		{
 //PROFILE_POKE(0x5f); //green
-			if (game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 0)
+			if (game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 0 || game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 1)
 			//if (is_block_free(ix, iy))
 			{
 				// This block is empty, so we can stop checking this row.
@@ -2307,6 +2372,22 @@ void add_block_at_bottom()
 	copy_board_to_nt();
 }
 
+
+
+void add_row_at_bottom()
+{
+	static signed char ix;
+	static unsigned char iy;
+	static unsigned char attacks;
+	//static unsigned char tentacle_fill[7];
+
+	memfill(&game_board[TILE_TO_BOARD_INDEX(0, BOARD_END_Y_PX_BOARD - kill_row_cur)], 1, BOARD_WIDTH);
+	++kill_row_cur;
+
+	// TODO: Only if changed above.
+	copy_board_to_nt();
+}
+
 void reset_gameplay_area()
 {
 	memfill(game_board, 0, BOARD_SIZE);
@@ -2317,6 +2398,7 @@ void reset_gameplay_area()
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 	row_to_clear = -1;
 	delay_lock_remaining = -1;
+	kill_row_cur = 0;
 
 	// load the palettes
 	time_of_day = 0;
