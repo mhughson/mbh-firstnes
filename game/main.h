@@ -35,6 +35,7 @@
 // play a sound effect that is treated like music to the user (jingles, etc).
 #define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
+#define SKULL_SPRITE 0x3b
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -428,6 +429,7 @@ unsigned char spawn_queued;
 signed char row_to_clear;
 
 unsigned char kill_row_cur;
+unsigned char kill_row_queued;
 
 
 

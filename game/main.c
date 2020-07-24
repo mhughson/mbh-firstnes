@@ -99,9 +99,13 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
+* Game Over eat into side of nametable (1 tile too far).
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
 
 COMPLETE:
+* Garbage in nametable after playing "timed", quiting to main menu, and entering options and changing a few settings.
+	* likely writing too many values in display_options, not sure why not 100% though.
+	* suspect you can hit this change an option with a high score at the same time PUSH START is toggled on/off
 * Quick fall rate sometimes: https://clips.twitch.tv/FuriousIntelligentClipzMau5
 * After quiting to main menu, previous match "next" block continues to show.
 * S and Z are too high when flat (or too low when vert)
@@ -503,6 +507,12 @@ void main (void)
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
 					attack_queue_ticks_remaining = attack_delay;
+				}
+
+				if (kill_row_queued)
+				{
+					add_row_at_bottom();
+					kill_row_queued = 0;
 				}
 
 //PROFILE_POKE(0x9f); //blue
@@ -993,8 +1003,6 @@ void movement(void)
 		{
 			attack_queued = 1;
 		}
-
-		add_row_at_bottom();
 	}
 
 	// INPUT
@@ -1744,36 +1752,6 @@ void go_to_state(unsigned char new_state)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
-				add_row_at_bottom();
-				delay(1);
-				clear_vram_buffer();
 			}
 
 			// Do this at the end of the state change so that
@@ -1867,12 +1845,22 @@ void inc_lines_cleared()
 
 		if (cur_level <= lines_total)
 		{
+			++cur_level;
+
 			// we only handle things up to level 29.
-			if (cur_level < 29 )
+			if (cur_level <= 29 )
 			{
-				++cur_level;
 				fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			}
+			else if (cur_level < 40) // raise the floor 10 levels.
+			{
+				if (cur_level == 30)
+				{
+					one_vram_buffer(SKULL_SPRITE, get_ppu_addr(cur_nt, 4<<3, 9<<3)); // skull
+				}
+				kill_row_queued = 1;
+			}
+				
 		}
 
 		++time_of_day;
@@ -1952,7 +1940,7 @@ void display_highscore()
 	while(temp_score != 0)
     {
         unsigned char digit = temp_score % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(0, ((17+7)<<3) - (i << 3), 27<<3 ));
+        one_vram_buffer('0' + digit, get_ppu_addr(0, (23<<3) - (i << 3), 27<<3 ));
 
         temp_score = temp_score / 10;
 		++i;
@@ -2376,15 +2364,8 @@ void add_block_at_bottom()
 
 void add_row_at_bottom()
 {
-	static signed char ix;
-	static unsigned char iy;
-	static unsigned char attacks;
-	//static unsigned char tentacle_fill[7];
-
 	memfill(&game_board[TILE_TO_BOARD_INDEX(0, BOARD_END_Y_PX_BOARD - kill_row_cur)], 1, BOARD_WIDTH);
 	++kill_row_cur;
-
-	// TODO: Only if changed above.
 	copy_board_to_nt();
 }
 
@@ -2468,20 +2449,32 @@ void display_sound()
 
 void display_options()
 {
-	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,17<<3));
-	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,19<<3));
-	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,21<<3));
-	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,23<<3));
-	multi_vram_buffer_horz(off_on_string[hard_drops_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,25<<3));
+ 	static unsigned char start_y = 16;
+
+	// TODO: Could be smarter and only update the line that changed, and delay
+	// 		 could probably be removed.
+	// Avoid overrun when mashing mode change.
+	delay(1);
+	clear_vram_buffer();
+
+	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,start_y<<3));
+	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
+	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
+	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
+	multi_vram_buffer_horz(off_on_string[hard_drops_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
 
 	// NOTE: One redundant call.
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 17<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 19<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 21<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 23<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, 25<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+2)<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+4)<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+6)<<3));
+	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+8)<<3));
 
-	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (17 + (cur_option<<1))<<3));
+	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
+	
+	// Avoid overrun when mashing mode change.
+	delay(1);
+	clear_vram_buffer();
 }
 
 
