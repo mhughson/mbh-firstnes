@@ -7,6 +7,7 @@
 #include "BG/options_screen.h"
 #include "BG/boot_screen.h"
 #include "BG/sound_screen.h"
+#include "BG/ty_screen.h"
 #include "main.h"
 
 /*
@@ -231,6 +232,17 @@ void main (void)
 			case STATE_BOOT:
 			{
 				if (tick_count == 120 || pad1_new & PAD_START)
+				{
+					fade_to_black();
+					go_to_state(STATE_TY);
+					fade_from_black();
+				}
+				break;
+			}
+			case STATE_TY:
+			{
+				// 120, means wait 240 frames from 120 (previous state).
+				if (tick_count == 104 || pad1_new & PAD_START)
 				{
 					fade_to_black();
 					go_to_state(STATE_MENU);
@@ -1571,7 +1583,7 @@ void go_to_state(unsigned char new_state)
 
 	switch (state)
 	{
-		case STATE_BOOT:
+		case STATE_TY:
 		case STATE_SOUND_TEST:
 		{
 			MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
@@ -1623,6 +1635,16 @@ void go_to_state(unsigned char new_state)
 
 			break;
 		}
+		case STATE_TY:
+		{
+			pal_bg(palette_bg_options);
+			ppu_off();
+			vram_adr(NTADR_A(0,0));
+			vram_unrle(ty_screen);
+			ppu_on_all();
+
+			break;
+		}
 		case STATE_MENU:
 		{
 			pal_bg(palette_bg);
@@ -1630,7 +1652,7 @@ void go_to_state(unsigned char new_state)
 			scroll_y = 0;
 			time_of_day = 0;
 
-			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_SOUND_TEST)
+			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST)
 			{
 				oam_clear();
 

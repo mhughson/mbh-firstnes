@@ -95,7 +95,7 @@ unsigned char hard_drops_on;
 unsigned char hard_drop_hold_remaining;
 unsigned char hard_drop_tap_required;
 
-enum { STATE_BOOT, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
+enum { STATE_BOOT, STATE_TY, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_BOOT;
 
 
