@@ -102,12 +102,12 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
-* Game Over eat into side of nametable (1 tile too far).
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
 * "When I was in the middle of playing a game the sound test came up, i was on a pink stage but couldn't catch the level." - KittyFae
-* "the way nestris does it is it declares you dead when two pieces overlap which happens when there's a piece where the next piece spawns"
 
 COMPLETE:
+* Game Over eat into side of nametable (1 tile too far).
+* "the way nestris does it is it declares you dead when two pieces overlap which happens when there's a piece where the next piece spawns"
 * Garbage in nametable after playing "timed", quiting to main menu, and entering options and changing a few settings.
 	* likely writing too many values in display_options, not sure why not 100% though.
 	* suspect you can hit this change an option with a high score at the same time PUSH START is toggled on/off
@@ -1825,11 +1825,11 @@ void go_to_state(unsigned char new_state)
 			// }
 
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
-			multi_vram_buffer_horz( "GAME OVER!", sizeof("GAME OVER!"), address);
+			multi_vram_buffer_horz( "GAME OVER!", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
-			multi_vram_buffer_horz("A-RESTART ", sizeof("A-RESTART "), address);
+			multi_vram_buffer_horz("A-RESTART ", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 16<<3);
-			multi_vram_buffer_horz("B-QUIT    ", sizeof("B-QUIT    "), address);
+			multi_vram_buffer_horz("B-QUIT    ", 10, address);
 			pal_bright(7);
 			delay(fade_delay);
 			pal_bright(6);
