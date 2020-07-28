@@ -17,16 +17,13 @@
 FEATURES:
 
 //must have
-* Kill screen ideas:
-- Remove lock delay.
-- Shrink the play area.
-- 2 block drops.
+--
 
 //should have
-* Lock-delay settings (off, 10 frames, 20 frames)
 
 //nice to have
-* Delay at start of match (maybe only high levels?)
+* Ghost pieces.
+* Lock-delay settings (off, 10 frames, 20 frames)
 * Options on the Pause screen (quit, music, sfx).
 * Store blocks. (classic only?)
 * Update mode order and names to be (will require more space):
@@ -52,6 +49,11 @@ FEATURES:
 
 
 COMPLETE:
+* Delay at start of match (maybe only high levels?)
+* Kill screen ideas:
+- Remove lock delay.
+- Shrink the play area. << THIS
+- 2 block drops.
 * Hard drop on HOLD.
 * Reset on A+B+SEL+START
 * Option to disable hard-drop (or require a slight hold to trigger hard drop.)
@@ -102,6 +104,8 @@ CUT:
 BUGS:
 * Game Over eat into side of nametable (1 tile too far).
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
+* "When I was in the middle of playing a game the sound test came up, i was on a pink stage but couldn't catch the level." - KittyFae
+* "the way nestris does it is it declares you dead when two pieces overlap which happens when there's a piece where the next piece spawns"
 
 COMPLETE:
 * Garbage in nametable after playing "timed", quiting to main menu, and entering options and changing a few settings.
@@ -976,11 +980,19 @@ void movement(void)
 	static unsigned char hard_drop_performed;
 
 	hit = 0;
-	temp_fall_rate = 0;
+	temp_fall_frame_counter = 0;
 	old_x = 0;
 	delay_lock_skip = 0;
 
-	--fall_frame_counter;
+	if (start_delay_remaining == 0)
+	{
+		--fall_frame_counter;
+	}
+	else
+	{
+		--start_delay_remaining;
+	}
+	
 
 	if (pad1_new & PAD_SELECT)
 	{
@@ -1094,7 +1106,7 @@ void movement(void)
 	//		 To fix, I think tick_count should be tracked seperate for
 	//		 this function so that it can be manipulated (eg. when release
 	//	     reset the tick count).
-	temp_fall_rate = fall_frame_counter;
+	temp_fall_frame_counter = fall_frame_counter;
 
 	hard_drop_performed = 0;
 	if (hard_drops_on && pad1 & PAD_UP && (pad1 & (PAD_LEFT|PAD_RIGHT)) == 0)
@@ -1107,38 +1119,11 @@ void movement(void)
 			{
 				hard_drop_performed = 1;
 				hard_drop_tap_required = 1;
+				
 				// TODO: Causes hitch.
 				while (!is_cluster_colliding())
 				{
-					
-					// ix = 0;
-					// iy = 0;
-					// for (bit = 0x8000; bit; bit >>= 1)
-					// {
-					// 	res = cur_cluster.layout & bit;
-
-					// 	// solid bit.
-					// 	if (res)
-					// 	{
-
-					// 		in_x = cur_block.x + ix;
-					// 		in_y = cur_block.y + iy;
-					// 		in_id = 5; //cur_cluster.sprite;
-					// 		set_block( );
-					// 	}
-
-					// 	++ix;
-					// 	if (ix >= 4)
-					// 	{
-					// 		ix = 0;
-					// 		++iy;
-					// 	}
-					// }
-
 					++cur_block.y;
-
-					// delay(1);
-					// clear_vram_buffer();
 				}
 
 				// No delay lock on hard drops.
@@ -1185,6 +1170,11 @@ void movement(void)
 
 		if (fall_frame_counter == 0)
 		{
+			// If the player forces the opening move, skip any remaining start delay.
+			// NOTE: We don't do this for Hard Drops, allowing a sort of "boosted start"
+			//		 if the player wants to try a place a few pieces before they start falling.
+			start_delay_remaining = 0;
+
 			cur_block.y += 1;
 			fall_frame_counter = fall_rate;
 		}
@@ -1595,6 +1585,7 @@ void go_to_state(unsigned char new_state)
 			saved_starting_level = cur_level;
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			row_to_clear = -1;
+			start_delay_remaining = START_DELAY;
 			display_level();
 			display_score();
 			break;
@@ -2402,6 +2393,7 @@ void reset_gameplay_area()
 	row_to_clear = -1;
 	delay_lock_remaining = -1;
 	kill_row_cur = 0;
+	start_delay_remaining = START_DELAY;
 
 	// load the palettes
 	time_of_day = 0;

@@ -373,7 +373,7 @@ unsigned char off_nt;
 
 // movement()
 char hit;
-unsigned char temp_fall_rate;
+unsigned char temp_fall_frame_counter;
 unsigned char old_x;
 // spawn_new_cluster()
 unsigned char id;
@@ -430,6 +430,9 @@ signed char row_to_clear;
 
 unsigned char kill_row_cur;
 unsigned char kill_row_queued;
+
+#define START_DELAY 120
+unsigned char start_delay_remaining;
 
 
 
