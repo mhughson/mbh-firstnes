@@ -1331,12 +1331,14 @@ void put_cur_cluster()
 //PROFILE_POKE(0x9f); //blue
 	SFX_PLAY_WRAPPER(SOUND_LAND);
 
-	if (min_y <= BOARD_OOB_END)
-	{
-		go_to_state(STATE_OVER);
-		return;
-	}
-	else
+	// Don't end the game when something goes off screen (it should only end when a new piece can't be placed).
+	//
+	// if (min_y <= BOARD_OOB_END)
+	// {
+	// 	go_to_state(STATE_OVER);
+	// 	return;
+	// }
+	// else
 	{
 //PROFILE_POKE(0x3f); //red
 		// hide the sprite while we work.
