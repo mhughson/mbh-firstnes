@@ -17,11 +17,13 @@
 FEATURES:
 
 //must have
---
+* Test NES rotations
 
 //should have
+--
 
 //nice to have
+* Start level 29.
 * Ghost pieces.
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Options on the Pause screen (quit, music, sfx).
@@ -29,8 +31,6 @@ FEATURES:
 * Update mode order and names to be (will require more space):
 	* Kraken, Classic, Kraken Alt* Description of modes in option screen.
 * Game over screen (polished).
-* When on Level 29, display MAX instead.
-	* Doge suggested showing levels beyond 29.
 * Points kicker
 * Trigger sound test on Konami Code.
 * Special Thanks screen
@@ -38,7 +38,6 @@ FEATURES:
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
-* See if tentacles can be made to work with name tables.
 * Screen shake on hit. (others say this is annoying)
 * Hard drop trails. (likely too much cpu)
 
@@ -94,6 +93,11 @@ COMPLETE:
 * Push start flashing text.
 
 CUT:
+* See if tentacles can be made to work with name tables.
+	* Want to keep animation.
+* When on Level 29, display MAX instead.
+	* Doge suggested showing levels beyond 29.
+	* Added "Kill Screen"
 * Last chance move on hard drop (maybe optional).
 	* Feels weird. See commented out code in movement().
 * Sound on hit tentacle.
@@ -102,10 +106,12 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
+* Kraken eye is all glitches when hitting tentacle on hardware.
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
 * "When I was in the middle of playing a game the sound test came up, i was on a pink stage but couldn't catch the level." - KittyFae
 
 COMPLETE:
+* SKULL doesn't clear on game over.
 * Game Over eat into side of nametable (1 tile too far).
 * "the way nestris does it is it declares you dead when two pieces overlap which happens when there's a piece where the next piece spawns"
 * Garbage in nametable after playing "timed", quiting to main menu, and entering options and changing a few settings.
@@ -2401,6 +2407,9 @@ void reset_gameplay_area()
 	time_of_day = 0;
 	pal_bg(palette_bg_list[time_of_day]);
 	pal_spr(palette_sp);
+
+	// Clear the skull if needed.
+	one_vram_buffer(0x8, get_ppu_addr(2, 4<<3, 9<<3));
 
 	display_lines_cleared();
 	display_score();
