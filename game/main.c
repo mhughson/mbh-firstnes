@@ -17,7 +17,7 @@
 FEATURES:
 
 //must have
-* Test NES rotations
+--
 
 //should have
 --
@@ -48,6 +48,7 @@ FEATURES:
 
 
 COMPLETE:
+* Test NES rotations (confirmed)
 * Delay at start of match (maybe only high levels?)
 * Kill screen ideas:
 - Remove lock delay.
@@ -107,10 +108,14 @@ CUT:
 
 BUGS:
 * Kraken eye is all glitches when hitting tentacle on hardware.
-* Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
+	* Krysio kart only.
 * "When I was in the middle of playing a game the sound test came up, i was on a pink stage but couldn't catch the level." - KittyFae
 
 COMPLETE:
+* Blocks are not falling fast enough on soft drop
+	* Was falling every 3 frames instead of 2 frames.
+* Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
+	* Discovered a couple problems on top of special case for lines is now only lines.
 * SKULL doesn't clear on game over.
 * Game Over eat into side of nametable (1 tile too far).
 * "the way nestris does it is it declares you dead when two pieces overlap which happens when there's a piece where the next piece spawns"
@@ -1171,7 +1176,7 @@ void movement(void)
 		else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
 		{
 			// fall every other frame.
-			fall_frame_counter = MIN(fall_frame_counter, 2);
+			fall_frame_counter = MIN(fall_frame_counter, 1);
 		}
 
 		if (fall_frame_counter == 0)
@@ -1541,20 +1546,35 @@ void rotate_cur_cluster(char dir)
 	// if after rotating, we are now colliding we something, revert the rotation.
 	if (is_cluster_colliding())
 	{
+		// RIGHT 1
 		++cur_block.x;
 		if (is_cluster_colliding())
 		{
+			// LEFT 1
 			cur_block.x -= 2;
 			if (is_cluster_colliding())
 			{
 				// Special case for line piece :(
-				// TODO: May be to change side that gets checked, after updating block layouts.
-				--cur_block.x;
-				if (is_cluster_colliding())
+				if (cur_cluster.id == 2)
+				{
+					// RIGHT 2
+					cur_block.x += 3;
+					if (is_cluster_colliding())
+					{
+						// Officially no where to go. Revert back to original position
+						// and rotation, and play a whaa-whaa sound.
+						cur_block.x -= 2;
+						cur_rot = old_rot;
+						cur_cluster.layout = cur_cluster.def[cur_rot];
+						SFX_PLAY_WRAPPER(SOUND_BLOCKED);
+						return;
+					}
+				}
+				else
 				{
 					// Officially no where to go. Revert back to original position
 					// and rotation, and play a whaa-whaa sound.
-					cur_block.x += 2;
+					cur_block.x += 1;
 					cur_rot = old_rot;
 					cur_cluster.layout = cur_cluster.def[cur_rot];
 					SFX_PLAY_WRAPPER(SOUND_BLOCKED);
@@ -1563,10 +1583,7 @@ void rotate_cur_cluster(char dir)
 			}
 		}
 	}
-
-
 	SFX_PLAY_WRAPPER(SOUND_ROTATE);
-
 }
 
 void go_to_state(unsigned char new_state)

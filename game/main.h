@@ -321,7 +321,7 @@ const unsigned int* cluster_defs_classic [NUM_CLUSTERS] =
 {
     def_z_clust,
     def_z_rev_clust,
-    def_line_clust,
+    def_line_clust, // if move update places that check for line via id.
     def_box_clust,
     def_tee_clust,
     def_L_clust,
