@@ -320,8 +320,12 @@ void main (void)
 					ppu_on_all();
 					fade_from_black();
 
-					// little cheap to start at very high levels.
-					if (pad1 & PAD_A)
+					// little cheat to start at very high levels.
+					if (cur_level == 9 && pad1 & PAD_SELECT)
+					{
+						cur_level = 29;
+					}
+					else if (pad1 & PAD_A)
 					{
 						cur_level += 10;
 					}
