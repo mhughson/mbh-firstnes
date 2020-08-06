@@ -23,6 +23,7 @@ FEATURES:
 --
 
 //nice to have
+* Disable hard drop (not on hold - People either want it or not).
 * Start level 29.
 * Ghost pieces.
 * Lock-delay settings (off, 10 frames, 20 frames)
@@ -278,12 +279,25 @@ void main (void)
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 				}
 
+				if (pad1_new != 0)
+				{
+					if (pad1_new & konami_code[cur_konami_index])
+					{
+						++cur_konami_index;
+					}
+					else
+					{
+						cur_konami_index = 0;
+					}
+				}
+
 				if (pad1_new & PAD_START)
 				{
 					seed_rng();
 
-					if (pad1 & PAD_A)
+					if (cur_konami_index >= KONAMI_CODE_LEN)
 					{
+						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
 						music_stop();
 						go_to_state(STATE_SOUND_TEST);
 					}

@@ -98,6 +98,9 @@ unsigned char hard_drop_tap_required;
 enum { STATE_BOOT, STATE_TY, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
 unsigned char state = STATE_BOOT;
 
+#define KONAMI_CODE_LEN 11
+unsigned char konami_code[KONAMI_CODE_LEN] = { PAD_UP, PAD_UP, PAD_DOWN, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_LEFT, PAD_RIGHT, PAD_B, PAD_A, PAD_START };
+unsigned char cur_konami_index;
 
 
 // The block operates in "logical space" from 0 -> w/h. The logical
