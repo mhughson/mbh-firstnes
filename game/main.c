@@ -23,7 +23,6 @@ FEATURES:
 --
 
 //nice to have
-* Disable hard drop (not on hold - People either want it or not).
 * Start level 29.
 * Ghost pieces.
 * Lock-delay settings (off, 10 frames, 20 frames)
@@ -49,6 +48,8 @@ FEATURES:
 
 
 COMPLETE:
+* Disable hard drop (not on hold - People either want it or not).
+	* Added 3 settings: off, tap, hold.
 * Test NES rotations (confirmed)
 * Delay at start of match (maybe only high levels?)
 * Kill screen ideas:
@@ -108,11 +109,14 @@ CUT:
 	* Don't like that it won't be consistent between lockdelay and just slow falling.
 
 BUGS:
+* Flicker on hard drop.
+* Can get game over when spawned piece clears a line. Wouldn't be so bad if the line didn't get cleared.
 * Kraken eye is all glitches when hitting tentacle on hardware.
-	* Krysio kart only.
+	* Krysio kart only. Need resistor on pins?
 * "When I was in the middle of playing a game the sound test came up, i was on a pink stage but couldn't catch the level." - KittyFae
 
 COMPLETE:
+* Flickering sprites when pressing select during Kraken modes.
 * Blocks are not falling fast enough on soft drop
 	* Was falling every 3 frames instead of 2 frames.
 * Bad wall kick: http://harddrop.com/fumen/?m115@fhB8NemL2SAy3WeD0488AwkUNEjhd5DzoBAAvhA+qu?AA
@@ -542,13 +546,13 @@ void main (void)
 					}
 				}
 
-//PROFILE_POKE(0x5f); // green
 				// delay a frame for perf.
 				if (attack_style != ATTACK_NEVER && attack_queued)
 				{
+PROFILE_POKE(PROF_R);
 					// TODO: Perf - Very expensive.
 					add_block_at_bottom();
-
+PROFILE_POKE(PROF_W);
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
 					attack_queue_ticks_remaining = attack_delay;
@@ -560,7 +564,7 @@ void main (void)
 					kill_row_queued = 0;
 				}
 
-//PROFILE_POKE(0x9f); //blue
+PROFILE_POKE(PROF_G);
 
 				if (delay_spawn_remaining != -1)
 				{
@@ -582,10 +586,12 @@ void main (void)
 					movement();
 				}
 				
+PROFILE_POKE(PROF_B);
 
-//PROFILE_POKE(0x3f); // red
 				draw_gameplay_sprites();
-//PROFILE_POKE(0x1f); // white
+
+PROFILE_POKE(PROF_W);
+
 				if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
 				{
 					--attack_queue_ticks_remaining;
@@ -643,7 +649,7 @@ void main (void)
 				// 	//go_to_state(STATE_OVER);
 				// }
 #endif
-//PROFILE_POKE(0x1e); // white
+PROFILE_POKE(PROF_CLEAR);
 				break;
 			}
 
@@ -2319,15 +2325,16 @@ void copy_board_to_nt()
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
-		if (ix % 4 == 0)
+		if (ix % 3 == 0)
 		{
 			// calling this again here isn't needed, as time will not have advanced, so
 			// drawing the sprites again will do nothing.
 			//draw_gameplay_sprites();
-//PROFILE_POKE(0x1e); //clear so we don't screw up the visualization.
+			PROFILE_POKE(PROF_CLEAR);
 			delay(1);
 			clear_vram_buffer();
 		}
+		PROFILE_POKE(PROF_R);
 	}
 
 	// if (fast_music && cur_gameplay_music != MUSIC_STRESS)

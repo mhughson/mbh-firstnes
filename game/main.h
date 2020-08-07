@@ -8,6 +8,12 @@
 #define PROFILE_POKE(val)
 #endif
 
+#define PROF_CLEAR 0x1e // none
+#define PROF_R 0x3f // red
+#define PROF_G 0x5f // green
+#define PROF_B 0x9f // blue
+#define PROF_W 0x1f // white
+
 // Nametable A: 	2400-2000 = 400
 // Attributes: 		2400-23c0 = 0x40
 // Patterns: 		0x400-0x40 = 0x3c0
