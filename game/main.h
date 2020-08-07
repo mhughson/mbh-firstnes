@@ -559,6 +559,10 @@ unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
     "CLASSIC"
 };
 
+#define NUM_HARD_DROP_SETTINGS 3
+#define HARD_DROP_STRING_LEN 4
+unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
+
 unsigned char text_push_start[] = { "PUSH START" };
 unsigned char clear_push_start[] = { "          " };
 

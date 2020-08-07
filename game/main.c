@@ -412,9 +412,9 @@ void main (void)
 
 					case 4: // hard drops
 					{
-						if (hard_drops_on == 0)
+						if (hard_drops_on < NUM_HARD_DROP_SETTINGS - 1)
 						{
-							hard_drops_on = 1;
+							++hard_drops_on;
 						}
 					}
 
@@ -494,7 +494,7 @@ void main (void)
 					{
 						if (hard_drops_on != 0)
 						{
-							hard_drops_on = 0;
+							--hard_drops_on;
 						}
 						break;
 					}
@@ -1170,7 +1170,14 @@ void movement(void)
 		{
 			hard_drop_tap_required = 0;
 		}
-		hard_drop_hold_remaining = HARD_DROP_HOLD_TIME;
+		if (hard_drops_on == 1) // tap
+		{
+			hard_drop_hold_remaining = 1;
+		}
+		else if (hard_drops_on == 2) // hold
+		{
+			hard_drop_hold_remaining = HARD_DROP_HOLD_TIME;
+		}
 	}
 	
 	
@@ -1685,6 +1692,7 @@ void go_to_state(unsigned char new_state)
 			pal_spr(palette_sp);
 			scroll_y = 0;
 			time_of_day = 0;
+			cur_konami_index = 0;
 
 			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST)
 			{
@@ -2521,7 +2529,7 @@ void display_options()
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
 	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
-	multi_vram_buffer_horz(off_on_string[hard_drops_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
+	multi_vram_buffer_horz(hard_drop_types[hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
 
 	// NOTE: One redundant call.
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
