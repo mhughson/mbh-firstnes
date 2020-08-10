@@ -33,7 +33,7 @@
 #define BOARD_HEIGHT (BOARD_END_Y_PX_BOARD - BOARD_OOB_END)
 #define BOARD_WIDTH (BOARD_END_X_PX_BOARD + 1)
 
-#define TILE_TO_BOARD_INDEX(x,y) (((y) * 10) + (x))
+#define TILE_TO_BOARD_INDEX(x,y) ((board_lookup_y[(y)]) + (x))
 
 #define BLINK_LEN (60 * 5)
 
@@ -55,14 +55,13 @@ struct block
 
 struct cluster
 {
-    /*
-        1 1 0 0 ─┬─ [ byte 0 ]
-        0 1 1 0 ─┘
-        0 0 0 0
-        0 0 0 0
-    */
-    unsigned int layout;
-    const unsigned int def[4];
+    
+    // The current layout. 1 entry from "def".
+    unsigned char layout[4];
+    // The 4 rotations defining this block.
+    // Each entry in the array is an index into index_to_x/y_lookup.
+    // That look up contains x/y offsets from the position of this block.
+    const unsigned char def[4][4];
     unsigned char sprite;
     unsigned char id;
 };
@@ -137,216 +136,80 @@ unsigned char cur_level = 0;
 
 // CLASSIC RIGHT-HANDED (NES)
 
-const unsigned int def_z_clust[4] = 
-{ 
-    0xc60,
-    0x2640,
-    0xc60, // dupe.
-    0x2640, // dupe.
-};
+// TODO: offset in pixels as well?
+const unsigned char index_to_x_lookup[16] = { 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 };
+const unsigned char index_to_y_lookup[16] = { 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3 };
 
-
-const unsigned int def_z_rev_clust[4] = 
-{ 
-    0x6C0,
-    0x4620,
-    0x6C0, // dupe.
-    0x4620, // dupe.
-};
-
-const unsigned int def_line_clust[4] =
+const unsigned char def_line[4][4] = 
 {
-    0xf0,
-    0x2222,
-    0xf0, // dupe.
-    0x2222 // dupe.
+    { 8, 9, 10, 11 },
+    { 2, 6, 10, 14 },
+    { 8, 9, 10, 11 },
+    { 2, 6, 10, 14 }
 };
 
-const unsigned int def_box_clust[4] =
+const unsigned char def_square[4][4] =
 {
-    0x660,    
-    0x660,    
-    0x660,
-    0x660,
+    { 5, 6, 9, 10 },
+    { 5, 6, 9, 10 },
+    { 5, 6, 9, 10 },
+    { 5, 6, 9, 10 }
 };
 
-const unsigned int def_tee_clust[4] =
+const unsigned char def_L_rev[4][4] =
 {
-    0xe40, // 1
-    0x4c40, //2
-    0x4e00, // 3    
-    0x4640, // 4
+    { 4, 5, 6, 10 },
+    { 1, 5, 8, 9 },
+    { 0, 4, 5, 6 },
+    { 1, 2, 5, 9 },
 };
 
-const unsigned int def_L_clust[4] =
+const unsigned char def_L[4][4] =
 {
-    0xe80,    
-    0xc440,    
-    0x2e00,
-    0x4460,
+    { 4, 5, 6, 8 },
+    { 0, 1, 5, 9 },
+    { 2, 4, 5, 6 },
+    { 1, 5, 9, 10 },
 };
 
-const unsigned int def_L_rev_clust[4] =
+const unsigned char def_S[4][4] =
 {
-    0xe20,    
-    0x44c0,    
-    0x8e00,
-    0x6440,
+    { 5, 6, 8, 9 },
+    { 1, 5, 6, 10 },
+    { 5, 6, 8, 9 },
+    { 1, 5, 6, 10 },
 };
 
-// CLASSIC LEFT-HANDED (GB)
-
-const unsigned int def_z_clust_gb[4] = 
-{ 
-    0xc60,
-    0x264,
-    0xc60, // dupe.
-    0x264, // dupe.
-};
-
-
-const unsigned int def_z_rev_clust_gb[4] = 
-{ 
-    0x6C0,
-    0x8C40,
-    0x6C0, // dupe.
-    0x8C40, // dupe.
-};
-
-const unsigned int def_line_clust_gb[4] =
+const unsigned char def_Z[4][4] =
 {
-    0xf0,
-    0x4444,
-    0xf0, // dupe.
-    0x4444 // dupe.
+    { 4, 5, 9, 10 },
+    { 2, 5, 6, 9 },
+    { 4, 5, 9, 10 },
+    { 2, 5, 6, 9 },
 };
 
-const unsigned int def_box_clust_gb[4] =
+const unsigned char def_T[4][4] =
 {
-    0x660,    
-    0x660,    
-    0x660,
-    0x660,
-};
-
-const unsigned int def_tee_clust_gb[4] =
-{
-    0xe40, // 1
-    0x4c40, //2
-    0x4e00, // 3    
-    0x4640, // 4
-};
-
-const unsigned int def_L_clust_gb[4] =
-{
-    0xe80,    
-    0xc440,    
-    0x2e00,
-    0x4460,
-};
-
-const unsigned int def_L_rev_clust_gb[4] =
-{
-    0xe20,    
-    0x44c0,    
-    0x8e00,
-    0x6440,
-};
-
-// MODERN
-
-const unsigned int def_elbow_clust[4] =
-{
-    0x4600,    
-    0x0640,    
-    0xc40,
-    0x4c00,
-};
-
-const unsigned int def_short_line_clust[4] =
-{
-    0xe0,
-    0x4440,
-    0xe0, // dupe.
-    0x4440 // dupe.
+    { 4, 5, 6, 9 },
+    { 1, 4, 5, 9 },
+    { 1, 4, 5, 6 },
+    { 1, 5, 6, 9 },
 };
 
 
-const unsigned int def_triangle_clust[4] =
-{
-    0x4a00,    
-    0x4240,    
-    0xa40,
-    0x4840,
-};
-
-const unsigned int def_Y_clust[4] =
-{
-    0x4c44,    
-    0x2f00,    
-    0x2232,
-    0xf4,
-};
-
-const unsigned int def_Y_rev_clust[4] =
-{
-    0x4644,    
-    0xf20,    
-    0x2262,
-    0x4f0,
-};
-
-const unsigned int def_cross_clust[4] =
-{
-    0x4e40,
-    0x4e40,
-    0x4e40,
-    0x4e40,
-};
-
-const unsigned int def_steps_clust[4] =
-{
-    0x4630,
-    0x364,
-    0xc62,
-    0x26c0,
-};
 
 
 #define NUM_CLUSTERS 7
-// unused.
-const unsigned int* cluster_defs_modern [NUM_CLUSTERS] =
-{
-    def_cross_clust, // def_z_clust,
-    def_steps_clust, // def_z_rev_clust,
-    def_short_line_clust, // def_line_clust,
-    def_triangle_clust, // def_box_clust,
-    def_elbow_clust, // def_tee_clust,
-    def_Y_clust, // def_L_clust,
-    def_Y_rev_clust, // def_L_rev_clust,
-};
 
-const unsigned int* cluster_defs_classic [NUM_CLUSTERS] =
+const unsigned char** cluster_defs_classic [NUM_CLUSTERS] =
 {
-    def_z_clust,
-    def_z_rev_clust,
-    def_line_clust, // if move update places that check for line via id.
-    def_box_clust,
-    def_tee_clust,
-    def_L_clust,
-    def_L_rev_clust,
-};
-
-// unused.
-const unsigned int* cluster_defs_classic_gb [NUM_CLUSTERS] =
-{
-    def_z_clust_gb,
-    def_z_rev_clust_gb,
-    def_line_clust_gb,
-    def_box_clust_gb,
-    def_tee_clust_gb,
-    def_L_clust_gb,
-    def_L_rev_clust_gb,
+    def_Z,
+    def_S,
+    def_line, // if move update places that check for line via id.
+    def_square,
+    def_T,
+    def_L,
+    def_L_rev,
 };
 
 unsigned char cur_rot;
@@ -443,7 +306,16 @@ unsigned char kill_row_queued;
 #define START_DELAY 120
 unsigned char start_delay_remaining;
 
+unsigned char board_lookup_y[24] = 
+{
+    0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230
+};
 
+unsigned int mask;
+int address;
+unsigned char time_of_day;
+unsigned char temp_pal[16];
+unsigned int line_score_mod;
 
 #pragma bss-name(push, "BSS")
 
@@ -458,8 +330,6 @@ const unsigned char option_icon[] = {0x25, 0x26};
 // copy_board_to_nt()
 char copy_board_data[BOARD_HEIGHT];
 char lines_cleared_y[4];
-
-unsigned char temp_pal[16];
 
 const unsigned char palette_bg[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x00,0x17,0x28,0x0f,0x2a,0x16,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_sp[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x0f,0x26,0x37,0x0f,0x16,0x31,0x37,0x0f,0x22,0x26,0x37 };
@@ -491,8 +361,6 @@ const unsigned char palette_bg_list[NUM_TIMES_OF_DAY][16]=
     { 0x0f,0x1c,0x36,0x30,0x0f,0x00,0x18,0x26,0x0f,0x2a,0x16,0x38,0x0f,0x1c,0x26,0x37 },
     { 0x0f,0x23,0x32,0x30,0x0f,0x00,0x17,0x28,0x0f,0x2a,0x16,0x37,0x0f,0x23,0x26,0x37 },
 };
-
-unsigned char time_of_day;
 
 /*
 Level	Frames per Gridcell

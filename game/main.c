@@ -756,33 +756,32 @@ PROFILE_POKE(PROF_CLEAR);
 
 void draw_menu_sprites(void)
 {
-	static unsigned char ix;
-	static unsigned int t;
+	static unsigned char t;
 
 	// clear all sprites from sprite buffer
 	oam_clear();
 
 	// FLAGS
-	t = tick_count_large % 60;
-	if (t > 45)
+	t = tick_count % 64;
+	if (t > 48)
 	{
-		ix = 0x69;
+		local_ix = 0x69;
 	}
-	else if (t > 30)
+	else if (t > 32)
 	{
-		ix = 0x68;
+		local_ix = 0x68;
 	}
-	else if (t > 15)
+	else if (t > 16)
 	{
-		ix = 0x67;
+		local_ix = 0x67;
 	}
 	else
 	{
-		ix = 0x66;
+		local_ix = 0x66;
 	}
 
-	oam_spr(10 << 3, 23 << 3, ix, 0);
-	oam_spr(22 << 3, 23 << 3, ix, 0);
+	oam_spr(10 << 3, 23 << 3, local_ix, 0);
+	oam_spr(22 << 3, 23 << 3, local_ix, 0);
 
 	// TENTACLES
 	oam_spr(19 << 3, 14 << 3, 0x60, 1);
@@ -800,9 +799,11 @@ void draw_menu_sprites(void)
 
 void draw_gameplay_sprites(void)
 {
-	static unsigned int mask;
 	static char shake_offset;
 	static unsigned char speed;
+	static unsigned char i;
+	static unsigned char j;
+
 //PROFILE_POKE(0x5f); // green
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -814,36 +815,25 @@ void draw_gameplay_sprites(void)
 	local_start_x = (cur_block.x << 3) + BOARD_START_X_PX;
 	local_start_y = (cur_block.y << 3) + BOARD_START_Y_PX;
 
-	local_iy = 0;
-	local_ix = 0;
-	for (mask = 0x8000; mask; mask >>= 1)
+	// 255 means hide.
+	if (cur_block.y != 255)
 	{
-		// 255 means hide.
-		if (cur_block.y != 255)
+		for (i = 0; i < 4; ++i)
 		{
-			if (cur_cluster.layout & mask)
+			// store the index into the x,y offset for each solid piece in the first rotation.
+			j = cur_cluster.layout[i];
+
+			// conver that to x,y offsets.
+			local_ix = index_to_x_lookup[j];
+			local_iy = index_to_y_lookup[j];
+
+			// Don't draw the current cluster if it is above the top of the board.
+			// We want it to be able to function and move up there, but should not
+			// be visible.
+			if (local_start_y + (local_iy << 3) > OOB_TOP)
 			{
-				// Don't draw the current cluster if it is above the top of the board.
-				// We want it to be able to function and move up there, but should not
-				// be visible.
-				if (local_start_y + (local_iy << 3) > OOB_TOP)
-				{
-					oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
-				}
+				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 			}
-		}
-
-		// Next is now in NameTable.
-		// if (next_cluster.layout & mask)
-		// {
-		// 	oam_spr((15 << 3) + (local_ix << 3), (1 << 3) + (local_iy << 3), next_cluster.sprite, 0);
-		// }
-
-		++local_ix;
-		if (local_ix >= 4)
-		{
-			local_ix = 0;
-			++local_iy;
 		}
 	}
 
@@ -1008,10 +998,6 @@ void draw_gameplay_sprites(void)
 
 void movement(void)
 {
-	// static unsigned char ix;
-	// static unsigned char iy;
-	// static unsigned int bit;
-	// static unsigned int res;
 	static unsigned char hard_drop_performed;
 
 	hit = 0;
@@ -1233,7 +1219,6 @@ void movement(void)
 
 	hit = 0;
 
-//PROFILE_POKE(0x3f); //red
 	// Offset from the bottom.
 	if (is_cluster_colliding())
 	{
@@ -1262,13 +1247,11 @@ void movement(void)
 	{
 		delay_lock_remaining = -1;
 	}
-	
+
 
 	if (hit)
 	{
-//PROFILE_POKE(0x5f); //green
 		put_cur_cluster();
-//PROFILE_POKE(0x9f); //blue
 		// Spawn a new block.
 		//spawn_new_cluster();
 		delay_spawn_remaining = DELAY_SPAWN_LEN;
@@ -1278,8 +1261,6 @@ void movement(void)
 
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 {
-	static int address;
-
 	// w = 10 tiles,  80 px
 	// h = 20 tiles, 160 px
 
@@ -1300,7 +1281,6 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
 {
-	int address;
 	if (y <= BOARD_OOB_END)
 	{
 		// Don't place stuff out of bounds.
@@ -1323,51 +1303,41 @@ void clear_block(unsigned char x, unsigned char y)
 
 void put_cur_cluster()
 {
-	static unsigned char ix;
-	static unsigned char iy;
-	static unsigned int bit;
-	static unsigned int res;
+	static unsigned char i;
+	static unsigned char j;
 
 //PROFILE_POKE(0x5f); //green
 
 	max_y = 0;
 	min_y = 0xff; // max
 
-	ix = 0;
-	iy = 0;
-	for (bit = 0x8000; bit; bit >>= 1)
+	for (i = 0; i < 4; ++i)
 	{
-		res = cur_cluster.layout & bit;
+		// store the index into the x,y offset for each solid piece in the first rotation.
+		j = cur_cluster.layout[i];
 
-		// solid bit.
-		if (res)
+		// convert that to x,y offsets.
+		local_ix = index_to_x_lookup[j];
+		local_iy = index_to_y_lookup[j];
+
+		in_x = cur_block.x + local_ix;
+		in_y = cur_block.y + local_iy;
+		in_id = cur_cluster.sprite;
+
+		// This is basically always going to be the first thing drawn,
+		// but i couldn't think of a clever way to do this once.
+		if (in_y < min_y)
 		{
-
-			in_x = cur_block.x + ix;
-			in_y = cur_block.y + iy;
-			in_id = cur_cluster.sprite;
-
-			// This is basically always going to be the first thing drawn,
-			// but i couldn't think of a clever way to do this once.
-			if (in_y < min_y)
-			{
-				min_y = in_y;
-			}
-			if (in_y > max_y)
-			{
-				max_y = in_y;
-			}
+			min_y = in_y;
+		}
+		if (in_y > max_y)
+		{
+			max_y = in_y;
+		}
 //PROFILE_POKE(0x3f); //red
-			set_block( );
+		set_block( );
 //PROFILE_POKE(0x5f); //green
-		}
 
-		++ix;
-		if (ix >= 4)
-		{
-			ix = 0;
-			++iy;
-		}
 	}
 
 //PROFILE_POKE(0x9f); //blue
@@ -1427,42 +1397,33 @@ unsigned char is_block_free(unsigned char x, unsigned char y)
 
 unsigned char is_cluster_colliding()
 {
-	static unsigned char ix;
-	static unsigned char iy;
-	static unsigned int bit;
-
 	static unsigned char x;
 	static unsigned char y;
+	static unsigned char i;
+	static unsigned char j;
 
-	ix = 0;
-	iy = 0;
-	for (bit = 0x8000; bit; bit >>= 1)
+	for (i = 0; i < 4; ++i)
 	{
-		// solid bit.
-		if (cur_cluster.layout & bit)
+		// store the index into the x,y offset for each solid piece in the first rotation.
+		j = cur_cluster.layout[i];
+
+		// convert that to x,y offsets.
+		local_ix = index_to_x_lookup[j];
+		local_iy = index_to_y_lookup[j];
+
+		x = cur_block.x + local_ix;
+		y = cur_block.y + local_iy;
+
+		if (y > BOARD_END_Y_PX_BOARD || x > BOARD_END_X_PX_BOARD)
 		{
-
-			x = cur_block.x + ix;
-			y = cur_block.y + iy;
-
-			if (y > BOARD_END_Y_PX_BOARD || x > BOARD_END_X_PX_BOARD)
-			{
-				// consider this blocked.
-				return 1;
-			}
-
-			//return get_block(x, y) == 0;
-			if(game_board[TILE_TO_BOARD_INDEX(x,y)]) // != 5 && game_board[TILE_TO_BOARD_INDEX(x,y)] != 0)
-			{
-				return 1;
-			}
+			// consider this blocked.
+			return 1;
 		}
 
-		++ix;
-		if (ix >= 4)
+		//return get_block(x, y) == 0;
+		if(game_board[TILE_TO_BOARD_INDEX(x,y)]) // != 5 && game_board[TILE_TO_BOARD_INDEX(x,y)] != 0)
 		{
-			ix = 0;
-			++iy;
+			return 1;
 		}
 	}
 
@@ -1471,8 +1432,8 @@ unsigned char is_cluster_colliding()
 
 void spawn_new_cluster()
 {
-	static unsigned int mask;
-	static unsigned char next_block_vram[4];
+	static unsigned char i;
+	static unsigned char j;
 
 	id = 0;
 
@@ -1484,23 +1445,14 @@ void spawn_new_cluster()
 	cur_rot = 0;
 
 	// Copy the next cluster to the current one.
-	memcpy(cur_cluster.def, next_cluster.def, 4 * 2);
-	//cur_cluster.def = next_cluster.def;
-	cur_cluster.layout = cur_cluster.def[0];
+	memcpy(cur_cluster.def, next_cluster.def, 4 * 4);
+	memcpy(cur_cluster.layout, cur_cluster.def[0], 4);
 	cur_cluster.sprite = next_cluster.sprite;
 	cur_cluster.id = next_cluster.id;
 
 	// Reset the block.
 	cur_block.x = 3; //(BOARD_END_Y_PX_BOARD >> 1);
 	cur_block.y = cluster_offsets[cur_cluster.id];
-
-	// If the block is colliding right out of the game, move it up so that
-	// we get a cleaner game over.
-	// REMOVED FOR PERF
-	// if (is_cluster_colliding())
-	// {
-	// 	--cur_block.y;
-	// }
 
 	// By checking twice we go from 1 in 7 chance of a dupe to
 	// 1 in 49 chance.
@@ -1510,17 +1462,8 @@ void spawn_new_cluster()
 		id = rand8() % NUM_CLUSTERS;
 	}
 	next_cluster.id = id;
-	if (block_style == BLOCK_STYLE_MODERN)
-	{
-		memcpy(next_cluster.def, cluster_defs_modern[id], 4 * 2);
-	}
-	else
-	{
-		memcpy(next_cluster.def, cluster_defs_classic[id], 4 * 2);
-	}
-
-	//next_cluster.def = cluster_defs[id]; // def_z_rev_clust;
-	next_cluster.layout = next_cluster.def[0];
+	memcpy(next_cluster.def, cluster_defs_classic[id], (4 * 4));
+	memcpy(next_cluster.layout, next_cluster.def[0], 4);
 	next_cluster.sprite = cluster_sprites[id];
 
 //PROFILE_POKE(0x9f); //blue
@@ -1528,28 +1471,22 @@ void spawn_new_cluster()
 	local_iy = 0;
 	local_ix = 0;
 	local_t = next_cluster.sprite;
-	// We need only check the middle 2 rows because all clusters spawn horizontal which 
-	// means the top and bottom rows are empty.
-	for (mask = 0x800; mask > 8; mask >>= 1)
-	{
-		if (next_cluster.layout & mask)
-		{
-			next_block_vram[local_ix] = local_t;
-		}
-		else
-		{
-			next_block_vram[local_ix] = 0;
-		}
 		
+	// clear out the middle 2 rows of the "next piece" (all pieces spawn with only those 2 rows containing visuals).
+	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 16));
+	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 24));
 
-		++local_ix;
-		if (local_ix >= 4)
-		{
-			multi_vram_buffer_horz(next_block_vram, 4, get_ppu_addr(cur_nt, 120, 16 + (local_iy << 3)));
-			local_ix = 0;
-			++local_iy;
-		}
-	}	
+	for (i = 0; i < 4; ++i)
+	{
+		// store the index into the x,y offset for each solid piece in the first rotation.
+		j = next_cluster.layout[i];
+		
+		// convert that to x,y offsets.
+		local_ix = index_to_x_lookup[j];
+		local_iy = index_to_y_lookup[j];
+
+		one_vram_buffer(local_t, get_ppu_addr(cur_nt, 120 + (local_ix << 3), 8 + (local_iy << 3)));
+	}
 //PROFILE_POKE(0x1e); //none
 
 	// There is an edge case where a block moves down on the frame it is spawned, while
@@ -1572,7 +1509,8 @@ void rotate_cur_cluster(char dir)
 	old_rot = cur_rot;
 
 	cur_rot = (cur_rot + dir) & 3; // % 4
-	cur_cluster.layout = cur_cluster.def[cur_rot];
+
+	memcpy(cur_cluster.layout, cur_cluster.def[cur_rot], 4);
 
 	// if after rotating, we are now colliding we something, revert the rotation.
 	if (is_cluster_colliding())
@@ -1596,7 +1534,7 @@ void rotate_cur_cluster(char dir)
 						// and rotation, and play a whaa-whaa sound.
 						cur_block.x -= 2;
 						cur_rot = old_rot;
-						cur_cluster.layout = cur_cluster.def[cur_rot];
+						memcpy(cur_cluster.layout, cur_cluster.def[cur_rot], 4);
 						SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 						return;
 					}
@@ -1607,7 +1545,7 @@ void rotate_cur_cluster(char dir)
 					// and rotation, and play a whaa-whaa sound.
 					cur_block.x += 1;
 					cur_rot = old_rot;
-					cur_cluster.layout = cur_cluster.def[cur_rot];
+					memcpy(cur_cluster.layout, cur_cluster.def[cur_rot], 4);
 					SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 					return;
 				}
@@ -1619,7 +1557,6 @@ void rotate_cur_cluster(char dir)
 
 void go_to_state(unsigned char new_state)
 {
-	static int address;
 	static unsigned char i;
 	static unsigned char fade_delay;
 	static unsigned char prev_state;
@@ -1873,12 +1810,6 @@ void go_to_state(unsigned char new_state)
 			pal_bright(8);
 			delay(fade_delay);
 
-			// for (i = 0; i < 3; ++i)
-			// {
-			// 	address = get_ppu_addr(cur_nt, BOARD_START_X_PX, (14+i)<<3);
-			// 	multi_vram_buffer_horz(empty_row, 10, address);
-			// }
-
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz( "GAME OVER!", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
@@ -2046,12 +1977,9 @@ void display_level()
 
 void clear_rows_in_data(unsigned char start_y)
 {
-	static unsigned char ix;
-	static unsigned char iy;
 	static unsigned char line_complete;
 	static unsigned char i;
 	static unsigned char prev_level;
-	static unsigned int line_score_mod;
 //PROFILE_POKE(0x9f); //blue
 	i = 0;
 	prev_level = cur_level;
@@ -2060,15 +1988,15 @@ void clear_rows_in_data(unsigned char start_y)
 	memfill(lines_cleared_y, 0xff, 4);
 //PROFILE_POKE(0x3f); //red
 	// Start at the bottom of the board, and work our way up.
-	for (iy = start_y; iy > BOARD_OOB_END; --iy)
+	for (local_iy = start_y; local_iy > BOARD_OOB_END; --local_iy)
 	{
 		// Assume this row is complete unless we find an empty
 		// block.
 		line_complete = 1;
-		for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+		for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
 		{
 //PROFILE_POKE(0x5f); //green
-			if (game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 0 || game_board[TILE_TO_BOARD_INDEX(ix,iy)] == 1)
+			if (game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == 0 || game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == 1)
 			//if (is_block_free(ix, iy))
 			{
 				// This block is empty, so we can stop checking this row.
@@ -2094,9 +2022,9 @@ void clear_rows_in_data(unsigned char start_y)
 			// }
 
 			// early detection for hit, so that we can play hit reaction during clear animation.
-			for (ix = 0; ix < BOARD_WIDTH; ++ix)
+			for (local_ix = 0; local_ix < BOARD_WIDTH; ++local_ix)
 			{
-				if (attack_row_status[ix] > ATTACK_QUEUE_SIZE && attack_row_status[ix] - (ATTACK_QUEUE_SIZE+1) >= (BOARD_END_Y_PX_BOARD - iy))
+				if (attack_row_status[local_ix] > ATTACK_QUEUE_SIZE && attack_row_status[local_ix] - (ATTACK_QUEUE_SIZE+1) >= (BOARD_END_Y_PX_BOARD - local_iy))
 				{
 					hit_reaction_remaining = 60;
 					//debug_display_number(hit_reaction_remaining, 1);
@@ -2106,11 +2034,11 @@ void clear_rows_in_data(unsigned char start_y)
 			inc_lines_cleared();
 
 			// Fill the row will empty data.
-			memcpy(&game_board[TILE_TO_BOARD_INDEX(0, iy)], empty_row, 10);
+			memcpy(&game_board[TILE_TO_BOARD_INDEX(0, local_iy)], empty_row, 10);
 
 			// Keep track of rows that we cleared so that they can be quickly
 			// collapsed later.
-			lines_cleared_y[i] = iy;
+			lines_cleared_y[i] = local_iy;
 
 			// Remember that we cleared some lines.
 			++i;
@@ -2234,7 +2162,9 @@ void reveal_empty_rows_to_nt()
 }
 
 void try_collapse_empty_row_data(void)
-{
+{	
+	// cannot use global ix,ix for some reason. Causes Kraken to not
+	// retreat when hit.
 	static unsigned char ix;
 	static unsigned char iy;
 	static signed char i;
@@ -2288,9 +2218,6 @@ void try_collapse_empty_row_data(void)
 
 void copy_board_to_nt()
 {
-	static unsigned char ix;
-	static unsigned char iy;
-
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 
@@ -2303,12 +2230,12 @@ void copy_board_to_nt()
 	//clear_vram_buffer();
 	//return;
 
-	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+	for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
 	{
 		// copy a column into an array.
-		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
 		{
-			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			copy_board_data[local_iy] = game_board[TILE_TO_BOARD_INDEX(local_ix, local_iy + BOARD_OOB_END + 1)];
 
 			// if (iy <= STRESS_MUSIC_LEVEL && copy_board_data[iy] != 0)
 			// {
@@ -2321,11 +2248,11 @@ void copy_board_to_nt()
 			BOARD_HEIGHT,
 			get_ppu_addr(
 				cur_nt,
-				BOARD_START_X_PX + (ix << 3),
+				BOARD_START_X_PX + (local_ix << 3),
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
-		if (ix % 3 == 0)
+		if (local_ix % 3 == 0)
 		{
 			// calling this again here isn't needed, as time will not have advanced, so
 			// drawing the sprites again will do nothing.
@@ -2603,21 +2530,18 @@ void debug_copy_board_data_to_nt(void)
 {
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
 
-	static unsigned char ix;
-	static unsigned char iy;
-
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 
 	delay(1);
 	clear_vram_buffer();
 
-	for (ix = 0; ix <= BOARD_END_X_PX_BOARD; ++ix)
+	for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
 	{
 		// copy a column into an array.
-		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
+		for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
 		{
-			copy_board_data[iy] = '0' + game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			copy_board_data[local_iy] = '0' + game_board[TILE_TO_BOARD_INDEX(local_ix, local_iy + BOARD_OOB_END + 1)];
 		}
 
 		multi_vram_buffer_vert(
@@ -2625,11 +2549,11 @@ void debug_copy_board_data_to_nt(void)
 			BOARD_HEIGHT,
 			get_ppu_addr(
 				cur_nt,
-				BOARD_START_X_PX + (ix << 3),
+				BOARD_START_X_PX + (local_ix << 3),
 				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
-		if (ix % 4 == 0)
+		if (local_ix % 4 == 0)
 		{
 			delay(1);
 			clear_vram_buffer();
