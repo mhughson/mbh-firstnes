@@ -23,7 +23,6 @@ FEATURES:
 --
 
 //nice to have
-* Start level 29.
 * Ghost pieces.
 * Lock-delay settings (off, 10 frames, 20 frames)
 * Options on the Pause screen (quit, music, sfx).
@@ -40,6 +39,7 @@ FEATURES:
 * Number of rows that hit the tentacle adds a delay to next attack.
 * Screen shake on hit. (others say this is annoying)
 * Hard drop trails. (likely too much cpu)
+* Drought reduction: have a max number of turns a piece can drought. If hit that max, for it to be played.
 
 //sound
 * Kraken hit.
@@ -48,6 +48,8 @@ FEATURES:
 
 
 COMPLETE:
+* Start level 29.
+	* Select + Start on level 9.
 * Disable hard drop (not on hold - People either want it or not).
 	* Added 3 settings: off, tap, hold.
 * Test NES rotations (confirmed)
