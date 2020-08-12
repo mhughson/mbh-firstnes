@@ -8,6 +8,7 @@
 #include "BG/boot_screen.h"
 #include "BG/sound_screen.h"
 #include "BG/ty_screen.h"
+#include "../include/stdlib.h"
 #include "main.h"
 
 /*
@@ -299,7 +300,7 @@ void main (void)
 
 				if (pad1_new & PAD_START)
 				{
-					seed_rng();
+					srand(tick_count_large);
 
 					if (cur_konami_index >= KONAMI_CODE_LEN)
 					{
@@ -551,10 +552,10 @@ void main (void)
 				// delay a frame for perf.
 				if (attack_style != ATTACK_NEVER && attack_queued)
 				{
-PROFILE_POKE(PROF_R);
+//PROFILE_POKE(PROF_R);
 					// TODO: Perf - Very expensive.
 					add_block_at_bottom();
-PROFILE_POKE(PROF_W);
+//PROFILE_POKE(PROF_W);
 					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
 					attack_queued = 0;
 					attack_queue_ticks_remaining = attack_delay;
@@ -566,7 +567,7 @@ PROFILE_POKE(PROF_W);
 					kill_row_queued = 0;
 				}
 
-PROFILE_POKE(PROF_G);
+//PROFILE_POKE(PROF_G);
 
 				if (delay_spawn_remaining != -1)
 				{
@@ -588,11 +589,11 @@ PROFILE_POKE(PROF_G);
 					movement();
 				}
 				
-PROFILE_POKE(PROF_B);
+//PROFILE_POKE(PROF_B);
 
 				draw_gameplay_sprites();
 
-PROFILE_POKE(PROF_W);
+//PROFILE_POKE(PROF_W);
 
 				if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
 				{
@@ -651,7 +652,7 @@ PROFILE_POKE(PROF_W);
 				// 	//go_to_state(STATE_OVER);
 				// }
 #endif
-PROFILE_POKE(PROF_CLEAR);
+//PROFILE_POKE(PROF_CLEAR);
 				break;
 			}
 
@@ -1458,10 +1459,10 @@ void spawn_new_cluster()
 
 	// By checking twice we go from 1 in 7 chance of a dupe to
 	// 1 in 49 chance.
-	id = rand8() % NUM_CLUSTERS;
+	id = rand() % NUM_CLUSTERS;
 	if (id == cur_cluster.id)
 	{
-		id = rand8() % NUM_CLUSTERS;
+		id = rand() % NUM_CLUSTERS;
 	}
 	next_cluster.id = id;
 	memcpy(next_cluster.def, cluster_defs_classic[id], (4 * 4));
@@ -1752,8 +1753,11 @@ void go_to_state(unsigned char new_state)
 
 				memfill(attack_row_status, 0, BOARD_WIDTH);
 
+				// Reseed rng at the start of each match to incrase randomness.
+				srand(tick_count_large);
+
 				// where to start the attack!
-				i = rand8() % BOARD_WIDTH;
+				i = rand() % BOARD_WIDTH;
 				attack_row_status[i] = 1;
 
 				require_new_down_button = 1;
@@ -2259,11 +2263,11 @@ void copy_board_to_nt()
 			// calling this again here isn't needed, as time will not have advanced, so
 			// drawing the sprites again will do nothing.
 			//draw_gameplay_sprites();
-			PROFILE_POKE(PROF_CLEAR);
+//PROFILE_POKE(PROF_CLEAR);
 			delay(1);
 			clear_vram_buffer();
 		}
-		PROFILE_POKE(PROF_R);
+//PROFILE_POKE(PROF_R);
 	}
 
 	// if (fast_music && cur_gameplay_music != MUSIC_STRESS)
@@ -2353,7 +2357,7 @@ void add_block_at_bottom()
 	if (attacks == 0)
 	{
 		// where to start the attack!
-		attack_row_status[rand8() % BOARD_WIDTH] = 1;
+		attack_row_status[rand() % BOARD_WIDTH] = 1;
 	}
 
 	// TODO: Only if changed above.
