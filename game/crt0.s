@@ -21,7 +21,7 @@ FT_SFX_ENABLE   = 1		;undefine to exclude all sound effects code
 ;this called the CONDES function
 
     .export _exit,__STARTUP__:absolute=1
-	.import push0,popa,popax,_main,zerobss,copydata
+	.import push0,popa,popax,_main,zerobss,copydata,_high_scores
 
 ; Linker generated symbols
 	.import __STACK_START__   ,__STACKSIZE__ ;changed
@@ -125,7 +125,6 @@ DATA_PTR:			.res 2
 
 start:
 _exit:
-
     sei
 	cld
 	ldx #$40
@@ -170,6 +169,17 @@ clearVRAM:
 	dey
 	bne @1
 
+	; loop over 12 btyes of highscore data (3 32 bit longs) and store it in the stack memory $700-$7ff
+	; to be loaded after clearing RAM.
+storeScores:
+	ldy #0
+@1:
+	lda _high_scores,y ;load a byte of the score into a
+	sta $700,y ;store that byte into stack memory
+	iny
+	cpy #12 ;12 bytes need to be copied over (3 longs)
+	bne @1
+
 clearRAM:
     txa
 @1:
@@ -180,7 +190,7 @@ clearRAM:
     sta $400,x
     sta $500,x
     sta $600,x
-    sta $700,x
+    ;sta $700,x ; commented out, as this memory will be used to transfer data between resets.
     inx
     bne @1
 
@@ -250,6 +260,30 @@ detectNTSC:
 	sta PPU_SCROLL
 	sta PPU_SCROLL
 
+	; loop over 12 btyes of highscore data (3 32 bit longs) and store it back into highscore table.
+	; the scores will have been copied into stack memory ($700) above, and $700 left uncleared.
+restoreScores:
+	ldy #0
+@1:
+	lda $700,y ;load a byte of the scores into a
+	sta _high_scores,y ;store that byte into highscores array.
+	lda #0
+	sta $700,y
+	iny
+	cpy #12
+	bne @1
+
+	; now that the score have been copied over, clear out the 
+	; stack RAM, which was left untouched in clearRAM above.
+; clearStackRAM:
+;     ldx #0
+; 	txa
+; @1:
+;     sta $700,x
+;     inx
+;     bne @1
+
+	;jmp _on_reset			;no parameters
 	jmp _main			;no parameters
 
 	.include "LIB/neslib.s"

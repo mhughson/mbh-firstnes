@@ -183,6 +183,12 @@ slow it down till morning, when surely help will arrive...
 
 */
 
+void on_reset (void)
+{
+	// POKE(0x300, 255);
+	// POKE(0x301, 255);
+}
+
 void main (void)
 {
 	ppu_off(); // screen off
