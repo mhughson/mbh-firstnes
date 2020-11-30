@@ -40,11 +40,23 @@
 #define SFX_PLAY_WRAPPER(id) if (sfx_on) { sfx_play((id), 0); }
 // play a sound effect that is treated like music to the user (jingles, etc).
 #define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
+#if VS_SYS_ENABLED
+#define MUSIC_PLAY_WRAPPER(id) if (music_on && (id != MUSIC_TITLE || DIP7 == 0)) { music_play((id)); }
+#else
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
+#endif // VS_SYS_ENABLED
 #define SKULL_SPRITE 0x3b
 
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
+
+#if VS_SYS_ENABLED
+#define DIP0 (PEEK(0x4016) & 1<<3) // FREE PLAY
+#define DIP1 (PEEK(0x4016) & 1<<4) // EXTRA COIN COST
+#define DIP5 (PEEK(0x4017) & 1<<5) // MUSIC OFF
+#define DIP6 (PEEK(0x4017) & 1<<6) // SFX OFF
+#define DIP7 (PEEK(0x4017) & 1<<7) // MUTE MAIN MENU
+#endif // VS_SYS_ENABLED
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -493,6 +505,11 @@ unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 #define NUM_HARD_DROP_SETTINGS 3
 #define HARD_DROP_STRING_LEN 4
 unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
+
+#if VS_SYS_ENABLED
+unsigned char free_play_enabled;
+unsigned char game_cost;
+#endif //VS_SYS_ENABLED
 
 #if VS_SYS_ENABLED
 unsigned char text_insert_coin[] = { "\xDBINSERT COIN\xDC" }; // { "PUSH START" };

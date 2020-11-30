@@ -190,22 +190,19 @@ DIP SWITCHES:
 
 All defaults will be 0.
 
-FREE PLAY		|	1	-	-	-	-	-	-	-
-CREDIT/COIN	1/1	|	-	0	-	-	-	-	-	-	*
-CREDIT/COIN	1/2	|	-	1	-	-	-	-	-	-	*
+FREE PLAY				|	1	-	-	-	-	-	-	-
+CREDIT/COIN	1/1			|	-	0	-	-	-	-	-	-
+CREDIT/COIN	1/2			|	-	1	-	-	-	-	-	-
 
-PPU1			|	-	-	0	0	0	-	-	-	*
-PPU2			|	-	-	1	0	0	-	-	-	*
-PPU3			|	-	-	0	1	0	-	-	-	*
-PPU4			|	-	-	1	1	0	-	-	-	*
-PPU...			|	-	-	0	0	0	-	-	-	*
+PPU1					|	-	-	0	0	0	-	-	-	*
+PPU2					|	-	-	1	0	0	-	-	-	*
+PPU3					|	-	-	0	1	0	-	-	-	*
+PPU4					|	-	-	1	1	0	-	-	-	*
+PPU...					|	-	-	0	0	0	-	-	-	*
 
-ENABLE MUSIC	|	-	-	-	-	-	0	-	-	*
-DISABLE MUSIC	|	-	-	-	-	-	1	-	-	*
-ENABLE SFX		|	-	-	-	-	-	-	0	-	*
-DISABLE SFX		|	-	-	-	-	-	-	1	-	*
-EXTRA HARD OFF	|	-	-	-	-	-	-	-	0	*
-EXTRA HARD ON	|	-	-	-	-	-	-	-	1	* // Add +10 levels to each difficulty. [9, 18, 29]
+DISABLE MUSIC			|	-	-	-	-	-	1	-	-
+DISABLE SFX				|	-	-	-	-	-	-	1	-
+DISABLE ATTACT SOUND	|	-	-	-	-	-	-	-	1
 
 VERSUS TODO:
 * PPU support
@@ -214,7 +211,7 @@ VERSUS TODO:
 * Game Mode Screen.
 * Remaining Dip Switches.
 * [done] Game over timer (force quit).
-* Credit display.
+* [done] Credit display.
 * Matenience coin counter.
 * Maintenience coin feeder.
 * Consider hard drop (setting, dip, hold by default, etc).
@@ -287,6 +284,10 @@ void main (void)
 	cur_garbage_type = 0;
 #if VS_SYS_ENABLED	
 	credits_remaining = 0;
+	free_play_enabled = DIP0;
+	game_cost = (DIP1 == 0) ? 1 : 2;
+	music_on = DIP5 == 0;
+	sfx_on = DIP6 == 0;
 #endif //#if VS_SYS_ENABLED
 
 	pal_bright(0);
@@ -398,11 +399,11 @@ void main (void)
 				if (tick_count % 128 == 0)
 				{
 #if VS_SYS_ENABLED
-					if (PEEK(0x4016) & 1<<3) // free play
+					if (free_play_enabled) // free play
 					{
 						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 10<<3, 12<<3));
 					}
-					else if (credits_remaining > 0)
+					else if (credits_remaining >= game_cost)
 					{
 						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
 					}
@@ -436,7 +437,7 @@ void main (void)
 				}
 
 #if VS_SYS_ENABLED
-				if ((pad1_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining > 0 || PEEK(0x4016) & 1<<3)) // free play
+				if ((pad1_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
 #else
 				if (pad1_new & PAD_START)
 #endif //VS_SYS_ENABLED
@@ -989,7 +990,7 @@ void draw_menu_sprites(void)
 		oam_spr(26 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
 	}
 	oam_spr(27 << 3, 27 << 3, 0x2f, 0);
-	oam_spr(28 << 3, 27 << 3, 0x31, 0);
+	oam_spr(28 << 3, 27 << 3, 0x30 + game_cost, 0);
 #endif //VS_SYS_ENABLED	
 }
 
@@ -1941,9 +1942,9 @@ void go_to_state(unsigned char new_state)
 				oam_clear();
 
 #if VS_SYS_ENABLED
-				if (credits_remaining > 0)
+				if (credits_remaining >= game_cost)
 				{
-					--credits_remaining;
+					credits_remaining-=game_cost;
 				}
 #endif// VS_SYS_ENABLED
 
