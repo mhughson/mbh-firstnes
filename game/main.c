@@ -411,12 +411,16 @@ void main (void)
 						multi_vram_buffer_horz(text_insert_coin, sizeof(text_insert_coin)-1, get_ppu_addr(0, 10<<3, 12<<3));
 					}
 #else
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif					
 				}
 				else if (tick_count % 128 == 96)
 				{
+#if VS_SYS_ENABLED
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+#else
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif					
 				}
 
 				if (pad1_new != 0)
@@ -480,11 +484,11 @@ void main (void)
 			{
 				if (tick_count % 128 == 0)
 				{
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 				}
 				else if (tick_count % 128 == 96)
 				{
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 				}
 
 				if (pad1_new & PAD_START)
@@ -974,6 +978,7 @@ void draw_menu_sprites(void)
 	// oam_spr(28 << 3, 26 << 3, 'E', 0);
 	// oam_spr(29 << 3, 26 << 3, 'D', 0);
 
+#if VS_SYS_ENABLED
 	if (credits_remaining > 9)
 	{
 		oam_spr(25 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
@@ -985,6 +990,7 @@ void draw_menu_sprites(void)
 	}
 	oam_spr(27 << 3, 27 << 3, 0x2f, 0);
 	oam_spr(28 << 3, 27 << 3, 0x31, 0);
+#endif //VS_SYS_ENABLED	
 }
 
 void draw_gameplay_sprites(void)
@@ -1859,7 +1865,11 @@ void go_to_state(unsigned char new_state)
 				}
 			}
 
-			multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+#if VS_SYS_ENABLED
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+#else
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif		
 
 			break;
 		}
@@ -2021,14 +2031,15 @@ void go_to_state(unsigned char new_state)
 
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("GAME OVER!", 10, address);
+#if VS_SYS_ENABLED					
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("PRESS 1   ", 10, address);
-#if !VS_SYS_ENABLED			
+#else		
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("A-RESTART ", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 16<<3);
 			multi_vram_buffer_horz("B-QUIT    ", 10, address);
-#endif //!VS_SYS_ENABLED			
+#endif //VS_SYS_ENABLED			
 			pal_bright(7);
 			delay(fade_delay);
 			pal_bright(6);
