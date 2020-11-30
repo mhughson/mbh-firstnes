@@ -109,15 +109,23 @@ DATA_PTR:			.res 2
 
 
 
-
 .segment "HEADER"
-
     .byte $4e,$45,$53,$1a
 	.byte <NES_PRG_BANKS
 	.byte <NES_CHR_BANKS
 	.byte <NES_MIRRORING|(<NES_MAPPER<<4)
-	.byte <NES_MAPPER&$f0
+.if(VS_SYS_ENABLED)
+	; use ines 2.0 for vs system ppu specifications.
+	.byte (<NES_MAPPER&$f0)|(1<<3)|1 ; mapper upper nibble | iNes2.0 | vs system
+	.res 5,0 ;filler
+	.byte 2 ; PPU 0001
+	.res 2
+	;.res 8,0
+.else
+	; use ines 1.0 for maximum compatibility.
+	.byte (<NES_MAPPER&$f0)
 	.res 8,0
+.endif
 
 
 

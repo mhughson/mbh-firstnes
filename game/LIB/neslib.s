@@ -1271,6 +1271,30 @@ palBrightTableH:
 	.byte >palBrightTable3,>palBrightTable4,>palBrightTable5
 	.byte >palBrightTable6,>palBrightTable7,>palBrightTable8
 
+
+.if(VS_SYS_ENABLED)
+palBrightTable0:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	;black
+palBrightTable1:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+palBrightTable2:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+palBrightTable3:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+palBrightTable4:
+	.byte $09,$1f,$2d,$35,$0c,$0b,$2b,$29,$0e,$05,$33,$3a,$25,$30,$30,$30
+palBrightTable5:
+	.byte $32,$39,$17,$2c,$27,$07,$02,$37,$3e,$31,$3a,$26,$04,$30,$30,$30
+palBrightTable6:
+	.byte $0f,$10,$03,$01,$0e,$3d,$2e,$0a,$0d,$13,$23,$19,$24,$30,$30,$30
+palBrightTable7:
+	.byte $0f,$21,$15,$22,$2a,$00,$36,$16,$3c,$34,$0f,$19,$14,$30,$30,$30
+palBrightTable8:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;white
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+.else
 palBrightTable0:
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;black
 palBrightTable1:
@@ -1292,6 +1316,6 @@ palBrightTable8:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
-
+.endif ;VS_SYS_ENABLED
 ;;	.include "famitone2.s"
 ; included in crt0.s

@@ -5,7 +5,11 @@
 #include "BG/game_area.h"
 #include "BG/title_screen.h"
 #include "BG/options_screen.h"
+#if VS_SYS_ENABLED
+#include "BG/vs_boot_screen.h"
+#else
 #include "BG/boot_screen.h"
+#endif
 #include "BG/sound_screen.h"
 #include "BG/ty_screen.h"
 #include "../include/stdlib.h"
@@ -181,11 +185,71 @@ slow it down till morning, when surely help will arrive...
 - A page for each mode.
 - A making of section about how the game was created.
 
+DIP SWITCHES:
+* = not yet implemented.
+
+All defaults will be 0.
+
+FREE PLAY		|	1	-	-	-	-	-	-	-
+CREDIT/COIN	1/1	|	-	0	-	-	-	-	-	-	*
+CREDIT/COIN	1/2	|	-	1	-	-	-	-	-	-	*
+
+PPU1			|	-	-	0	0	0	-	-	-	*
+PPU2			|	-	-	1	0	0	-	-	-	*
+PPU3			|	-	-	0	1	0	-	-	-	*
+PPU4			|	-	-	1	1	0	-	-	-	*
+PPU...			|	-	-	0	0	0	-	-	-	*
+
+ENABLE MUSIC	|	-	-	-	-	-	0	-	-	*
+DISABLE MUSIC	|	-	-	-	-	-	1	-	-	*
+ENABLE SFX		|	-	-	-	-	-	-	0	-	*
+DISABLE SFX		|	-	-	-	-	-	-	1	-	*
+EXTRA HARD OFF	|	-	-	-	-	-	-	-	0	*
+EXTRA HARD ON	|	-	-	-	-	-	-	-	1	* // Add +10 levels to each difficulty. [9, 18, 29]
+
+VERSUS TODO:
+* PPU support
+* Leaderboards
+* Save game.
+* Game Mode Screen.
+* Remaining Dip Switches.
+* [done] Game over timer (force quit).
+* Credit display.
+* Matenience coin counter.
+* Maintenience coin feeder.
+* Consider hard drop (setting, dip, hold by default, etc).
+* Artwork.
+* [done] start game with A or B as well.
+* [done] game over quits with any key, changed messaging.
+* [done] credit display.
+
 */
+
+// const unsigned char test_palette_bg[16]=
+// { 
+// 	0x0f,0x1f,0x2f,0x3f,
+// 	0x0f,0x1d,0x2d,0x3d,
+// 	0x0f,0x1a,0x2a,0x3a,
+// 	0x0f,0x10,0x20,0x30 
+// };
 
 void main (void)
 {
+	// pal_bg(test_palette_bg);
+	// ppu_on_all(); // turn on screen
+	// while (1)
+	// {
+	// 	ppu_wait_nmi(); // wait till beginning of the frame
+	// }
+
 	ppu_off(); // screen off
+	
+	// memcpy(palette_bg, { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], }, 16)
+
+	// palette_bg = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
+	// palette_sp = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
+	// palette_bg_options = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
+
 
 	// load the palettes
 	//pal_bg(palette_bg);
@@ -221,6 +285,9 @@ void main (void)
 	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
+#if VS_SYS_ENABLED	
+	credits_remaining = 0;
+#endif //#if VS_SYS_ENABLED
 
 	pal_bright(0);
 	go_to_state(STATE_BOOT);
@@ -235,13 +302,49 @@ void main (void)
 
 		++tick_count;
 		++tick_count_large;
+		++ticks_in_state_large;
 
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 
+		// Combine both controllers into one. This is mostly for Vs system, but seems like
+		// a nice enough feature for NES as well. Co-op mode!
+		pad1 |= pad_poll(1);
+		pad1_new |= get_pad_new(1);
+
+#if VS_SYS_ENABLED
+		if (credit_timer[0] > 0)
+		{
+			--credit_timer[0];
+		}
+		if ((credit_timer[0] == 0) && (PEEK(0x4016) & 1<<5))
+		{
+			if (credits_remaining < 254)
+			{
+				++credits_remaining;
+				credit_timer[0] = CREDIT_DELAY;
+				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+			}
+		}
+		if (credit_timer[1] > 0)
+		{
+			--credit_timer[1];
+		}
+		if ((credit_timer[1] == 0) && (PEEK(0x4016) & 1<<6))
+		{
+			if (credits_remaining < 254)
+			{
+				++credits_remaining;
+				credit_timer[1] = CREDIT_DELAY;
+				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+			}
+		}
+#endif //VS_SYS_ENABLED
+
 		clear_vram_buffer(); // do at the beginning of each frame
 
-		// Quick reset.
+		// Quick reset when not on the VS system. I don't think it makes sense to have a quick reset there.
+#if !VS_SYS_ENABLED		
 		if (state != STATE_MENU)
 		{
 			if (pad1 & PAD_A && pad1 & PAD_B && pad1 & PAD_SELECT && pad1 & PAD_START)
@@ -249,6 +352,7 @@ void main (void)
 				go_to_state(STATE_MENU);
 			}
 		}
+#endif // !VS_SYS_ENABLED		
 
 		switch(state)
 		{
@@ -275,15 +379,44 @@ void main (void)
 			}
 			case STATE_MENU:
 			{
+#if VS_SYS_ENABLED
+				// Yeah, this game has screen shake for inserting credits?? So what!?		
+				if (credit_timer[0] > 60 || credit_timer[1] > 60)
+				{
+					scroll((rand() % 2), (rand() % 2));
+				}
+				else
+				{
+					scroll(0, 0x1df); // shift the bg down 1 pixel
+				}
+
+				// set_scroll_x(scroll_y);
+				// ++scroll_y;
+#endif	// VS_SYS_ENABLED
 				draw_menu_sprites();
 
 				if (tick_count % 128 == 0)
 				{
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#if VS_SYS_ENABLED
+					if (PEEK(0x4016) & 1<<3) // free play
+					{
+						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					}
+					else if (credits_remaining > 0)
+					{
+						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					}
+					else
+					{
+						multi_vram_buffer_horz(text_insert_coin, sizeof(text_insert_coin)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					}
+#else
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+#endif					
 				}
 				else if (tick_count % 128 == 96)
 				{
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
 				}
 
 				if (pad1_new != 0)
@@ -298,7 +431,11 @@ void main (void)
 					}
 				}
 
+#if VS_SYS_ENABLED
+				if ((pad1_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining > 0 || PEEK(0x4016) & 1<<3)) // free play
+#else
 				if (pad1_new & PAD_START)
+#endif //VS_SYS_ENABLED
 				{
 					srand(tick_count_large);
 
@@ -311,10 +448,31 @@ void main (void)
 					else
 					{
 						fade_to_black();
+#if VS_SYS_ENABLED
+						state = STATE_OPTIONS; // HACK!
+						go_to_state(STATE_GAME);
+						//go_to_state(STATE_OPTIONS);
+#else
 						go_to_state(STATE_OPTIONS);
+#endif VS_SYS_ENABLED						
 						fade_from_black();
 					}
 				}
+
+#if VS_SYS_ENABLED
+				// "attract mode" to avoid burn in. Just go back to the start.
+				// Timed to be when the title track finishes for a 2nd time.
+				if (ticks_in_state_large > (48*60*2))
+				{
+					tick_count = tick_count_large = 0;
+					fade_to_black();
+					oam_clear();
+					music_stop();
+					go_to_state(STATE_BOOT);
+					fade_from_black();
+					//return;
+				}
+#endif //#if VS_SYS_ENABLED
 				break;
 			}
 
@@ -322,11 +480,11 @@ void main (void)
 			{
 				if (tick_count % 128 == 0)
 				{
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
 				}
 				else if (tick_count % 128 == 96)
 				{
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
 				}
 
 				if (pad1_new & PAD_START)
@@ -631,10 +789,13 @@ void main (void)
 					MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
 				}
 
+// No pause in the arcade, fool!
+#if !VS_SYS_ENABLED
 				if (pad1_new & PAD_START)
 				{
 					go_to_state(STATE_PAUSE);
 				}
+#endif // !VS_SYS_ENABLED
 
 #if DEBUG_ENABLED
 				// if (pad1_new & PAD_START)
@@ -679,6 +840,13 @@ void main (void)
 
 			case STATE_OVER:
 			{
+#if VS_SYS_ENABLED
+				if (ticks_in_state_large > (60*10) || (pad1_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
+				{
+					//go_to_state(STATE_GAME);
+					go_to_state(STATE_MENU);
+				}
+#else			
 				if (pad1_new & PAD_B)
 				{
 					//go_to_state(STATE_GAME);
@@ -689,6 +857,8 @@ void main (void)
 					//go_to_state(STATE_GAME);
 					go_to_state(STATE_GAME);
 				}
+#endif				
+
 				break;
 			}
 
@@ -798,6 +968,23 @@ void draw_menu_sprites(void)
 
 	oam_spr(19 << 3, 17 << 3, 0x90, 1);
 	oam_spr(20 << 3, 17 << 3, 0x91, 1);
+
+	// oam_spr(26 << 3, 26 << 3, 'C', 0);
+	// oam_spr(27 << 3, 26 << 3, 'R', 0);
+	// oam_spr(28 << 3, 26 << 3, 'E', 0);
+	// oam_spr(29 << 3, 26 << 3, 'D', 0);
+
+	if (credits_remaining > 9)
+	{
+		oam_spr(25 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
+		oam_spr(26 << 3, 27 << 3, '!', 0);
+	}
+	else
+	{
+		oam_spr(26 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
+	}
+	oam_spr(27 << 3, 27 << 3, 0x2f, 0);
+	oam_spr(28 << 3, 27 << 3, 0x31, 0);
 }
 
 void draw_gameplay_sprites(void)
@@ -1017,8 +1204,11 @@ void movement(void)
 		--start_delay_remaining;
 	}
 	
-
+#if VS_SYS_ENABLED
+	if (pad1_new & (PAD_SELECT | PAD_START))
+#else
 	if (pad1_new & PAD_SELECT)
+#endif
 	{
 		//hit_reaction_remaining = 60;
 		//  inc_lines_cleared();
@@ -1610,6 +1800,8 @@ void go_to_state(unsigned char new_state)
 
 	state = new_state;
 
+	ticks_in_state_large = 0;
+
 	switch (state)
 	{
 		case STATE_BOOT:
@@ -1666,6 +1858,8 @@ void go_to_state(unsigned char new_state)
 					fade_from_black();
 				}
 			}
+
+			multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
 
 			break;
 		}
@@ -1726,8 +1920,6 @@ void go_to_state(unsigned char new_state)
 
 		case STATE_GAME:
 		{
-
-
 			// This gets done in the main menu too.
 			if (prev_state == STATE_OVER)
 			{
@@ -1738,12 +1930,21 @@ void go_to_state(unsigned char new_state)
 			{
 				oam_clear();
 
+#if VS_SYS_ENABLED
+				if (credits_remaining > 0)
+				{
+					--credits_remaining;
+				}
+#endif// VS_SYS_ENABLED
+
+#if !VS_SYS_ENABLED
 				while (scroll_y < 240)
 				{
 					scroll(0, scroll_y);
 					delay(1);
 					scroll_y += 4;
 				}
+#endif //!VS_SYS_ENABLED
 				scroll(0, 239);
 
 				// Spawn "next"
@@ -1795,10 +1996,12 @@ void go_to_state(unsigned char new_state)
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
 
 			// Without music this delay feels really odd.
+#if !VS_SYS_ENABLED
 			if (music_on)
 			{
 				delay(120);
 			}
+#endif // !VS_SYS_ENABLED
 
 			// treat this like music, since it is a jingle.
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER_SONG);
@@ -1817,11 +2020,15 @@ void go_to_state(unsigned char new_state)
 			delay(fade_delay);
 
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
-			multi_vram_buffer_horz( "GAME OVER!", 10, address);
+			multi_vram_buffer_horz("GAME OVER!", 10, address);
+			address = get_ppu_addr(cur_nt, 96, 15<<3);
+			multi_vram_buffer_horz("PRESS 1   ", 10, address);
+#if !VS_SYS_ENABLED			
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("A-RESTART ", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 16<<3);
 			multi_vram_buffer_horz("B-QUIT    ", 10, address);
+#endif //!VS_SYS_ENABLED			
 			pal_bright(7);
 			delay(fade_delay);
 			pal_bright(6);

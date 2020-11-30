@@ -43,6 +43,9 @@
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
 #define SKULL_SPRITE 0x3b
 
+// The time before another code will be accepted.
+#define CREDIT_DELAY 70
+
 #pragma bss-name(push, "ZEROPAGE")
 
 // GLOBAL VARIABLES
@@ -68,6 +71,7 @@ struct cluster
 
 unsigned char tick_count;
 unsigned int tick_count_large;
+unsigned int ticks_in_state_large;
 unsigned char hit_reaction_remaining;
 unsigned int attack_queue_ticks_remaining;
 const unsigned int attack_delay = 600;
@@ -331,6 +335,59 @@ const unsigned char option_icon[] = {0x25, 0x26};
 char copy_board_data[BOARD_HEIGHT];
 char lines_cleared_y[4];
 
+// 2C03
+// 333,014,006,326,403,    503,510,420,320,120,    031,040,022,000,000,    000
+// 555,036,027,407,507,    704,700,630,430,140,    040,053,044,000,000,    000
+// 777,357,447,637,707,    737,740,750,660,360,    070,276,077,000,000,    000
+// 777,567,657,757,747,    755,764,772,773,572,    473,276,467,000,000,    000
+
+// 755,637,700,447,044,    120,222,704,777,333,    750,503,403,660,320,     777
+// 357,653,310,360,467,    657,764,027,760,276,    000,200,666,444,707,     014
+// 003,567,757,070,077,    022,053,507,000,420,    747,510,407,006,740,     000
+// 000,140,555,031,572,    326,770,630,020,036,    040,111,773,737,430,     473
+
+// first "16" entry is remapping of 772 to 764.
+// unsigned char ppu_RP2C04_0001_mapping[] = 
+// {
+// $09,$1f,$2d,$35,$0c, $0b,$2b,$29,$0e,$05, $33,$3a,$25,$30,$30, $30,
+// $32,$39,$17,$2c,$27, $07,$02,$37,$3e,$31, $3a,$26,$04,$30,$30, $30,
+// $0f,$10,$03,$01,$0e, $3d,$2e,$0a,$0d,$13, $23,$19,$24,$30,$30, $30,
+// $0f,$21,$15,$22,$2a, $00,$36,$16,$3c,$34, $3f,$19,$14,$30,$30, $30
+// };
+
+// // 0001
+// unsigned char ppu_RP2C04_0001[] = 
+// {
+// 0x35,0x23,0x16,0x22,0x1c,0x09,0x2d,0x15,0x30,0x00,0x27,0x05,0x04,0x28,0x08,0x30,
+// 0x21,0x18,0x06,0x29,0x3c,0x32,0x36,0x12,0x18,0x3b,0x0d,0x06,0x10,0x00,0x24,0x01,
+// 0x01,0x31,0x33,0x2a,0x2c,0x0c,0x1b,0x14,0x0d,0x07,0x34,0x06,0x13,0x02,0x26,0x0d,
+// 0x0d,0x19,0x10,0x0a,0x39,0x03,0x28,0x17,0x09,0x11,0x0b,0x10,0x38,0x25,0x18,0x3a,
+// };
+
+
+// const unsigned char palette_bg_[16] = 
+// { 
+//     0x30,   //     0x0f,
+//     0x03,   //     0x22,
+//     0x21,   //     0x31,
+//     0x08,   //     0x30,
+
+//     0x30,   //     0x0f,
+//     0x09,   //     0x00,
+//     0x37,   //     0x17,
+//     0x0d,   //     0x28,
+
+//     0x30,   //     0x0f,
+//     0x23,   //     0x2a,
+//     0x02,   //     0x16,
+//     0x3c,   //     0x37, 
+
+//     0x30,   //     0x0f,
+//     0x03,   //     0x22,
+//     0x2e,   //     0x26, // 0x00 - Should be 2e, but appears to be blue, so picked something close.
+//     0x3c    //     0x37 
+// };
+
 const unsigned char palette_bg[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x00,0x17,0x28,0x0f,0x2a,0x16,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_sp[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x0f,0x26,0x37,0x0f,0x16,0x31,0x37,0x0f,0x22,0x26,0x37 };
 const unsigned char palette_bg_options[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x30,0x0f,0x26,0x0f,0x22,0x0f,0x26,0x0f,0x22,0x26,0x37 };
@@ -437,8 +494,20 @@ unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 #define HARD_DROP_STRING_LEN 4
 unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
 
-unsigned char text_push_start[] = { "PUSH START" };
+#if VS_SYS_ENABLED
+unsigned char text_insert_coin[] = { "\xDBINSERT COIN\xDC" }; // { "PUSH START" };
+unsigned char text_free_play[] = {   "\xdb FREE PLAY \xDC" }; // { "PUSH START" };
+unsigned char text_push_start[] = {  "\xDBPRESS A KEY\xDC" }; // { "PUSH START" };
+unsigned char clear_push_start[] = { "\xDB           \xDC" }; //{ "          " };
+#else
+unsigned char text_push_start[] =  { "PUSH START" };
 unsigned char clear_push_start[] = { "          " };
+#endif //VS_SYS_ENABLED
+
+#if VS_SYS_ENABLED
+unsigned char credits_remaining;
+unsigned char credit_timer[2];
+#endif // VS_SYS_ENABLED
 
 // PROTOTYPES
 void draw_menu_sprites(void);
