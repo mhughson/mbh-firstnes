@@ -87,8 +87,12 @@ unsigned int ticks_in_state_large;
 unsigned char hit_reaction_remaining;
 unsigned int attack_queue_ticks_remaining;
 const unsigned int attack_delay = 600;
+unsigned char pad_all;
+unsigned char pad_all_new;
 unsigned char pad1;
 unsigned char pad1_new;
+unsigned char pad2;
+unsigned char pad2_new;
 unsigned int scroll_y;
 
 #define NUM_OPTIONS 5
@@ -509,6 +513,7 @@ unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { 
 #if VS_SYS_ENABLED
 unsigned char free_play_enabled;
 unsigned char game_cost;
+unsigned char option_state;
 #endif //VS_SYS_ENABLED
 
 #if VS_SYS_ENABLED

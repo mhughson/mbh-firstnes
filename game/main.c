@@ -4,11 +4,13 @@
 #include "LIB/nesdoug.h"
 #include "BG/game_area.h"
 #include "BG/title_screen.h"
-#include "BG/options_screen.h"
 #if VS_SYS_ENABLED
 #include "BG/vs_boot_screen.h"
+#include "BG/vs_settings_difficulty.h"
+#include "BG/vs_settings_mode.h"
 #else
 #include "BG/boot_screen.h"
+#include "BG/options_screen.h"
 #endif
 #include "BG/sound_screen.h"
 #include "BG/ty_screen.h"
@@ -208,8 +210,8 @@ VERSUS TODO:
 * PPU support
 * Leaderboards
 * Save game.
-* Game Mode Screen.
-* Remaining Dip Switches.
+* Game Mode Screen art.
+* [done] Remaining Dip Switches.
 * [done] Game over timer (force quit).
 * [done] Credit display.
 * Matenience coin counter.
@@ -219,6 +221,7 @@ VERSUS TODO:
 * [done] start game with A or B as well.
 * [done] game over quits with any key, changed messaging.
 * [done] credit display.
+* Catch credits in NMI, and poll value in main.
 
 */
 
@@ -308,10 +311,13 @@ void main (void)
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 
+		pad2 = pad_poll(1);
+		pad2_new = get_pad_new(1);
+
 		// Combine both controllers into one. This is mostly for Vs system, but seems like
 		// a nice enough feature for NES as well. Co-op mode!
-		pad1 |= pad_poll(1);
-		pad1_new |= get_pad_new(1);
+		pad_all = pad1 | pad2;
+		pad_all_new = pad1_new | pad2_new;
 
 #if VS_SYS_ENABLED
 		if (credit_timer[0] > 0)
@@ -348,7 +354,7 @@ void main (void)
 #if !VS_SYS_ENABLED		
 		if (state != STATE_MENU)
 		{
-			if (pad1 & PAD_A && pad1 & PAD_B && pad1 & PAD_SELECT && pad1 & PAD_START)
+			if (pad_all & PAD_A && pad_all & PAD_B && pad_all & PAD_SELECT && pad_all & PAD_START)
 			{
 				go_to_state(STATE_MENU);
 			}
@@ -359,7 +365,7 @@ void main (void)
 		{
 			case STATE_BOOT:
 			{
-				if (tick_count == 120 || pad1_new & PAD_START)
+				if (tick_count == 120 || pad_all_new & PAD_START)
 				{
 					fade_to_black();
 					go_to_state(STATE_TY);
@@ -370,7 +376,7 @@ void main (void)
 			case STATE_TY:
 			{
 				// 120, means wait 240 frames from 120 (previous state).
-				if (tick_count == 104 || pad1_new & PAD_START)
+				if (tick_count == 104 || pad_all_new & PAD_START)
 				{
 					fade_to_black();
 					go_to_state(STATE_MENU);
@@ -424,9 +430,9 @@ void main (void)
 #endif					
 				}
 
-				if (pad1_new != 0)
+				if (pad_all_new != 0)
 				{
-					if (pad1_new & konami_code[cur_konami_index])
+					if (pad_all_new & konami_code[cur_konami_index])
 					{
 						++cur_konami_index;
 					}
@@ -437,9 +443,9 @@ void main (void)
 				}
 
 #if VS_SYS_ENABLED
-				if ((pad1_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
+				if ((pad_all_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
 #else
-				if (pad1_new & PAD_START)
+				if (pad_all_new & PAD_START)
 #endif //VS_SYS_ENABLED
 				{
 					srand(tick_count_large);
@@ -453,13 +459,7 @@ void main (void)
 					else
 					{
 						fade_to_black();
-#if VS_SYS_ENABLED
-						state = STATE_OPTIONS; // HACK!
-						go_to_state(STATE_GAME);
-						//go_to_state(STATE_OPTIONS);
-#else
-						go_to_state(STATE_OPTIONS);
-#endif VS_SYS_ENABLED						
+						go_to_state(STATE_OPTIONS);	
 						fade_from_black();
 					}
 				}
@@ -483,6 +483,95 @@ void main (void)
 
 			case STATE_OPTIONS:
 			{
+#if VS_SYS_ENABLED
+				switch ((option_state))
+				{
+					case 0:
+					{
+						// 1: p1 select (virtual - Doesn't seem to match physical controller in Messen)
+						// 2: p2 select
+						// 3: p1 start
+						// 4: p2 start
+						if (pad1_new & (PAD_START | PAD_SELECT) || pad2_new & PAD_SELECT)
+						{
+							// option 1
+							if (pad1_new & (PAD_SELECT))
+							{
+								attack_style = ATTACK_ON_LAND;
+							}
+							// option 2
+							else if (pad2_new & PAD_SELECT)
+							{
+								attack_style = ATTACK_ON_TIME;
+							}
+							// option 3
+							else if (pad1_new & PAD_START)
+							{
+								attack_style = ATTACK_NEVER;
+							}
+
+							fade_to_black();
+							oam_clear();
+							ppu_off();
+							vram_adr(NTADR_A(0,0));
+							vram_unrle(vs_settings_difficulty);
+							ppu_on_all();
+							option_state = 1;
+
+							fade_from_black();
+						}						
+						break;
+					}
+
+					case 1:
+					{
+						// 1: p1 select (virtual - Doesn't seem to match physical controller in Messen)
+						// 2: p2 select
+						// 3: p1 start
+						// 4: p2 start
+						if (pad1_new & (PAD_START | PAD_SELECT) || pad2_new & PAD_SELECT || ((pad2 & PAD_START) && (pad_all & PAD_A)))
+						{
+							// SECRET DIFFICULTY
+							// Any "A" + Button 4
+							if ((pad2 & PAD_START) && (pad_all & PAD_A))
+							{
+								cur_level = 29;
+							}
+							// options 1
+							else if (pad1_new & (PAD_SELECT))
+							{
+								cur_level = 0;
+							}
+							// option 2
+							else if (pad2_new & PAD_SELECT)
+							{
+								cur_level = 9;
+							}
+							// option 3
+							else if (pad1_new & PAD_START)
+							{
+								cur_level = 19;
+							}
+
+							music_stop();
+							SFX_PLAY_WRAPPER(SOUND_START);
+
+							fade_to_black();
+							ppu_off();
+							vram_adr(NTADR_A(0,0));
+							vram_unrle(title_screen);
+							ppu_on_all();
+							go_to_state(STATE_GAME);
+							fade_from_black();
+						}
+
+						break;
+					}
+				
+					default:
+						break;
+				}
+#else				
 				if (tick_count % 128 == 0)
 				{
 					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
@@ -492,7 +581,7 @@ void main (void)
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 				}
 
-				if (pad1_new & PAD_START)
+				if (pad_all_new & PAD_START)
 				{
 					music_stop();
 					SFX_PLAY_WRAPPER(SOUND_START);
@@ -505,24 +594,24 @@ void main (void)
 					fade_from_black();
 
 					// little cheat to start at very high levels.
-					if (cur_level == 9 && pad1 & PAD_SELECT)
+					if (cur_level == 9 && pad_all & PAD_SELECT)
 					{
 						cur_level = 29;
 					}
-					else if (pad1 & PAD_A)
+					else if (pad_all & PAD_A)
 					{
 						cur_level += 10;
 					}
 					go_to_state(STATE_GAME);
 				}
 
-				if (pad1_new & PAD_B)
+				if (pad_all_new & PAD_B)
 				{
 					fade_to_black();
 					go_to_state(STATE_MENU);
 					fade_from_black();
 				}
-				else if (pad1_new & PAD_RIGHT)
+				else if (pad_all_new & PAD_RIGHT)
 				{
 					switch (cur_option)
 					{
@@ -595,7 +684,7 @@ void main (void)
 					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					display_options();
 				}
-				else if (pad1_new & PAD_LEFT)
+				else if (pad_all_new & PAD_LEFT)
 				{
 					switch (cur_option)
 					{
@@ -676,13 +765,13 @@ void main (void)
 					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 					display_options();
 				}
-				else if (pad1_new & PAD_DOWN)
+				else if (pad_all_new & PAD_DOWN)
 				{
 					cur_option = (cur_option + 1) % NUM_OPTIONS;
 					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 					display_options();
 				}
-				else if (pad1_new & PAD_UP)
+				else if (pad_all_new & PAD_UP)
 				{
 					if (cur_option == 0)
 					{
@@ -692,6 +781,7 @@ void main (void)
 					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					display_options();
 				}
+#endif				
 				break;
 			}
 
@@ -796,14 +886,14 @@ void main (void)
 
 // No pause in the arcade, fool!
 #if !VS_SYS_ENABLED
-				if (pad1_new & PAD_START)
+				if (pad_all_new & PAD_START)
 				{
 					go_to_state(STATE_PAUSE);
 				}
 #endif // !VS_SYS_ENABLED
 
 #if DEBUG_ENABLED
-				// if (pad1_new & PAD_START)
+				// if (pad_all_new & PAD_START)
 				// {
 
 				// 	memcpy(temp_pal, palette_bg, sizeof(palette_bg));
@@ -836,7 +926,7 @@ void main (void)
 				// }
 
 
-				if (pad1_new & PAD_START)
+				if (pad_all_new & PAD_START)
 				{
 					go_to_state(STATE_GAME);
 				}
@@ -846,18 +936,18 @@ void main (void)
 			case STATE_OVER:
 			{
 #if VS_SYS_ENABLED
-				if (ticks_in_state_large > (60*10) || (pad1_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
+				if (ticks_in_state_large > (60*10) || (pad_all_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
 				{
 					//go_to_state(STATE_GAME);
 					go_to_state(STATE_MENU);
 				}
 #else			
-				if (pad1_new & PAD_B)
+				if (pad_all_new & PAD_B)
 				{
 					//go_to_state(STATE_GAME);
 					go_to_state(STATE_MENU);
 				}
-				if (pad1_new & PAD_A)
+				if (pad_all_new & PAD_A)
 				{
 					//go_to_state(STATE_GAME);
 					go_to_state(STATE_GAME);
@@ -872,18 +962,18 @@ void main (void)
 				// MUSIC
 				//
 
-				if (pad1_new & PAD_DOWN && test_song < 15)
+				if (pad_all_new & PAD_DOWN && test_song < 15)
 				{
 					++test_song;
 					display_song();
 				}
-				else if (pad1_new & PAD_UP && test_song > 0)
+				else if (pad_all_new & PAD_UP && test_song > 0)
 				{
 					--test_song;
 					display_song();
 				}
 
-				if (pad1_new & PAD_B)
+				if (pad_all_new & PAD_B)
 				{
 					if (test_song == test_song_active)
 					{
@@ -902,18 +992,18 @@ void main (void)
 				// SOUND
 				//
 
-				if (pad1_new & PAD_RIGHT && test_sound < 31)
+				if (pad_all_new & PAD_RIGHT && test_sound < 31)
 				{
 					++test_sound;
 					display_sound();
 				}
-				else if (pad1_new & PAD_LEFT && test_sound > 0)
+				else if (pad_all_new & PAD_LEFT && test_sound > 0)
 				{
 					--test_sound;
 					display_sound();
 				}
 
-				if (pad1_new & PAD_A)
+				if (pad_all_new & PAD_A)
 				{
 					// Intentionally not using wrapper so this plays regardless of settings.
 					sfx_play(test_sound, 0);
@@ -922,7 +1012,7 @@ void main (void)
 				// EXIT
 				//
 
-				if (pad1_new & PAD_SELECT || pad1_new & PAD_START)
+				if (pad_all_new & PAD_SELECT || pad_all_new & PAD_START)
 				{
 					go_to_state(STATE_MENU);
 				}
@@ -1212,9 +1302,9 @@ void movement(void)
 	}
 	
 #if VS_SYS_ENABLED
-	if (pad1_new & (PAD_SELECT | PAD_START))
+	if (pad_all_new & (PAD_SELECT | PAD_START))
 #else
-	if (pad1_new & PAD_SELECT)
+	if (pad_all_new & PAD_SELECT)
 #endif
 	{
 		//hit_reaction_remaining = 60;
@@ -1252,11 +1342,11 @@ void movement(void)
 
 	// INPUT
 
-	if (pad1_new & PAD_A)
+	if (pad_all_new & PAD_A)
 	{
 		rotate_cur_cluster(1);
 	}
-	else if (pad1_new & PAD_B)
+	else if (pad_all_new & PAD_B)
 	{
 		rotate_cur_cluster(-1);
 	}
@@ -1267,10 +1357,10 @@ void movement(void)
 	}
 
 	old_x = cur_block.x;
-	if (((pad1 & PAD_RIGHT) && horz_button_delay == 0) || (pad1_new & PAD_RIGHT))
+	if (((pad_all & PAD_RIGHT) && horz_button_delay == 0) || (pad_all_new & PAD_RIGHT))
 	{
 		horz_button_delay = button_delay;
-		if ((pad1_new & PAD_RIGHT))
+		if ((pad_all_new & PAD_RIGHT))
 		{
 			horz_button_delay <<= 1;
 		}
@@ -1286,10 +1376,10 @@ void movement(void)
 		// }
 
 	}
-	else if (((pad1 & PAD_LEFT) && horz_button_delay == 0) || pad1_new & PAD_LEFT)
+	else if (((pad_all & PAD_LEFT) && horz_button_delay == 0) || pad_all_new & PAD_LEFT)
 	{
 		horz_button_delay = button_delay;
-		if ((pad1_new & PAD_LEFT))
+		if ((pad_all_new & PAD_LEFT))
 		{
 			// normal delay * 8
 			horz_button_delay <<= 1;
@@ -1330,9 +1420,9 @@ void movement(void)
 	temp_fall_frame_counter = fall_frame_counter;
 
 	hard_drop_performed = 0;
-	if (hard_drops_on && pad1 & PAD_UP && (pad1 & (PAD_LEFT|PAD_RIGHT)) == 0)
+	if (hard_drops_on && pad_all & PAD_UP && (pad_all & (PAD_LEFT|PAD_RIGHT)) == 0)
 	{
-		if ((pad1 & PAD_UP && hard_drop_tap_required == 0) || pad1_new & PAD_UP)
+		if ((pad_all & PAD_UP && hard_drop_tap_required == 0) || pad_all_new & PAD_UP)
 		{
 			--hard_drop_hold_remaining;	
 
@@ -1358,7 +1448,7 @@ void movement(void)
 	}
 	else
 	{
-		if ((pad1 & (PAD_LEFT|PAD_RIGHT)) == 0)
+		if ((pad_all & (PAD_LEFT|PAD_RIGHT)) == 0)
 		{
 			hard_drop_tap_required = 0;
 		}
@@ -1378,9 +1468,9 @@ void movement(void)
 		// Hard drop skips all this to avoid dropping to the bottom
 		// and then dropping again because it happens to be
 		// the natural fall frame.
-		if (pad1_new & PAD_DOWN || delay_lock_remaining != -1)
+		if (pad_all_new & PAD_DOWN || delay_lock_remaining != -1)
 		{
-			if (pad1_new & PAD_DOWN)
+			if (pad_all_new & PAD_DOWN)
 			{
 				// if a new press was made this frame, skip the delay lock.
 				delay_lock_skip = 1;
@@ -1390,7 +1480,7 @@ void movement(void)
 			// fall this frame.
 			fall_frame_counter = 0;
 		}
-		else if ((pad1 & PAD_DOWN) && require_new_down_button == 0)
+		else if ((pad_all & PAD_DOWN) && require_new_down_button == 0)
 		{
 			// fall every other frame.
 			fall_frame_counter = MIN(fall_frame_counter, 1);
@@ -1885,8 +1975,12 @@ void go_to_state(unsigned char new_state)
 
 			//go_to_state(STATE_SOUND_TEST);
 			vram_adr(NTADR_A(0,0));
+#if VS_SYS_ENABLED
+			vram_unrle(vs_settings_mode);
+			ppu_on_all();
+			option_state = 0;
+#else
 			vram_unrle(options_screen);
-
 			// vram_adr(NTADR_A(16,19));
 			// vram_write(attack_style_strings[attack_style], ATTACK_STRING_LEN);
 
@@ -1905,6 +1999,7 @@ void go_to_state(unsigned char new_state)
 			delay(1);
 			clear_vram_buffer();
 			display_highscore();
+#endif
 
 			break;
 		}
