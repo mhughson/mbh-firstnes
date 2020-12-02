@@ -214,14 +214,17 @@ VERSUS TODO:
 * [done] Remaining Dip Switches.
 * [done] Game over timer (force quit).
 * [done] Credit display.
-* Matenience coin counter.
-* Maintenience coin feeder.
+* [done] Matenience coin counter.
+* [done] Maintenience coin feeder.
 * Consider hard drop (setting, dip, hold by default, etc).
 * Artwork.
 * [done] start game with A or B as well.
 * [done] game over quits with any key, changed messaging.
 * [done] credit display.
-* Catch credits in NMI, and poll value in main.
+* [done] Catch credits in NMI, and poll value in main.
+* Better coin display.
+* Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
+* [done] coin feedback across all states (but disbled during gameplay)
 
 */
 
@@ -271,7 +274,8 @@ void main (void)
 	vram_adr(NTADR_C(0,0));
 	vram_unrle(game_area);
 
-	scroll(0, 0x1df); // shift the bg down 1 pixel
+	scroll_y = 0x1df;
+	scroll(0, scroll_y); // shift the bg down 1 pixel
 	//set_scroll_y(0xff);
 
 	ppu_on_all(); // turn on screen
@@ -320,32 +324,56 @@ void main (void)
 		pad_all_new = pad1_new | pad2_new;
 
 #if VS_SYS_ENABLED
-		if (credit_timer[0] > 0)
+
+		// Don't start counting credits until the physical counter is cleared
+		// from the previous coin.
+		if (maintenance_counter == 0)
 		{
-			--credit_timer[0];
-		}
-		if ((credit_timer[0] == 0) && (PEEK(0x4016) & 1<<5))
-		{
-			if (credits_remaining < 254)
+			// Did the user drop at least 1 credit (maybe more) since the last update?
+			// Did the arcade owner press the maintenance button.
+			if (CREDITS_QUEUED > 0 || ((prev_4016 & 1<<2) && !(PEEK(0x4016) & 1<<2)))
 			{
-				++credits_remaining;
-				credit_timer[0] = CREDIT_DELAY;
-				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+				if (credits_remaining < 254)
+				{
+					++credits_remaining;
+					// If this was triggered with maintenance button, the dequeue might be 0, and this would
+					// send it to 255, which can never be dequeued again.
+					if (CREDITS_QUEUED > 0)
+					{
+						--CREDITS_QUEUED;
+
+						// We need 6 frames to set the counter. 3 on and 3 off.
+						maintenance_counter = 6;
+
+						// Set the phyical counter bit.
+						// NOTE: Overrides other values. Should this PEEK and OR?
+						// NOTE: This seems to have no impact in emulator. The value at $4020 does not change.
+						POKE(0x4020, 1);
+					}
+
+					// Don't play fx if in the gameplay state, as it could be distracting.
+					if (state != STATE_GAME)
+					{
+						screen_shake_remaining = 5;
+						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+					}
+				}
 			}
 		}
-		if (credit_timer[1] > 0)
+		else
 		{
-			--credit_timer[1];
-		}
-		if ((credit_timer[1] == 0) && (PEEK(0x4016) & 1<<6))
-		{
-			if (credits_remaining < 254)
+			--maintenance_counter;
+			// Half way throught the physicial counter sequence.
+			// Turn off the bit, but it needs to stay off for 3 more
+			// frames.
+			if (maintenance_counter == 3)
 			{
-				++credits_remaining;
-				credit_timer[1] = CREDIT_DELAY;
-				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+				POKE(0x4020, 0);
 			}
 		}
+
+		// Store this for next frame so that we can detect maintenance key released.
+		prev_4016 = PEEK(0x4016);
 #endif //VS_SYS_ENABLED
 
 		clear_vram_buffer(); // do at the beginning of each frame
@@ -386,20 +414,7 @@ void main (void)
 			}
 			case STATE_MENU:
 			{
-#if VS_SYS_ENABLED
-				// Yeah, this game has screen shake for inserting credits?? So what!?		
-				if (credit_timer[0] > 60 || credit_timer[1] > 60)
-				{
-					scroll((rand() % 2), (rand() % 2));
-				}
-				else
-				{
-					scroll(0, 0x1df); // shift the bg down 1 pixel
-				}
 
-				// set_scroll_x(scroll_y);
-				// ++scroll_y;
-#endif	// VS_SYS_ENABLED
 				draw_menu_sprites();
 
 				if (tick_count % 128 == 0)
@@ -1019,6 +1034,22 @@ void main (void)
 				break;
 			}
 		}
+
+//#if VS_SYS_ENABLED
+				// Yeah, this game has screen shake for inserting credits?? So what!?		
+				if (screen_shake_remaining > 0)
+				{
+					--screen_shake_remaining;
+					scroll((rand() % 2), scroll_y - (rand() % 2));
+				}
+				else
+				{
+					scroll(0, scroll_y); // shift the bg down 1 pixel
+				}
+
+				// set_scroll_x(scroll_y);
+				// ++scroll_y;
+//#endif	// VS_SYS_ENABLED
 	}
 }
 
@@ -1925,7 +1956,7 @@ void go_to_state(unsigned char new_state)
 		{
 			pal_bg(palette_bg);
 			pal_spr(palette_sp);
-			scroll_y = 0;
+			scroll_y = 0x1df;
 			time_of_day = 0;
 			cur_konami_index = 0;
 
@@ -1947,6 +1978,7 @@ void go_to_state(unsigned char new_state)
 
 				reset_gameplay_area();
 
+				scroll_y = 0x1df;
 				scroll(0, 0x1df); // shift the bg down 1 pixel
 				MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 
@@ -2044,6 +2076,8 @@ void go_to_state(unsigned char new_state)
 #endif// VS_SYS_ENABLED
 
 #if !VS_SYS_ENABLED
+				// start at the top.
+				scroll_y = 0;
 				while (scroll_y < 240)
 				{
 					scroll(0, scroll_y);
@@ -2051,7 +2085,8 @@ void go_to_state(unsigned char new_state)
 					scroll_y += 4;
 				}
 #endif //!VS_SYS_ENABLED
-				scroll(0, 239);
+				scroll_y = 239;
+				scroll(0, scroll_y);
 
 				// Spawn "next"
 				spawn_new_cluster();

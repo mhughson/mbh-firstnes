@@ -339,6 +339,9 @@ unsigned int line_score_mod;
 
 #pragma bss-name(push, "BSS")
 
+// Defined in crt0.s
+extern unsigned char CREDITS_QUEUED;
+
 unsigned char game_board[BOARD_SIZE];
 unsigned char game_board_temp[BOARD_SIZE];
 char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -514,7 +517,16 @@ unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { 
 unsigned char free_play_enabled;
 unsigned char game_cost;
 unsigned char option_state;
+// Store the value at $4016 from previous frame, so that
+// it can be compared for release events.
+unsigned char prev_4016;
+// Counter used to turn on the hardware coin counter for 3 frames
+// then off for at least 3 frames.
+unsigned char maintenance_counter;
 #endif //VS_SYS_ENABLED
+
+// Screen shake is now supported across the game.
+unsigned char screen_shake_remaining;
 
 #if VS_SYS_ENABLED
 unsigned char text_insert_coin[] = { "\xDBINSERT COIN\xDC" }; // { "PUSH START" };
@@ -528,7 +540,6 @@ unsigned char clear_push_start[] = { "          " };
 
 #if VS_SYS_ENABLED
 unsigned char credits_remaining;
-unsigned char credit_timer[2];
 #endif // VS_SYS_ENABLED
 
 // PROTOTYPES

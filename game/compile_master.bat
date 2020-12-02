@@ -23,8 +23,8 @@ IF DEFINED audio (
 IF DEFINED code (
 	REM -g adds debug information, but the end result .nes file is not
 	REM affected, so leave it in all the time.
-	cc65 -g -Oirs -D VS_SYS_ENABLED=1 %name%.c --add-source
-	ca65 -D VS_SYS_ENABLED=1 crt0.s
+	cc65 -g -Oirs -D VS_SYS_ENABLED=0 %name%.c --add-source
+	ca65 -D VS_SYS_ENABLED=0 crt0.s
 	ca65 %name%.s -g
 
 	REM -dbgfile does not impact the resulting .nes file.

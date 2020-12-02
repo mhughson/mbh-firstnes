@@ -28,7 +28,6 @@
 	.export _flush_vram_update_nmi, _oam_set, _oam_get
 
 
-
 ;NMI handler
 
 nmi:
@@ -37,6 +36,59 @@ nmi:
 	pha
 	tya
 	pha
+
+	; check for credits in the first slot
+	lda CREDITS1_PREV
+	and #%00100000
+	beq @check_slot_2_creds
+	lda $4016
+	and #%00100000
+	bne @check_slot_2_creds
+	inc CREDITS_QUEUED
+
+@check_slot_2_creds:
+	lda $4016
+	sta CREDITS1_PREV
+
+	; check for credits in the second slot
+	lda CREDITS2_PREV
+	and #%01000000
+	beq @done_credit_check
+	lda $4016
+	and #%01000000
+	bne @done_credit_check
+	inc CREDITS_QUEUED
+
+@done_credit_check:
+	lda $4016
+	sta CREDITS2_PREV	
+
+
+	; if prev_val_a == 1
+		; if new_val_a == 0
+			; inc CREDITS_QUEUED
+	; prev_val_a = new_val_b
+	; repeat for b
+
+		; check for zero
+		; if now zero
+
+;on the Vs system, check for credits!
+;todo: check for 1 and 2 independently. hook up to c logic.
+; 	lda CREDITS_COUNTDOWN
+; 	beq @check_for_creds
+; 	dec CREDITS_COUNTDOWN
+; 	jmp @skip_creds
+
+; @check_for_creds:
+; 	lda $4016
+; 	and #%01100000
+; 	beq @skip_creds
+; 	inc CREDITS_QUEUED
+; 	lda #70
+; 	sta CREDITS_COUNTDOWN
+	
+;@skip_creds:
 
 	lda <PPU_MASK_VAR	;if rendering is disabled, do not access the VRAM at all
 	and #%00011000

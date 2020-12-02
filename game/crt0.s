@@ -106,8 +106,17 @@ VRAM_INDEX:			.res 1
 META_PTR:			.res 2
 DATA_PTR:			.res 2
 
+.segment "BSS" ; (it can be any segment)
+CREDITS_QUEUED: .res 1
+_CREDITS_QUEUED = CREDITS_QUEUED ; alias with a _
+.export _CREDITS_QUEUED
 
+;CREDITS_COUNTDOWN:	.res 1
+;_CREDITS_COUNTDOWN = CREDITS_COUNTDOWN ; alias with a _
+;.export _CREDITS_COUNTDOWN
 
+CREDITS1_PREV: 	.res 1
+CREDITS2_PREV:	.res 1
 
 .segment "HEADER"
     .byte $4e,$45,$53,$1a
