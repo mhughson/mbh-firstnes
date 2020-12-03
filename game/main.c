@@ -218,7 +218,7 @@ VERSUS TODO:
 * PPU support
 * Leaderboards
 * Save game.
-* Game Mode Screen art.
+* [done] Game Mode Screen art.
 * [done] Remaining Dip Switches.
 * [done] Game over timer (force quit).
 * [done] Credit display.
@@ -230,10 +230,10 @@ VERSUS TODO:
 * [done] game over quits with any key, changed messaging.
 * [done] credit display.
 * [done] Catch credits in NMI, and poll value in main.
-* Better coin display.
+* [done] Better coin display.
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [done] coin feedback across all states (but disbled during gameplay)
-* Auto-advance all menus to avoid burn in.
+* [done] Auto-advance all menus to avoid burn in.
 
 */
 
@@ -261,9 +261,11 @@ VERSUS TODO:
 
 void main (void)
 {
+#if VS_SYS_ENABLED
 	static unsigned char i;
 	static unsigned int temp_secs;
 	static unsigned char digit;
+#endif
 
 	// pal_bg(test_palette_bg);
 	// ppu_on_all(); // turn on screen
@@ -362,6 +364,9 @@ void main (void)
 			{
 				if (credits_remaining < 254)
 				{
+					// Reset the timer so that the "insert coin" display updates
+					// this frame.
+					tick_count = 0;
 					++credits_remaining;
 					// If this was triggered with maintenance button, the dequeue might be 0, and this would
 					// send it to 255, which can never be dequeued again.
@@ -449,15 +454,22 @@ void main (void)
 #if VS_SYS_ENABLED
 					if (free_play_enabled) // free play
 					{
-						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 10<<3, 12<<3));
+						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 9<<3, 12<<3));
 					}
 					else if (credits_remaining >= game_cost)
 					{
-						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
 					}
 					else
 					{
-						multi_vram_buffer_horz(text_insert_coin, sizeof(text_insert_coin)-1, get_ppu_addr(0, 10<<3, 12<<3));
+						if (game_cost -  credits_remaining == 1)
+						{
+							multi_vram_buffer_horz(text_insert_1_coin, sizeof(text_insert_1_coin)-1, get_ppu_addr(0, 9<<3, 12<<3));
+						}
+						else
+						{
+							multi_vram_buffer_horz(text_insert_2_coin, sizeof(text_insert_2_coin)-1, get_ppu_addr(0, 9<<3, 12<<3));
+						}
 					}
 #else
 					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
@@ -466,7 +478,7 @@ void main (void)
 				else if (tick_count % 128 == 96)
 				{
 #if VS_SYS_ENABLED
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
 #else
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif					
@@ -1183,6 +1195,9 @@ void main (void)
 void draw_menu_sprites(void)
 {
 	static unsigned char t;
+#if VS_SYS_ENABLED	
+	static unsigned char d;
+#endif
 
 	// clear all sprites from sprite buffer
 	oam_clear();
@@ -1228,17 +1243,17 @@ void draw_menu_sprites(void)
 	// oam_spr(29 << 3, 26 << 3, 'D', 0);
 
 #if VS_SYS_ENABLED
-	if (credits_remaining > 9)
-	{
-		oam_spr(25 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
-		oam_spr(26 << 3, 27 << 3, '!', 0);
-	}
-	else
-	{
-		oam_spr(26 << 3, 27 << 3, 0x30 + MIN(9, credits_remaining), 0);
-	}
-	oam_spr(27 << 3, 27 << 3, 0x2f, 0);
-	oam_spr(28 << 3, 27 << 3, 0x30 + game_cost, 0);
+	//3<<3, 26<<3
+	t = credits_remaining;
+	d = (t) % 10;
+	oam_spr(5<<3, 27<<3, '0' + d, 0);
+	t = t / 10;
+	d = (t) % 10;
+	oam_spr(4<<3, 27<<3, '0' + d, 0);
+
+	oam_spr(6 << 3, 27 << 3, 0x28, 0);
+	oam_spr(7 << 3, 27 << 3, 0x30 + game_cost, 0);
+	oam_spr(8 << 3, 27 << 3, 0x29, 0);
 #endif //VS_SYS_ENABLED	
 }
 
@@ -2100,6 +2115,12 @@ void go_to_state(unsigned char new_state)
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
 				ppu_on_all();
+#if VS_SYS_ENABLED
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+				multi_vram_buffer_horz("CREDIT", 6, get_ppu_addr(0, 3<<3, 26<<3));
+#else
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif						
 			}
 			else
 			{
@@ -2114,17 +2135,18 @@ void go_to_state(unsigned char new_state)
 				scroll(0, 0x1df); // shift the bg down 1 pixel
 				MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 
+#if VS_SYS_ENABLED
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+				multi_vram_buffer_horz("CREDIT", 6, get_ppu_addr(0, 3<<3, 26<<3));
+#else
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif		
+
 				if (prev_state == STATE_OVER)
 				{
 					fade_from_black();
 				}
 			}
-
-#if VS_SYS_ENABLED
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 10<<3, 12<<3));
-#else
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif		
 
 			break;
 		}

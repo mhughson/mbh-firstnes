@@ -547,10 +547,11 @@ unsigned char maintenance_counter;
 unsigned char screen_shake_remaining;
 
 #if VS_SYS_ENABLED
-unsigned char text_insert_coin[] = { "\xDBINSERT COIN\xDC" }; // { "PUSH START" };
-unsigned char text_free_play[] = {   "\xdb FREE PLAY \xDC" }; // { "PUSH START" };
-unsigned char text_push_start[] = {  "\xDBPRESS A KEY\xDC" }; // { "PUSH START" };
-unsigned char clear_push_start[] = { "\xDB           \xDC" }; //{ "          " };
+unsigned char text_insert_1_coin[] = { "\xDB INSERT  COIN \xDC" }; // { "PUSH START" };
+unsigned char text_insert_2_coin[] = { "\xDBINSERT 2 COINS\xDC" }; // { "PUSH START" };
+unsigned char text_free_play[] = {     "\xdb  FREE  PLAY  \xDC" }; // { "PUSH START" };
+unsigned char text_push_start[] = {    "\xDB PRESS  START \xDC" }; // { "PUSH START" };
+unsigned char clear_push_start[] = {   "\xDB              \xDC" }; //{ "          " };
 #else
 unsigned char text_push_start[] =  { "PUSH START" };
 unsigned char clear_push_start[] = { "          " };
