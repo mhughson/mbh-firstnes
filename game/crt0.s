@@ -287,9 +287,8 @@ sounds_data:
 	.include "MUSIC/sounds.s"
 	.endif
 
-	
-	
-.segment "SAMPLES"
+; Not used, so don't allocate space for it.
+;.segment "SAMPLES"
 ;	.incbin "music_dpcm.bin"
 
 

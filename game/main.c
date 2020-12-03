@@ -206,6 +206,14 @@ DISABLE MUSIC			|	-	-	-	-	-	1	-	-
 DISABLE SFX				|	-	-	-	-	-	-	1	-
 DISABLE ATTACT SOUND	|	-	-	-	-	-	-	-	1
 
+
+Arcade Buttons:
+
+1: p1 select (virtual - Doesn't seem to match physical controller in Messen)
+2: p2 select
+3: p1 start
+4: p2 start
+
 VERSUS TODO:
 * PPU support
 * Leaderboards
@@ -225,6 +233,7 @@ VERSUS TODO:
 * Better coin display.
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [done] coin feedback across all states (but disbled during gameplay)
+* Auto-advance all menus to avoid burn in.
 
 */
 
@@ -236,8 +245,26 @@ VERSUS TODO:
 // 	0x0f,0x10,0x20,0x30 
 // };
 
+// const unsigned char metasprite_flag[]={
+// 	  0,  0,0x6e,1,
+// 	  8,  0,0x6f,1,
+// 	  0,  8,0x7e,1,
+// 	  8,  8,0x7f,1,
+// 	  0, 16,0x8e,1,
+// 	  8, 16,0x8f,1,
+// 	  0, 24,0x9e,1,
+// 	  8, 24,0x9f,1,
+// 	128
+// };
+
+
+
 void main (void)
 {
+	static unsigned char i;
+	static unsigned int temp_secs;
+	static unsigned char digit;
+
 	// pal_bg(test_palette_bg);
 	// ppu_on_all(); // turn on screen
 	// while (1)
@@ -499,32 +526,63 @@ void main (void)
 			case STATE_OPTIONS:
 			{
 #if VS_SYS_ENABLED
+
+				// do this first, so the sprites get cleared in the case of auto-advancing.
+				if (ticks_in_state_large <= AUTO_FORWARD_DELAY)
+				{
+					oam_clear();
+					temp_secs = ((AUTO_FORWARD_DELAY - ticks_in_state_large)/60);
+					digit = (temp_secs) % 10;
+					oam_spr(27<<3, 2<<3, '0' + digit, 0);
+					temp_secs = temp_secs / 10;
+					digit = (temp_secs) % 10;
+					oam_spr(26<<3, 2<<3, '0' + digit, 0);
+
+					//oam_meta_spr(setting_sprite_x, 22<<3, metasprite_flag);
+				}
+
 				switch ((option_state))
 				{
 					case 0:
 					{
-						// 1: p1 select (virtual - Doesn't seem to match physical controller in Messen)
-						// 2: p2 select
-						// 3: p1 start
-						// 4: p2 start
-						if (pad1_new & (PAD_START | PAD_SELECT) || pad2_new & PAD_SELECT)
+						if (pad_all_new & PAD_RIGHT)
 						{
-							// option 1
-							if (pad1_new & (PAD_SELECT))
-							{
-								attack_style = ATTACK_ON_LAND;
-							}
-							// option 2
-							else if (pad2_new & PAD_SELECT)
-							{
-								attack_style = ATTACK_ON_TIME;
-							}
-							// option 3
-							else if (pad1_new & PAD_START)
-							{
-								attack_style = ATTACK_NEVER;
-							}
+								if (attack_style < ATTACK_NUM - 1)
+								{
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+									}
 
+									++attack_style;
+									SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+									}
+								}
+						}
+						else if (pad_all_new & PAD_LEFT)
+						{
+								if (attack_style > 0)
+								{
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+									}
+
+									--attack_style;
+									SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+									}
+								}
+						}
+						else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || ticks_in_state_large > AUTO_FORWARD_DELAY)
+						{
 							fade_to_black();
 							oam_clear();
 							ppu_off();
@@ -532,47 +590,116 @@ void main (void)
 							vram_unrle(vs_settings_difficulty);
 							ppu_on_all();
 							option_state = 1;
-
+							for (i = 0; i < 4; ++i)
+							{
+								pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+							}
+							for (i = 0; i < 4; ++i)
+							{
+								pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+							}
 							fade_from_black();
-						}						
+						}		
 						break;
 					}
 
 					case 1:
 					{
-						// 1: p1 select (virtual - Doesn't seem to match physical controller in Messen)
-						// 2: p2 select
-						// 3: p1 start
-						// 4: p2 start
-						if (pad1_new & (PAD_START | PAD_SELECT) || pad2_new & PAD_SELECT || ((pad2 & PAD_START) && (pad_all & PAD_A)))
+						if (vs_code_index < VS_CODE_LEN)
 						{
-							// SECRET DIFFICULTY
-							// Any "A" + Button 4
-							if ((pad2 & PAD_START) && (pad_all & PAD_A))
+							if (pad_all_new != 0)
 							{
-								cur_level = 29;
+								if (pad_all_new & vs_code[vs_code_index])
+								{
+									++vs_code_index;
+									if (vs_code_index == VS_CODE_LEN)
+									{
+										music_stop();
+										SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI)
+										cur_level_vs_setting = 3;
+										pal_bg(palette_vs_options_skulls);
+									}
+								}
+								else
+								{
+									vs_code_index = 0;
+								}
 							}
-							// options 1
-							else if (pad1_new & (PAD_SELECT))
+						}
+						else
+						{
+							for (i = 0; i < 8; ++i)
 							{
-								cur_level = 0;
+								one_vram_buffer(0x01, get_ppu_addr(0, rand() % 256, rand() % 240));
 							}
-							// option 2
-							else if (pad2_new & PAD_SELECT)
-							{
-								cur_level = 9;
-							}
-							// option 3
-							else if (pad1_new & PAD_START)
-							{
-								cur_level = 19;
-							}
+						}
 
+						if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_RIGHT)
+						{
+								if (cur_level_vs_setting < 2)
+								{
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
+									}
+
+									++cur_level_vs_setting;
+									SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+									}
+								}
+						}
+						else if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_LEFT)
+						{
+								if (cur_level_vs_setting > 0)
+								{
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
+									}
+
+									--cur_level_vs_setting;
+									SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+
+									for (i = 0; i < 4; ++i)
+									{
+										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+									}
+								}
+						}
+						else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
+						{
 							music_stop();
 							SFX_PLAY_WRAPPER(SOUND_START);
 
+							switch (cur_level_vs_setting)
+							{
+							case 0:
+								cur_level = 0;
+								break;
+							case 1:
+								cur_level = 9;
+								break;
+							case 2:
+								cur_level = 19;
+								break;
+							case 3:
+								cur_level_vs_setting = 2; // reset it back to normal value.
+								cur_level = 29;
+								break;
+							
+							default:
+								cur_level = 0;
+								break;
+							}
+
 							fade_to_black();
 							ppu_off();
+							// prevent vram changes showing up in gameplay.
+							clear_vram_buffer();
 							vram_adr(NTADR_A(0,0));
 							vram_unrle(title_screen);
 							ppu_on_all();
@@ -1895,6 +2022,11 @@ void go_to_state(unsigned char new_state)
 		}
 		case STATE_OPTIONS:
 		{
+#if VS_SYS_ENABLED
+			// swap back to normal CHR setup.
+			bank_bg(0);
+			bank_spr(1);
+#endif
 			pal_bg(palette_bg);
 			saved_starting_level = cur_level;
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
@@ -2000,10 +2132,33 @@ void go_to_state(unsigned char new_state)
 		case STATE_OPTIONS:
 		{
 			oam_clear();
+	
+			// get rid of any queued up changes as they are no longer valid.
+			// fixes bug where "press a button" is on screen in settings because it got queued up
+			// on the frame that we transitioned.
+			clear_vram_buffer();
 
 			ppu_off();
 
+#if VS_SYS_ENABLED
+			vs_code_index = 0;
+
+			// For VS, we use the 2nd half of the CHR for Background, and the first half
+			// for sprites.
+			// NOTE: The sprite switch isn't actually needed I think, since the only sprites
+			// 		 drawn are numbers which exist in both.
+			bank_bg(1);
+			bank_spr(0);
+			pal_bg(palette_vs_options);
+
+			// Update the palettes to show which option is currently selected.
+			for (i = 0; i < 4; ++i)
+			{
+				pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+			}
+#else
 			pal_bg(palette_bg_options);
+#endif
 
 			//go_to_state(STATE_SOUND_TEST);
 			vram_adr(NTADR_A(0,0));
