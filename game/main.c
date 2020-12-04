@@ -3,12 +3,13 @@
 #include "LIB/neslib.h"
 #include "LIB/nesdoug.h"
 #include "BG/game_area.h"
-#include "BG/title_screen.h"
 #if VS_SYS_ENABLED
 #include "BG/vs_boot_screen.h"
 #include "BG/vs_settings_difficulty.h"
 #include "BG/vs_settings_mode.h"
+#include "BG/vs_title_screen.h"
 #else
+#include "BG/title_screen.h"
 #include "BG/boot_screen.h"
 #include "BG/options_screen.h"
 #endif
@@ -218,6 +219,7 @@ VERSUS TODO:
 * PPU support
 * Leaderboards
 * Save game.
+* [done] Title Screen with "Vs."
 * [done] Game Mode Screen art.
 * [done] Remaining Dip Switches.
 * [done] Game over timer (force quit).
@@ -234,6 +236,7 @@ VERSUS TODO:
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [done] coin feedback across all states (but disbled during gameplay)
 * [done] Auto-advance all menus to avoid burn in.
+* Shared leaderboard on dual system.
 
 */
 
@@ -257,6 +260,17 @@ VERSUS TODO:
 // 	128
 // };
 
+const unsigned char metasprite_vs_logo[]={
+	  0,  0,0x0a,3,
+	  8,  0,0x0b,3,
+	 16,  0,0x0c,3,
+	 24,  0,0x0d,3,
+	  0,  8,0x1a,3,
+	  8,  8,0x1b,3,
+	 16,  8,0x1c,3,
+	 24,  8,0x1d,3,
+	128
+};
 
 
 void main (void)
@@ -549,8 +563,6 @@ void main (void)
 					temp_secs = temp_secs / 10;
 					digit = (temp_secs) % 10;
 					oam_spr(26<<3, 2<<3, '0' + digit, 0);
-
-					//oam_meta_spr(setting_sprite_x, 22<<3, metasprite_flag);
 				}
 
 				switch ((option_state))
@@ -1254,6 +1266,8 @@ void draw_menu_sprites(void)
 	oam_spr(6 << 3, 27 << 3, 0x28, 0);
 	oam_spr(7 << 3, 27 << 3, 0x30 + game_cost, 0);
 	oam_spr(8 << 3, 27 << 3, 0x29, 0);
+
+	oam_meta_spr(22<<3, 3<<3, metasprite_vs_logo);
 #endif //VS_SYS_ENABLED	
 }
 
@@ -2110,6 +2124,7 @@ void go_to_state(unsigned char new_state)
 			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST)
 			{
 				oam_clear();
+				draw_menu_sprites();
 
 				ppu_off();
 				vram_adr(NTADR_A(0,0));
@@ -2117,7 +2132,6 @@ void go_to_state(unsigned char new_state)
 				ppu_on_all();
 #if VS_SYS_ENABLED
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
-				multi_vram_buffer_horz("CREDIT", 6, get_ppu_addr(0, 3<<3, 26<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif						
@@ -2131,13 +2145,14 @@ void go_to_state(unsigned char new_state)
 
 				reset_gameplay_area();
 
+				draw_menu_sprites();
+
 				scroll_y = 0x1df;
 				scroll(0, 0x1df); // shift the bg down 1 pixel
 				MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
-				multi_vram_buffer_horz("CREDIT", 6, get_ppu_addr(0, 3<<3, 26<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif		
