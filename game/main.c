@@ -8,6 +8,7 @@
 #include "BG/vs_settings_difficulty.h"
 #include "BG/vs_settings_mode.h"
 #include "BG/vs_title_screen.h"
+#include "BG/high_score_screen.h"
 #else
 #include "BG/title_screen.h"
 #include "BG/boot_screen.h"
@@ -237,6 +238,16 @@ VERSUS TODO:
 * [done] coin feedback across all states (but disbled during gameplay)
 * [done] Auto-advance all menus to avoid burn in.
 * Shared leaderboard on dual system.
+* Prefer credit style of 1/2
+* White text is hard to read.
+* Press Start should be Press Any Button
+* Hide coin display in Free Play mode.
+* On gameover, continue should go to Mode select, not title screen.
+* Tapping button should speed up countdown.
+* Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
+* More buttons (not just 1) for entering initials.
+* Countdown timer on entering initials.
+* Auto-forward if no input on the leaderboards for too long.
 
 */
 
@@ -259,18 +270,6 @@ VERSUS TODO:
 // 	  8, 24,0x9f,1,
 // 	128
 // };
-
-const unsigned char metasprite_vs_logo[]={
-	  0,  0,0x0a,3,
-	  8,  0,0x0b,3,
-	 16,  0,0x0c,3,
-	 24,  0,0x0d,3,
-	  0,  8,0x1a,3,
-	  8,  8,0x1b,3,
-	 16,  8,0x1c,3,
-	 24,  8,0x1d,3,
-	128
-};
 
 
 void main (void)
@@ -338,6 +337,7 @@ void main (void)
 	game_cost = (DIP1 == 0) ? 1 : 2;
 	music_on = DIP5 == 0;
 	sfx_on = DIP6 == 0;
+	high_score_entry_placement = 0xff;
 #endif //#if VS_SYS_ENABLED
 
 	pal_bright(0);
@@ -511,7 +511,13 @@ void main (void)
 				}
 
 #if VS_SYS_ENABLED
-				if ((pad_all_new & (PAD_START | PAD_SELECT | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
+				if (pad_all_new & (PAD_SELECT)) // free play
+				{
+						fade_to_black();
+						go_to_state(STATE_HIGH_SCORE_TABLE);	
+						fade_from_black();
+				}
+				else if ((pad_all_new & (PAD_START | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
 #else
 				if (pad_all_new & PAD_START)
 #endif //VS_SYS_ENABLED
@@ -537,11 +543,12 @@ void main (void)
 				// Timed to be when the title track finishes for a 2nd time.
 				if (ticks_in_state_large > (48*60*2))
 				{
-					tick_count = tick_count_large = 0;
+					//tick_count = tick_count_large = 0;
 					fade_to_black();
-					oam_clear();
-					music_stop();
-					go_to_state(STATE_BOOT);
+					//oam_clear();
+					//music_stop();
+					auto_forward_leaderboards = 3;
+					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
 					//return;
 				}
@@ -711,7 +718,7 @@ void main (void)
 								cur_level = 19;
 								break;
 							case 3:
-								cur_level_vs_setting = 2; // reset it back to normal value.
+								//cur_level_vs_setting = 2; // reset it back to normal value.
 								cur_level = 29;
 								break;
 							
@@ -812,7 +819,7 @@ void main (void)
 						if (music_on == 0)
 						{
 							music_on = 1;
-							MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+							MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 							music_pause(0);
 						}
 
@@ -1104,8 +1111,11 @@ void main (void)
 #if VS_SYS_ENABLED
 				if (ticks_in_state_large > (60*10) || (pad_all_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
 				{
-					//go_to_state(STATE_GAME);
-					go_to_state(STATE_MENU);
+					// always go through the high score table, but sometimes it will be waiting to have you enter
+					// your initials.
+					fade_to_black();
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
 				}
 #else			
 				if (pad_all_new & PAD_B)
@@ -1184,6 +1194,153 @@ void main (void)
 				}
 				break;
 			}
+
+#if VS_SYS_ENABLED
+			case STATE_HIGH_SCORE_TABLE:
+			{
+				if (high_score_entry_placement < 3)
+				{
+					if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] == '-')
+					{
+						high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'A';
+					}
+
+					oam_clear();
+					if (ticks_in_state_large % 128 < 64)
+					{
+						switch (cur_level_vs_setting)
+						{
+						case 0:
+							in_x = 4;
+							in_y = 12;
+							break;
+						case 1:
+							in_x = 18;
+							in_y = 12;
+							break;
+						case 2:
+							in_x = 4;
+							in_y = 22;
+							break;
+						case 3:
+							in_x = 18;
+							in_y = 22;
+							break;
+						}
+
+						oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][0], 0);
+						oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][1], 0);
+						oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][2], 0);
+					}
+
+					if (pad_all_new & PAD_RIGHT)
+					{
+						ticks_in_state_large = 0;
+						++high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index];
+
+						if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] > 'Z')
+						{
+							high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'A';
+						}
+					}
+					else if (pad_all_new & PAD_LEFT)
+					{
+						ticks_in_state_large = 0;
+						--high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index];
+
+						if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] < 'A')
+						{
+							high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'Z';
+						}
+					}
+					else if (pad_all_new & PAD_START)
+					{
+						ticks_in_state_large = 0;
+						++cur_initial_index;
+
+						if (cur_initial_index >= 3)
+						{
+							SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+							fade_to_black();
+							auto_forward_leaderboards = 0;
+							go_to_state(STATE_HIGH_SCORE_TABLE);
+							fade_from_black();
+						}
+					}
+				}
+				else if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
+				{
+					if (attack_style > 0)
+					{
+						--attack_style;
+					}
+					else
+					{
+						attack_style = ATTACK_NUM - 1;
+					}
+
+					--auto_forward_leaderboards;
+					
+					if (auto_forward_leaderboards == 0)
+					{
+						fade_to_black();
+						go_to_state(STATE_MENU);
+						fade_from_black();
+					}
+					else
+					{
+						ticks_in_state_large = 0;
+						fade_to_black();
+						go_to_state(STATE_HIGH_SCORE_TABLE);
+						fade_from_black();
+					}
+				}
+				else if ( pad_all_new & PAD_LEFT)
+				{
+					if (attack_style > 0)
+					{
+						--attack_style;
+					}
+					else
+					{
+						attack_style = ATTACK_NUM - 1;
+					}
+					
+					auto_forward_leaderboards = 0;
+					fade_to_black();
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
+				}
+				else if ( pad_all_new & PAD_RIGHT)
+				{
+					if (attack_style < ATTACK_NUM - 1)
+					{
+						++attack_style;
+					}
+					else
+					{
+						attack_style = 0;
+					}
+					
+					auto_forward_leaderboards = 0;
+					fade_to_black();
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
+				}		
+				// else if (pad_all_new & PAD_A)
+				// {
+				// 	// stop auto-forwarding.
+				// 	auto_forward_leaderboards = 0;
+				// }				
+				else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
+				{
+					fade_to_black();
+					go_to_state(STATE_MENU);
+					fade_from_black();
+				}
+				break;
+			}
+#endif // #if VS_SYS_ENABLED			
 		}
 
 //#if VS_SYS_ENABLED
@@ -2037,7 +2194,12 @@ void go_to_state(unsigned char new_state)
 	static unsigned char i;
 	static unsigned char fade_delay;
 	static unsigned char prev_state;
-
+#if VS_SYS_ENABLED
+	static unsigned char j;
+	static unsigned char k;
+	static unsigned long temp_score;
+	static unsigned char digit;
+#endif // #if VS_SYS_ENABLED
 	fade_delay = 5;
 	prev_state = state;
 
@@ -2046,7 +2208,7 @@ void go_to_state(unsigned char new_state)
 		case STATE_TY:
 		case STATE_SOUND_TEST:
 		{
-			MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+			MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 			break;
 		}
 		case STATE_OPTIONS:
@@ -2076,13 +2238,46 @@ void go_to_state(unsigned char new_state)
 		{
 			// Little bit of future proofing in case we add other ways
 			// to exit the game (eg. from pause).
+#if VS_SYS_ENABLED
+			high_score_entry_placement = 0xff;
+			if (cur_score > 0)
+			{
+				for (i = 0; i < 3; ++i)
+				{
+					if (high_scores_vs_value[attack_style][cur_level_vs_setting][i] == NO_SCORE || cur_score > high_scores_vs_value[attack_style][cur_level_vs_setting][i])
+					{
+						high_score_entry_placement = i;
+						for(j = 2; j != i; --j)
+						{
+							if (high_scores_vs_value[attack_style][cur_level_vs_setting][j-1] != NO_SCORE)
+							{
+								high_scores_vs_value[attack_style][cur_level_vs_setting][j] = high_scores_vs_value[attack_style][cur_level_vs_setting][j-1];
+								memcpy(high_scores_vs_initials[attack_style][cur_level_vs_setting][j], high_scores_vs_initials[attack_style][cur_level_vs_setting][j-1], 3);
+							}
+						}
+						high_scores_vs_value[attack_style][cur_level_vs_setting][i] = cur_score;
+						memcpy(high_scores_vs_initials[attack_style][cur_level_vs_setting][i], "---", 3);
+						cur_score = NO_SCORE;
+						break;
+					}
+				}
+			}
+#else						
 			if (cur_score > high_scores[attack_style])
 			{
 				high_scores[attack_style] = cur_score;
 			}
+#endif 
 			break;
 		}
 
+#if VS_SYS_ENABLED
+		case STATE_HIGH_SCORE_TABLE:
+		{
+			high_score_entry_placement = 0xff;
+			break;
+		}
+#endif // #if VS_SYS_ENABLED
 	default:
 		break;
 	}
@@ -2121,7 +2316,7 @@ void go_to_state(unsigned char new_state)
 			time_of_day = 0;
 			cur_konami_index = 0;
 
-			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST)
+			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST || prev_state == STATE_HIGH_SCORE_TABLE)
 			{
 				oam_clear();
 				draw_menu_sprites();
@@ -2149,7 +2344,7 @@ void go_to_state(unsigned char new_state)
 
 				scroll_y = 0x1df;
 				scroll(0, 0x1df); // shift the bg down 1 pixel
-				MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
@@ -2178,6 +2373,8 @@ void go_to_state(unsigned char new_state)
 			ppu_off();
 
 #if VS_SYS_ENABLED
+
+			cur_level_vs_setting = MIN(cur_level_vs_setting, 2);
 			vs_code_index = 0;
 
 			// For VS, we use the 2nd half of the CHR for Background, and the first half
@@ -2268,8 +2465,15 @@ void go_to_state(unsigned char new_state)
 #endif// VS_SYS_ENABLED
 
 #if !VS_SYS_ENABLED
-				// start at the top.
-				scroll_y = 0;
+
+				// During initial scroll in, the scroll_y is 0x1df
+				// which will cause some very odd behavior when trying to scroll
+				// to 240. Force it to jump to 0 (1 pixel down), and scroll from there.
+				if (prev_state == STATE_OPTIONS)
+				{
+					// start at the top.
+					scroll_y = 0;
+				}
 				while (scroll_y < 240)
 				{
 					scroll(0, scroll_y);
@@ -2373,6 +2577,109 @@ void go_to_state(unsigned char new_state)
 			delay(fade_delay);
 			break;
 		}
+
+#if VS_SYS_ENABLED
+		case STATE_HIGH_SCORE_TABLE:
+		{
+			if (prev_state == STATE_OVER)
+			{
+				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
+				//before ppuoff
+				reset_gameplay_area();
+			}
+
+			oam_clear();
+			ppu_off(); // screen off
+
+			cur_initial_index = 0;
+
+			scroll_y = 0x1df;
+			// force it so we see it when the fade in completes.
+			scroll(0, scroll_y);
+
+			pal_bg(palette_vs_highscore_table);
+			vram_adr(NTADR_A(0,0));
+			vram_unrle(high_score_screen);
+
+			if (attack_style == ATTACK_NEVER)
+			{
+				vram_adr(NTADR_A(15 - ((sizeof(attack_style_strings[attack_style]))/2),3));
+			}
+			else
+			{
+				vram_adr(NTADR_A(16 - ((sizeof(attack_style_strings[attack_style]))/2),3));
+			}
+			
+			vram_write(attack_style_strings[attack_style], sizeof(attack_style_strings[attack_style]));
+
+			// difficulty
+			for (i = 0; i < 4; ++i)
+			{
+				switch (i)
+				{
+				case 0:
+					in_x = 4;
+					in_y = 12;
+					break;
+				case 1:
+					in_x = 18;
+					in_y = 12;
+					break;
+				case 2:
+					in_x = 4;
+					in_y = 22;
+					break;
+				case 3:
+					in_x = 18;
+					in_y = 22;
+					break;
+				}
+				// Scores from 1st place to last place.
+				for (j = 0; j < 3; ++j)
+				{
+					vram_adr(NTADR_A(in_x, in_y+j));
+					vram_write(high_scores_vs_initials[attack_style][i][j], 3);
+
+					// re-use cur_score. Means this can't be done during gameplay.
+					//cur_score = high_scores_vs_value[attack_style][i][j];
+
+					// vram_adr(NTADR_A(in_x + 4,in_y+j));
+					// vram_put('0' + cur_score);
+
+					temp_score = high_scores_vs_value[attack_style][i][j];
+
+					if (temp_score == NO_SCORE)
+					{
+						vram_adr(NTADR_A(in_x + 4,in_y+j));
+						vram_write("-------", 7);
+					}
+					else
+					{
+						// clear out any old score.
+						// multi_vram_buffer_horz("      ", 6, get_ppu_addr(cur_nt, 0, 6<<3));
+						vram_adr(NTADR_A(in_x + 4,in_y+j));
+						vram_write("0000000", 7);
+
+						k = 0;
+						while(temp_score != 0)
+						{
+							digit = temp_score % 10;
+							//one_vram_buffer('0' + digit, get_ppu_addr(0, (23<<3) - (i << 3), 27<<3 ));
+							vram_adr(NTADR_A((in_x + 4) + 6 - k, in_y + j));
+							vram_put('0' + digit);
+
+							temp_score = temp_score / 10;
+							++k;
+						}				
+					}	
+				}
+			}
+
+			ppu_on_all(); // turn on screen
+
+			break;
+		}
+#endif // #if VS_SYS_ENABLED
 
 		default:
 		{

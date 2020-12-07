@@ -40,10 +40,12 @@
 #define SFX_PLAY_WRAPPER(id) if (sfx_on) { sfx_play((id), 0); }
 // play a sound effect that is treated like music to the user (jingles, etc).
 #define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
-#if VS_SYS_ENABLED
-#define MUSIC_PLAY_WRAPPER(id) if (music_on && (id != MUSIC_TITLE || DIP7 == 0)) { music_play((id)); }
-#else
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
+#if VS_SYS_ENABLED
+#define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && DIP7 == 0) { music_play((id)); }
+#else
+// No attract mode.
+#define MUSIC_PLAY_ATTRACT_WRAPPER(id) MUSIC_PLAY_WRAPPER(id)
 #endif // VS_SYS_ENABLED
 #define SKULL_SPRITE 0x3b
 
@@ -60,6 +62,7 @@
 
 // Delay in the settings screens before the player options are auto-chosen for them.
 #define AUTO_FORWARD_DELAY (60*30)
+#define HIGH_SCORE_ENTRY 4
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -106,6 +109,108 @@ enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
 unsigned char attack_style;
 #define ATTACK_STRING_LEN 7
 
+#if VS_SYS_ENABLED
+// unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 
+// { 
+//     // ATTACK_ON_LAND/FIXED
+//     {
+//         { "1FE", "2FE", "3FE" }, // EASY
+//         { "1FM", "2FM", "3FM" }, // MED
+//         { "1FI", "2FI", "3FI" }, // INSANE
+//         { "1FD", "2FD", "3FD" }, // DEATH
+//     },
+//     // ATTACK_ON_TIME/TIMED
+//     {
+//         { "1TE", "2TE", "3TE" }, // EASY
+//         { "1TM", "2TM", "3TM" }, // MED
+//         { "1TI", "2TI", "3TI" }, // INSANE
+//         { "1TD", "2TD", "3TD" }, // DEATH
+//     },
+//     // ATTACK_NEVER/CLASSIC
+//     {
+//         { "1CE", "2CE", "3CE" }, // EASY
+//         { "1CM", "2CM", "3CM" }, // MED
+//         { "1CI", "2CI", "3CI" }, // INSANE
+//         { "1CD", "2CD", "3CD" }, // DEATH
+//     },
+// };
+
+unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 
+{ 
+    // ATTACK_ON_LAND/FIXED
+    {
+        { "---", "---", "---" }, // EASY
+        { "---", "---", "---" }, // MED
+        { "---", "---", "---" }, // INSANE
+        { "---", "---", "---" }, // DEATH
+    },
+    // ATTACK_ON_TIME/TIMED
+    {
+        { "---", "---", "---" }, // EASY
+        { "---", "---", "---" }, // MED
+        { "---", "---", "---" }, // INSANE
+        { "---", "---", "---" }, // DEATH
+    },
+    // ATTACK_NEVER/CLASSIC
+    {
+        { "---", "---", "---" }, // EASY
+        { "---", "---", "---" }, // MED
+        { "---", "---", "---" }, // INSANE
+        { "---", "---", "---" }, // DEATH
+    },
+};
+
+// unsigned long high_scores_vs_value[ATTACK_NUM][4][3] = 
+// { 
+//     // ATTACK_ON_LAND/FIXED
+//     {
+//         { 1234567, 12345, 12 }, // Easy
+//         { 1234567, 12345, 12 }, // Med
+//         { 1234567, 12345, 12 }, // Insane
+//         { 1234567, 12345, 12 }, // Death
+//     },
+//     {        
+//         { 1234567, 12345, 12 }, // Easy
+//         { 1234567, 12345, 12 }, // Med
+//         { 1234567, 12345, 12 }, // Insane
+//         { 1234567, 12345, 12 }, // Death
+//     },
+//     {        
+//         { 1234567, 12345, 12 }, // Easy
+//         { 1234567, 12345, 12 }, // Med
+//         { 1234567, 12345, 12 }, // Insane
+//         { 1234567, 12345, 12 }, // Death
+//     },
+// };
+
+#define NO_SCORE (0xffffffff)
+unsigned long high_scores_vs_value[ATTACK_NUM][4][3] = 
+{ 
+    // ATTACK_ON_LAND/FIXED
+    {
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+    },
+    // ATTACK_ON_TIME/TIMED
+    {
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+    },
+    // ATTACK_NEVER/CLASSIC
+    {
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
+        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+    },
+};
+unsigned char cur_initial_index;
+#endif
+
 unsigned long high_scores[ATTACK_NUM] = { 0, 0, 0}; // NOTE: long!
 
 unsigned char music_on;
@@ -116,18 +221,18 @@ enum {BLOCK_STYLE_MODERN, BLOCK_STYLE_CLASSIC};
 unsigned char block_style;
 #define BLOCK_STYLE_STRING_LEN 7
 
-unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+const unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 unsigned char saved_starting_level;
 
 unsigned char hard_drops_on;
 unsigned char hard_drop_hold_remaining;
 unsigned char hard_drop_tap_required;
 
-enum { STATE_BOOT, STATE_TY, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST };
+enum { STATE_BOOT, STATE_TY, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST, STATE_HIGH_SCORE_TABLE };
 unsigned char state = STATE_BOOT;
 
 #define KONAMI_CODE_LEN 11
-unsigned char konami_code[KONAMI_CODE_LEN] = { PAD_UP, PAD_UP, PAD_DOWN, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_LEFT, PAD_RIGHT, PAD_B, PAD_A, PAD_START };
+const unsigned char konami_code[KONAMI_CODE_LEN] = { PAD_UP, PAD_UP, PAD_DOWN, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_LEFT, PAD_RIGHT, PAD_B, PAD_A, PAD_START };
 unsigned char cur_konami_index;
 
 
@@ -141,11 +246,13 @@ unsigned char fall_rate = 48;
 unsigned char cur_level = 0;
 // When changing starting level, we actually change this linear number which then
 // gets mapped to starting numbers.
+#if VS_SYS_ENABLED
 unsigned char cur_level_vs_setting = 0;
+unsigned char high_score_entry_placement;
 #define VS_CODE_LEN 7
-unsigned char vs_code[VS_CODE_LEN] = { PAD_RIGHT, PAD_RIGHT, PAD_RIGHT, PAD_DOWN, PAD_DOWN, PAD_DOWN, PAD_RIGHT };
+const unsigned char vs_code[VS_CODE_LEN] = { PAD_RIGHT, PAD_RIGHT, PAD_RIGHT, PAD_DOWN, PAD_DOWN, PAD_DOWN, PAD_RIGHT };
 unsigned char vs_code_index;
-
+#endif // #if VS_SYS_ENABLED
 // Each entry in the array is a rotation.
 // Stored as 4x4 16 bit matrix to support line (otherwise 3x3 would do it).
 // TODO: Perhaps a special character could be user to terminate the array
@@ -250,12 +357,12 @@ struct cluster next_cluster;
 
 unsigned char attack_row_status[BOARD_WIDTH];
 
-unsigned char cluster_sprites[NUM_CLUSTERS] =
+const unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
     0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6
 };
 
-unsigned char cluster_offsets[NUM_CLUSTERS] = 
+const unsigned char cluster_offsets[NUM_CLUSTERS] = 
 {
     3, 3, 2, 3, 3, 3, 3,
     //10,10,10,10,10,10,10
@@ -304,16 +411,17 @@ enum
 { 
     SOUND_ROTATE, SOUND_LAND, SOUND_ROW, SOUND_MULTIROW, SOUND_GAMEOVER, 
     SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP, SOUND_LEVELUP_MULTI, 
-    SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG};
+    SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG
+};
 
 unsigned char cur_gameplay_music;
 #define STRESS_MUSIC_LEVEL 7 // 5 blocks down from the out of bounds area
 unsigned char attack_queued;
 
-char tenatcle_offsets[4] = { -1, 0, 1, 0 };
+const char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 
 #define NUM_GARBAGE_TYPES 3
-unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
 unsigned char cur_garbage_type;
 
 #define DELAY_LOCK_LEN 15
@@ -335,7 +443,7 @@ unsigned char kill_row_queued;
 #define START_DELAY 120
 unsigned char start_delay_remaining;
 
-unsigned char board_lookup_y[24] = 
+const unsigned char board_lookup_y[24] = 
 {
     0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230
 };
@@ -353,9 +461,9 @@ extern unsigned char CREDITS_QUEUED;
 
 unsigned char game_board[BOARD_SIZE];
 unsigned char game_board_temp[BOARD_SIZE];
-char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+const char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const char full_row[10] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+const unsigned char full_col[20] =  { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 const unsigned char option_empty[] = {0x0, 0x0};
 const unsigned char option_icon[] = {0x25, 0x26};
 
@@ -423,6 +531,8 @@ const unsigned char palette_bg_options[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x30,0x0f,
 #if VS_SYS_ENABLED
 //const unsigned char palette_vs_options[16]={ 0x0f,0x00,0x10,0x30,0x0f,0x00,0x10,0x30,0x0f,0x00,0x10,0x20,0x0f,0x22,0x32,0x30 };
 const unsigned char palette_vs_options[16]={ 0x0f,0x00,0x10,0x30,0x0f,0x00,0x10,0x30,0x0f,0x00,0x10,0x20,0x0f,0x22,0x31,0x30 };
+const unsigned char palette_vs_highscore_table[16]={ 0x0f,0x22,0x31,0x30,0x0f,0x30,0x0f,0x26,0x0f,0x22,0x0f,0x26,0x0f,0x06,0x0f,0x30 };
+
 const unsigned char palette_vs_options_inactive[] = { 0x0f,0x00,0x10,0x30 };
 const unsigned char palette_vs_options_active[] = { 0x0f,0x22,0x26,0x35 };
 const unsigned char palette_vs_options_skulls[16] = { 0x0f,0x06,0x16,0x36,0x0f,0x06,0x16,0x36,0x0f,0x06,0x16,0x36,0x0f,0x06,0x16,0x36, };
@@ -476,7 +586,7 @@ Level	Frames per Gridcell
 */
 
 // https://tetris.fandom.com/wiki/Tetris_(NES,_Nintendo)
-unsigned char fall_rates_per_level[] =
+const unsigned char fall_rates_per_level[] =
 {
     48,
     43,
@@ -510,18 +620,18 @@ unsigned char fall_rates_per_level[] =
     1, // 29+
 };
 
-unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
+const unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
 {
     "FIXED",
     "TIMED",
     "CLASSIC"
 };
-unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
+const unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
 {
     "OFF",
     "ON"
 };
-unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
+const unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 {
     "MODERN",
     "CLASSIC"
@@ -529,9 +639,10 @@ unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 
 #define NUM_HARD_DROP_SETTINGS 3
 #define HARD_DROP_STRING_LEN 4
-unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
+const unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
 
 #if VS_SYS_ENABLED
+unsigned char auto_forward_leaderboards;
 unsigned char free_play_enabled;
 unsigned char game_cost;
 unsigned char option_state;
@@ -547,18 +658,31 @@ unsigned char maintenance_counter;
 unsigned char screen_shake_remaining;
 
 #if VS_SYS_ENABLED
-unsigned char text_insert_1_coin[] = { "\xDB INSERT  COIN \xDC" }; // { "PUSH START" };
-unsigned char text_insert_2_coin[] = { "\xDBINSERT 2 COINS\xDC" }; // { "PUSH START" };
-unsigned char text_free_play[] = {     "\xdb  FREE  PLAY  \xDC" }; // { "PUSH START" };
-unsigned char text_push_start[] = {    "\xDB PRESS  START \xDC" }; // { "PUSH START" };
-unsigned char clear_push_start[] = {   "\xDB              \xDC" }; //{ "          " };
+const unsigned char text_insert_1_coin[] = { "\xDB INSERT  COIN \xDC" }; // { "PUSH START" };
+const unsigned char text_insert_2_coin[] = { "\xDBINSERT 2 COINS\xDC" }; // { "PUSH START" };
+const unsigned char text_free_play[] = {     "\xdb  FREE  PLAY  \xDC" }; // { "PUSH START" };
+const unsigned char text_push_start[] = {    "\xDB PRESS  START \xDC" }; // { "PUSH START" };
+const unsigned char clear_push_start[] = {   "\xDB              \xDC" }; //{ "          " };
 #else
-unsigned char text_push_start[] =  { "PUSH START" };
-unsigned char clear_push_start[] = { "          " };
+const unsigned char text_push_start[] =  { "PUSH START" };
+const unsigned char clear_push_start[] = { "          " };
 #endif //VS_SYS_ENABLED
 
 #if VS_SYS_ENABLED
 unsigned char credits_remaining;
+
+const unsigned char metasprite_vs_logo[]={
+	  0,  0,0x0a,3,
+	  8,  0,0x0b,3,
+	 16,  0,0x0c,3,
+	 24,  0,0x0d,3,
+	  0,  8,0x1a,3,
+	  8,  8,0x1b,3,
+	 16,  8,0x1c,3,
+	 24,  8,0x1d,3,
+	128
+};
+
 #endif // VS_SYS_ENABLED
 
 // PROTOTYPES
