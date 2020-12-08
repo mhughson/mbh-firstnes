@@ -220,23 +220,9 @@ VERSUS TODO:
 * PPU support
 * Leaderboards
 * Save game.
-* [done] Title Screen with "Vs."
-* [done] Game Mode Screen art.
-* [done] Remaining Dip Switches.
-* [done] Game over timer (force quit).
-* [done] Credit display.
-* [done] Matenience coin counter.
-* [done] Maintenience coin feeder.
 * Consider hard drop (setting, dip, hold by default, etc).
 * Artwork.
-* [done] start game with A or B as well.
-* [done] game over quits with any key, changed messaging.
-* [done] credit display.
-* [done] Catch credits in NMI, and poll value in main.
-* [done] Better coin display.
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
-* [done] coin feedback across all states (but disbled during gameplay)
-* [done] Auto-advance all menus to avoid burn in.
 * Shared leaderboard on dual system.
 * Prefer credit style of 1/2
 * White text is hard to read.
@@ -245,9 +231,40 @@ VERSUS TODO:
 * On gameover, continue should go to Mode select, not title screen.
 * Tapping button should speed up countdown.
 * Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
-* More buttons (not just 1) for entering initials.
 * Countdown timer on entering initials.
 * Auto-forward if no input on the leaderboards for too long.
+* Arrow sprites on leaderboards.
+* Font outline.
+* [done] Title Screen with "Vs."
+* [done] Game Mode Screen art.
+* [done] Remaining Dip Switches.
+* [done] Game over timer (force quit).
+* [done] Credit display.
+* [done] Matenience coin counter.
+* [done] Maintenience coin feeder.
+* [done] start game with A or B as well.
+* [done] game over quits with any key, changed messaging.
+* [done] credit display.
+* [done] Catch credits in NMI, and poll value in main.
+* [done] Better coin display.
+* [done] coin feedback across all states (but disbled during gameplay)
+* [done] Auto-advance all menus to avoid burn in.
+* [done] More buttons (not just 1) for entering initials. A to enter, B go back. Maybe 1 to skip.
+* [done] Button 1 and Button 2 go to leaderbaords. Should just be 2.
+* Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
+* Shared leaderboard on dual system.
+* Prefer credit style of 1/2
+* White text is hard to read.
+* Press Start should be Press Any Button
+* Hide coin display in Free Play mode.
+* On gameover, continue should go to Mode select, not title screen.
+* Tapping button should speed up countdown.
+* Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
+* Countdown timer on entering initials.
+* Auto-forward if no input on the leaderboards for too long.
+* Arrow sprites on leaderboards.
+* Font outline.
+* Block highlight.
 
 */
 
@@ -511,13 +528,15 @@ void main (void)
 				}
 
 #if VS_SYS_ENABLED
-				if (pad_all_new & (PAD_SELECT)) // free play
+				// 2
+				if (pad2_new & (PAD_SELECT))
 				{
 						fade_to_black();
 						go_to_state(STATE_HIGH_SCORE_TABLE);	
 						fade_from_black();
 				}
-				else if ((pad_all_new & (PAD_START | PAD_A | PAD_B)) && (credits_remaining >= game_cost || free_play_enabled)) // free play
+				// Any A or B, or 1, 3, 4.
+				else if (((pad1_new & PAD_SELECT) || (pad_all_new & (PAD_START | PAD_A | PAD_B))) && (credits_remaining >= game_cost || free_play_enabled)) // free play
 #else
 				if (pad_all_new & PAD_START)
 #endif //VS_SYS_ENABLED
@@ -1200,9 +1219,12 @@ void main (void)
 			{
 				if (high_score_entry_placement < 3)
 				{
-					if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] == '-')
+					// Save a bunch of code space, and make this easier to work with.
+					temp_table = high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement];
+
+					if (temp_table[cur_initial_index] == '-')
 					{
-						high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'A';
+						temp_table[cur_initial_index] = 'A';
 					}
 
 					oam_clear();
@@ -1228,32 +1250,42 @@ void main (void)
 							break;
 						}
 
-						oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][0], 0);
-						oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][1], 0);
-						oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][2], 0);
+						oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, temp_table[0], 0);
+						if (cur_initial_index > 0)
+						{
+							oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, temp_table[1], 0);
+						}
+						if (cur_initial_index > 1)
+						{
+							oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], 0);
+						}
 					}
 
 					if (pad_all_new & PAD_RIGHT)
 					{
+						// Reset the timer on movement, like on a modern OS.
 						ticks_in_state_large = 0;
-						++high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index];
 
-						if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] > 'Z')
+						// Increment the character. Works because A-Z is in order.
+						++temp_table[cur_initial_index];
+
+						// Support looping back.
+						if (temp_table[cur_initial_index] > 'Z')
 						{
-							high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'A';
+							temp_table[cur_initial_index] = 'A';
 						}
 					}
 					else if (pad_all_new & PAD_LEFT)
 					{
 						ticks_in_state_large = 0;
-						--high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index];
+						--temp_table[cur_initial_index];
 
-						if (high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] < 'A')
+						if (temp_table[cur_initial_index] < 'A')
 						{
-							high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement][cur_initial_index] = 'Z';
+							temp_table[cur_initial_index] = 'Z';
 						}
 					}
-					else if (pad_all_new & PAD_START)
+					else if (pad_all_new & PAD_A)
 					{
 						ticks_in_state_large = 0;
 						++cur_initial_index;
@@ -1265,6 +1297,15 @@ void main (void)
 							auto_forward_leaderboards = 0;
 							go_to_state(STATE_HIGH_SCORE_TABLE);
 							fade_from_black();
+						}
+					}
+					else if (pad_all_new & PAD_B)
+					{
+						if (cur_initial_index > 0)
+						{
+							ticks_in_state_large = 0;
+							temp_table[cur_initial_index] = '-';
+							--cur_initial_index;
 						}
 					}
 				}
@@ -1425,6 +1466,8 @@ void draw_menu_sprites(void)
 	oam_spr(8 << 3, 27 << 3, 0x29, 0);
 
 	oam_meta_spr(22<<3, 3<<3, metasprite_vs_logo);
+//	oam_meta_spr(27<<3, 27<<3, metasprite_button2);
+	
 #endif //VS_SYS_ENABLED	
 }
 
@@ -1651,6 +1694,8 @@ void movement(void)
 	if (pad_all_new & PAD_SELECT)
 #endif
 	{
+		// cur_score += 100;
+		// display_score();
 		//hit_reaction_remaining = 60;
 		//  inc_lines_cleared();
 		//  delay(1);

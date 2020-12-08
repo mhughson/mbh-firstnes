@@ -135,6 +135,9 @@ unsigned char attack_style;
 //     },
 // };
 
+// Temporary table used for manipulating high score table.
+unsigned char *temp_table;
+
 unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 
 { 
     // ATTACK_ON_LAND/FIXED
@@ -682,6 +685,16 @@ const unsigned char metasprite_vs_logo[]={
 	 24,  8,0x1d,3,
 	128
 };
+
+// const unsigned char metasprite_button2[]={
+// 	  0,  0,0xab,3,
+// 	  8,  0,0xac,3,
+// 	  0,  8,0xbb,3,
+// 	  8,  8,0xbc,3,
+// 	128
+// };
+
+
 
 #endif // VS_SYS_ENABLED
 
