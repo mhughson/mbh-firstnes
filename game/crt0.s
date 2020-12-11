@@ -122,9 +122,20 @@ CREDITS2_PREV:	.res 1
     .byte $4e,$45,$53,$1a
 	.byte <NES_PRG_BANKS
 	.byte <NES_CHR_BANKS
-	.byte <NES_MIRRORING|(<NES_MAPPER<<4)
-.if(VS_SYS_ENABLED)
+
+.if (VS_SRAM_ENABLED)
+	.byte <NES_MIRRORING|((<NES_MAPPER<<4)&$ff)|2 ; mirroring | mapper low bits | save support
 	; use ines 2.0 for vs system ppu specifications.
+	.byte (<NES_MAPPER&$f0)|(1<<3)|1 ; mapper upper nibble | iNes2.0 | vs system
+	.res 2,0 ;filler
+	.byte $50 ; 2k SRAM
+	.res 2,0 ;filler
+	.byte 2;|($50) ; PPU 0001 | dual (crashes)
+	.res 2
+	;.res 8,0
+.elseif (VS_SYS_ENABLED)
+	; use ines 2.0 for vs system ppu specifications.
+	.byte <NES_MIRRORING|((<NES_MAPPER<<4)&$ff)|2 ; mirroring | mapper low bits | save support
 	.byte (<NES_MAPPER&$f0)|(1<<3)|1 ; mapper upper nibble | iNes2.0 | vs system
 	.res 5,0 ;filler
 	.byte 2 ; PPU 0001
@@ -132,9 +143,11 @@ CREDITS2_PREV:	.res 1
 	;.res 8,0
 .else
 	; use ines 1.0 for maximum compatibility.
+	.byte <NES_MIRRORING|(<NES_MAPPER<<4)
 	.byte (<NES_MAPPER&$f0)
 	.res 8,0
 .endif
+;.byte $4E,$45,$53,$1A,$02,$01,$32,$69,$00,$00,$50,$00,$00,$52,$00,$00
 
 
 

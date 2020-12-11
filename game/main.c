@@ -145,7 +145,7 @@ COMPLETE:
   soon as player hits 110 lines, regardles of starting level).
 * Next block is hidden during line clear.
 * When hitting game over, final sprite switches.
-	* I think this is because the vram buffer is cleared at the start of game over, 
+	* I think this is because the vram buffer is cleared at the start of game over,
 	  before it has a chance to copy over the new block to the nametable.
 * CNR - Horz input has to be pressed again if line is cleared.
 * Hitch when tentacle retracts on hitting max (because of delays).
@@ -218,15 +218,13 @@ Arcade Buttons:
 
 VERSUS TODO:
 * PPU support
-* Leaderboards
-* Save game.
 * Consider hard drop (setting, dip, hold by default, etc).
 * Artwork.
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
-* Shared leaderboard on dual system.
+* Shared leaderboard on dual system (with save).
 * Prefer credit style of 1/2
 * White text is hard to read.
-* Press Start should be Press Any Button
+* Press Start should say Press Any Button
 * Hide coin display in Free Play mode.
 * On gameover, continue should go to Mode select, not title screen.
 * Tapping button should speed up countdown.
@@ -235,6 +233,7 @@ VERSUS TODO:
 * Auto-forward if no input on the leaderboards for too long.
 * Arrow sprites on leaderboards.
 * Font outline.
+* [done] Leaderboards
 * [done] Title Screen with "Vs."
 * [done] Game Mode Screen art.
 * [done] Remaining Dip Switches.
@@ -266,14 +265,50 @@ VERSUS TODO:
 * Font outline.
 * Block highlight.
 
+
+SRAM:
+
+* STATUS:
+	* Disabled behind VS_SRAM_ENABLED.
+	* Also need to manually turn XRAM back on in config.
+	* Currently only functions fully on CPU1.
+	* CPU2 is partially working, but that might just be by luck, since it should be mostly disabled.
+	* Next step is to move the leaderboards out of SRAM, and instead use SRAM as messaging system, and hook into IRQ.
+
+* Used as a messaging system, not storage for leaderboards.
+	* This ensures that it works on system without access to SRAM, and on CPU2 without requesting SRAM access.
+* Message: [unique id for validation] ... [msg type - leaderbaord update] [mode] [difficulty] [placement] [initals x 3] [score x 4] ... [end id]
+*			1 byte ... 					   1 byte						   1 byte 1 byte	   1 byte	   2 bytes       4 bytes		 1 byte
+
+CPU1:
+	* Keeps local copy of leaderboard, and message queue.
+	* When making changes to leaderboard, stores changes in message queue.
+	* At end of frame:
+		* Request SRAM.
+
+		* Copy message queue to SRAM.
+		* Clear local message queue.
+		* Trigger IRQ.
+		* Assume that IRQ will be done by the end of next frame.
+	* In IRQ, clear message queue?
+
+CPU2:
+	* Keeps local copy of leaderbaord, and message queue.
+	* When making changes to leaderboard, stores changes in message queue.
+	* In IRQ:
+		* Request SRAM.
+		* Copy message queue.
+		* Trigger IRQ.
+		* Assume that IRQ will be done by the end of next frame.	
+
 */
 
 // const unsigned char test_palette_bg[16]=
-// { 
+// {
 // 	0x0f,0x1f,0x2f,0x3f,
 // 	0x0f,0x1d,0x2d,0x3d,
 // 	0x0f,0x1a,0x2a,0x3a,
-// 	0x0f,0x10,0x20,0x30 
+// 	0x0f,0x10,0x20,0x30
 // };
 
 // const unsigned char metasprite_flag[]={
@@ -296,6 +331,10 @@ void main (void)
 	static unsigned int temp_secs;
 	static unsigned char digit;
 #endif
+#if VS_SRAM_ENABLED
+	static unsigned char j;
+	static unsigned char k;
+#endif
 
 	// pal_bg(test_palette_bg);
 	// ppu_on_all(); // turn on screen
@@ -305,7 +344,7 @@ void main (void)
 	// }
 
 	ppu_off(); // screen off
-	
+
 	// memcpy(palette_bg, { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], }, 16)
 
 	// palette_bg = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
@@ -348,7 +387,7 @@ void main (void)
 	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
-#if VS_SYS_ENABLED	
+#if VS_SYS_ENABLED
 	credits_remaining = 0;
 	free_play_enabled = DIP0;
 	game_cost = (DIP1 == 0) ? 1 : 2;
@@ -356,10 +395,53 @@ void main (void)
 	sfx_on = DIP6 == 0;
 	high_score_entry_placement = 0xff;
 #endif //#if VS_SYS_ENABLED
-
 	pal_bright(0);
 	go_to_state(STATE_BOOT);
 	fade_from_black();
+
+#if VS_SRAM_ENABLED
+	//one_vram_buffer('0', get_ppu_addr(0, 24, 32));
+	// Is primary?
+	if (IS_PRIMARY_CPU)
+	{
+		// // Has control.
+		// one_vram_buffer('0' + ((PEEK(0x4016) & (1 << 7))>>7), get_ppu_addr(0, 24, 32));
+		// // Take control.
+		POKE(0x4016, 2);
+		
+		if (xram_test[1] != 6)
+		{
+			xram_test[1] = 6;
+			one_vram_buffer(xram_test[1], get_ppu_addr(0, 40, 32));
+
+			// for (i = 0; i < ATTACK_NUM; ++i)
+			// //i = 0;
+			// {
+			// 	for (j = 0; j < 4; ++j)
+			// 	//j = 0;
+			// 	{
+			// 		for (k = 0; k < 3; ++k)
+			// 		{
+			// 			high_scores_vs_initials[i][j][k][0] = '-';
+			// 			high_scores_vs_initials[i][j][k][1] = '-';
+			// 			high_scores_vs_initials[i][j][k][2] = '-';
+			// 			high_scores_vs_value[i][j][k] = 0;
+			// 		}
+			// 	}
+			// }
+			memfill(high_scores_vs_initials, '-', sizeof(high_scores_vs_initials));
+			memfill(high_scores_vs_value, 0xff, sizeof(high_scores_vs_value) * 4);
+
+			//high_scores_vs_initials[0][0][0][0] = '-';
+			// high_scores_vs_initials[0][0][0][1] = '-';
+			// high_scores_vs_initials[0][0][0][2] = '-';
+			//high_scores_vs_value[0][0][0] = 0;
+		}
+
+		// Reliquish control of SRAM.
+		POKE(0x4016, 0);		
+	}	
+#endif // #if VS_SRAM_ENABLED
 
 	// infinite loop
 	while (1)
@@ -442,7 +524,7 @@ void main (void)
 		clear_vram_buffer(); // do at the beginning of each frame
 
 		// Quick reset when not on the VS system. I don't think it makes sense to have a quick reset there.
-#if !VS_SYS_ENABLED		
+#if !VS_SYS_ENABLED
 		if (state != STATE_MENU)
 		{
 			if (pad_all & PAD_A && pad_all & PAD_B && pad_all & PAD_SELECT && pad_all & PAD_START)
@@ -450,7 +532,7 @@ void main (void)
 				go_to_state(STATE_MENU);
 			}
 		}
-#endif // !VS_SYS_ENABLED		
+#endif // !VS_SYS_ENABLED
 
 		switch(state)
 		{
@@ -504,7 +586,7 @@ void main (void)
 					}
 #else
 					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif					
+#endif
 				}
 				else if (tick_count % 128 == 96)
 				{
@@ -512,7 +594,7 @@ void main (void)
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
 #else
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif					
+#endif
 				}
 
 				if (pad_all_new != 0)
@@ -532,7 +614,7 @@ void main (void)
 				if (pad2_new & (PAD_SELECT))
 				{
 						fade_to_black();
-						go_to_state(STATE_HIGH_SCORE_TABLE);	
+						go_to_state(STATE_HIGH_SCORE_TABLE);
 						fade_from_black();
 				}
 				// Any A or B, or 1, 3, 4.
@@ -552,7 +634,7 @@ void main (void)
 					else
 					{
 						fade_to_black();
-						go_to_state(STATE_OPTIONS);	
+						go_to_state(STATE_OPTIONS);
 						fade_from_black();
 					}
 				}
@@ -649,7 +731,7 @@ void main (void)
 								pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
 							}
 							fade_from_black();
-						}		
+						}
 						break;
 					}
 
@@ -740,7 +822,7 @@ void main (void)
 								//cur_level_vs_setting = 2; // reset it back to normal value.
 								cur_level = 29;
 								break;
-							
+
 							default:
 								cur_level = 0;
 								break;
@@ -759,11 +841,11 @@ void main (void)
 
 						break;
 					}
-				
+
 					default:
 						break;
 				}
-#else				
+#else
 				if (tick_count % 128 == 0)
 				{
 					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
@@ -814,7 +896,7 @@ void main (void)
 						{
 							++cur_level;
 						}
-						else 
+						else
 						{
 							cur_level = 0;
 						}
@@ -973,7 +1055,7 @@ void main (void)
 					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					display_options();
 				}
-#endif				
+#endif
 				break;
 			}
 
@@ -1033,7 +1115,7 @@ void main (void)
 				{
 					movement();
 				}
-				
+
 //PROFILE_POKE(PROF_B);
 
 				draw_gameplay_sprites();
@@ -1136,7 +1218,7 @@ void main (void)
 					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
 				}
-#else			
+#else
 				if (pad_all_new & PAD_B)
 				{
 					//go_to_state(STATE_GAME);
@@ -1147,13 +1229,13 @@ void main (void)
 					//go_to_state(STATE_GAME);
 					go_to_state(STATE_GAME);
 				}
-#endif				
+#endif
 
 				break;
 			}
 
 			case STATE_SOUND_TEST:
-			{				
+			{
 				// MUSIC
 				//
 
@@ -1217,8 +1299,12 @@ void main (void)
 #if VS_SYS_ENABLED
 			case STATE_HIGH_SCORE_TABLE:
 			{
-				if (high_score_entry_placement < 3)
+				if (IS_PRIMARY_CPU && high_score_entry_placement < 3)
 				{
+#if VS_SRAM_ENABLED					
+					// take control of SRAM.
+					POKE(0x4016, 2);
+#endif // #if VS_SRAM_ENABLED
 					// Save a bunch of code space, and make this easier to work with.
 					temp_table = high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement];
 
@@ -1308,6 +1394,10 @@ void main (void)
 							--cur_initial_index;
 						}
 					}
+#if VS_SRAM_ENABLED
+					// Reliquish control.
+					POKE(0x4016, 0);	
+#endif // #if VS_SRAM_ENABLED
 				}
 				else if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
 				{
@@ -1321,7 +1411,7 @@ void main (void)
 					}
 
 					--auto_forward_leaderboards;
-					
+
 					if (auto_forward_leaderboards == 0)
 					{
 						fade_to_black();
@@ -1346,7 +1436,7 @@ void main (void)
 					{
 						attack_style = ATTACK_NUM - 1;
 					}
-					
+
 					auto_forward_leaderboards = 0;
 					fade_to_black();
 					go_to_state(STATE_HIGH_SCORE_TABLE);
@@ -1362,17 +1452,17 @@ void main (void)
 					{
 						attack_style = 0;
 					}
-					
+
 					auto_forward_leaderboards = 0;
 					fade_to_black();
 					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
-				}		
+				}
 				// else if (pad_all_new & PAD_A)
 				// {
 				// 	// stop auto-forwarding.
 				// 	auto_forward_leaderboards = 0;
-				// }				
+				// }
 				else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
 				{
 					fade_to_black();
@@ -1381,11 +1471,11 @@ void main (void)
 				}
 				break;
 			}
-#endif // #if VS_SYS_ENABLED			
+#endif // #if VS_SYS_ENABLED
 		}
 
 //#if VS_SYS_ENABLED
-				// Yeah, this game has screen shake for inserting credits?? So what!?		
+				// Yeah, this game has screen shake for inserting credits?? So what!?
 				if (screen_shake_remaining > 0)
 				{
 					--screen_shake_remaining;
@@ -1405,7 +1495,7 @@ void main (void)
 void draw_menu_sprites(void)
 {
 	static unsigned char t;
-#if VS_SYS_ENABLED	
+#if VS_SYS_ENABLED
 	static unsigned char d;
 #endif
 
@@ -1467,8 +1557,8 @@ void draw_menu_sprites(void)
 
 	oam_meta_spr(22<<3, 3<<3, metasprite_vs_logo);
 //	oam_meta_spr(27<<3, 27<<3, metasprite_button2);
-	
-#endif //VS_SYS_ENABLED	
+
+#endif //VS_SYS_ENABLED
 }
 
 void draw_gameplay_sprites(void)
@@ -1687,7 +1777,7 @@ void movement(void)
 	{
 		--start_delay_remaining;
 	}
-	
+
 #if VS_SYS_ENABLED
 	if (pad_all_new & (PAD_SELECT | PAD_START))
 #else
@@ -1721,7 +1811,7 @@ void movement(void)
 		//spawn_new_cluster();
 
 		// Don't allow forcing the tentacle up while it is on the way down.
-		// Not too serious, but looks weird when the height in increases 
+		// Not too serious, but looks weird when the height in increases
 		// while the sprites are not moving up.
 		if (row_to_clear == -1)
 		{
@@ -1813,13 +1903,13 @@ void movement(void)
 	{
 		if ((pad_all & PAD_UP && hard_drop_tap_required == 0) || pad_all_new & PAD_UP)
 		{
-			--hard_drop_hold_remaining;	
+			--hard_drop_hold_remaining;
 
 			if (hard_drop_hold_remaining == 0)
 			{
 				hard_drop_performed = 1;
 				hard_drop_tap_required = 1;
-				
+
 				// TODO: Causes hitch.
 				while (!is_cluster_colliding())
 				{
@@ -1850,8 +1940,8 @@ void movement(void)
 			hard_drop_hold_remaining = HARD_DROP_HOLD_TIME;
 		}
 	}
-	
-	
+
+
 	if (hard_drop_performed == 0)
 	{
 		// Hard drop skips all this to avoid dropping to the bottom
@@ -1905,7 +1995,7 @@ void movement(void)
 		{
 			delay_lock_remaining = DELAY_LOCK_LEN - fall_rate;
 		}
-		// TODO: doesn't this mean that the delay lock is only decrementing every time that 
+		// TODO: doesn't this mean that the delay lock is only decrementing every time that
 		//		 the block tries to move down, meaning lower g levels will have a longer
 		//		 delay lock?
 		// No, because when delay_lock_remaing is != -1, it triggers a "down" press (see above).
@@ -2150,7 +2240,7 @@ void spawn_new_cluster()
 	local_iy = 0;
 	local_ix = 0;
 	local_t = next_cluster.sprite;
-		
+
 	// clear out the middle 2 rows of the "next piece" (all pieces spawn with only those 2 rows containing visuals).
 	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 16));
 	multi_vram_buffer_horz(empty_row, 4, get_ppu_addr(cur_nt, 120, 24));
@@ -2159,7 +2249,7 @@ void spawn_new_cluster()
 	{
 		// store the index into the x,y offset for each solid piece in the first rotation.
 		j = next_cluster.layout[i];
-		
+
 		// convert that to x,y offsets.
 		local_ix = index_to_x_lookup[j];
 		local_iy = index_to_y_lookup[j];
@@ -2278,15 +2368,19 @@ void go_to_state(unsigned char new_state)
 			pal_bright(4);
 			break;
 		}
-		
+
 		case STATE_GAME:
 		{
 			// Little bit of future proofing in case we add other ways
 			// to exit the game (eg. from pause).
 #if VS_SYS_ENABLED
 			high_score_entry_placement = 0xff;
-			if (cur_score > 0)
+			if (cur_score > 0 && IS_PRIMARY_CPU)
 			{
+#if VS_SRAM_ENABLED				
+				// take control of SRAM.
+				POKE(0x4016, 2);
+#endif // #if VS_SRAM_ENABLED				
 				for (i = 0; i < 3; ++i)
 				{
 					if (high_scores_vs_value[attack_style][cur_level_vs_setting][i] == NO_SCORE || cur_score > high_scores_vs_value[attack_style][cur_level_vs_setting][i])
@@ -2306,13 +2400,16 @@ void go_to_state(unsigned char new_state)
 						break;
 					}
 				}
+				
+				// Reliquish control of SRAM.
+				POKE(0x4016, 0);
 			}
-#else						
+#else
 			if (cur_score > high_scores[attack_style])
 			{
 				high_scores[attack_style] = cur_score;
 			}
-#endif 
+#endif
 			break;
 		}
 
@@ -2374,7 +2471,7 @@ void go_to_state(unsigned char new_state)
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif						
+#endif
 			}
 			else
 			{
@@ -2395,7 +2492,7 @@ void go_to_state(unsigned char new_state)
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif		
+#endif
 
 				if (prev_state == STATE_OVER)
 				{
@@ -2409,7 +2506,7 @@ void go_to_state(unsigned char new_state)
 		case STATE_OPTIONS:
 		{
 			oam_clear();
-	
+
 			// get rid of any queued up changes as they are no longer valid.
 			// fixes bug where "press a button" is on screen in settings because it got queued up
 			// on the frame that we transitioned.
@@ -2603,15 +2700,15 @@ void go_to_state(unsigned char new_state)
 
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("GAME OVER!", 10, address);
-#if VS_SYS_ENABLED					
+#if VS_SYS_ENABLED
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("PRESS 1   ", 10, address);
-#else		
+#else
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("A-RESTART ", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 16<<3);
 			multi_vram_buffer_horz("B-QUIT    ", 10, address);
-#endif //VS_SYS_ENABLED			
+#endif //VS_SYS_ENABLED
 			pal_bright(7);
 			delay(fade_delay);
 			pal_bright(6);
@@ -2654,7 +2751,7 @@ void go_to_state(unsigned char new_state)
 			{
 				vram_adr(NTADR_A(16 - ((sizeof(attack_style_strings[attack_style]))/2),3));
 			}
-			
+
 			vram_write(attack_style_strings[attack_style], sizeof(attack_style_strings[attack_style]));
 
 			// difficulty
@@ -2683,15 +2780,27 @@ void go_to_state(unsigned char new_state)
 				for (j = 0; j < 3; ++j)
 				{
 					vram_adr(NTADR_A(in_x, in_y+j));
-					vram_write(high_scores_vs_initials[attack_style][i][j], 3);
 
-					// re-use cur_score. Means this can't be done during gameplay.
-					//cur_score = high_scores_vs_value[attack_style][i][j];
+					if (IS_PRIMARY_CPU)
+					{
+#if VS_SRAM_ENABLED						
+						// take control of SRAM.
+						POKE(0x4016, 2);
+#endif // #if VS_SRAM_ENABLED			
+						vram_write(high_scores_vs_initials[attack_style][i][j], 3);
 
-					// vram_adr(NTADR_A(in_x + 4,in_y+j));
-					// vram_put('0' + cur_score);
+						// re-use cur_score. Means this can't be done during gameplay.
+						//cur_score = high_scores_vs_value[attack_style][i][j];
 
-					temp_score = high_scores_vs_value[attack_style][i][j];
+						// vram_adr(NTADR_A(in_x + 4,in_y+j));
+						// vram_put('0' + cur_score);
+
+						temp_score = high_scores_vs_value[attack_style][i][j];
+#if VS_SRAM_ENABLED						
+						// Reliquish control of SRAM.
+						POKE(0x4016, 0);
+#endif //#if VS_SRAM_ENABLED
+					}
 
 					if (temp_score == NO_SCORE)
 					{
@@ -2715,8 +2824,8 @@ void go_to_state(unsigned char new_state)
 
 							temp_score = temp_score / 10;
 							++k;
-						}				
-					}	
+						}
+					}
 				}
 			}
 
@@ -2760,7 +2869,7 @@ void inc_lines_cleared()
 				}
 				kill_row_queued = 1;
 			}
-				
+
 		}
 
 		++time_of_day;
@@ -2980,7 +3089,7 @@ void clear_rows_in_data(unsigned char start_y)
 				line_score_mod = 300;
 				break;
 			}
-			
+
 			case 4:
 			default:
 			{
@@ -3061,7 +3170,7 @@ void reveal_empty_rows_to_nt()
 }
 
 void try_collapse_empty_row_data(void)
-{	
+{
 	// cannot use global ix,ix for some reason. Causes Kraken to not
 	// retreat when hit.
 	static unsigned char ix;
@@ -3372,7 +3481,7 @@ void display_options()
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+8)<<3));
 
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
-	
+
 	// Avoid overrun when mashing mode change.
 	delay(1);
 	clear_vram_buffer();

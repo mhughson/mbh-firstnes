@@ -63,6 +63,25 @@
 // Delay in the settings screens before the player options are auto-chosen for them.
 #define AUTO_FORWARD_DELAY (60*30)
 #define HIGH_SCORE_ENTRY 4
+#define NO_SCORE (0xffffffff)
+
+#if VS_SRAM_ENABLED
+#define IS_PRIMARY_CPU ((PEEK(0x4016) & (1 << 7)) == 0)
+#else
+#define IS_PRIMARY_CPU (1)
+#endif // #if VS_SRAM_ENABLED
+
+enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
+
+#if VS_SRAM_ENABLED
+#pragma bss-name(push, "XRAM")
+unsigned char xram_test[8];
+#if VS_SYS_ENABLED
+unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3];
+unsigned long high_scores_vs_value[ATTACK_NUM][4][3];
+#endif //#if VS_SYS_ENABLED
+#pragma bss-name(pop)
+#endif // #if VS_SRAM_ENABLED
 
 #pragma bss-name(push, "ZEROPAGE")
 
@@ -105,7 +124,6 @@ unsigned int scroll_y;
 unsigned char cur_option;
 
 //const unsigned char text[] = "- PRESS START -";
-enum { ATTACK_ON_LAND, ATTACK_ON_TIME, ATTACK_NEVER, ATTACK_NUM };
 unsigned char attack_style;
 #define ATTACK_STRING_LEN 7
 
@@ -138,6 +156,7 @@ unsigned char attack_style;
 // Temporary table used for manipulating high score table.
 unsigned char *temp_table;
 
+#if !VS_SRAM_ENABLED
 unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 
 { 
     // ATTACK_ON_LAND/FIXED
@@ -186,7 +205,6 @@ unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] =
 //     },
 // };
 
-#define NO_SCORE (0xffffffff)
 unsigned long high_scores_vs_value[ATTACK_NUM][4][3] = 
 { 
     // ATTACK_ON_LAND/FIXED
@@ -211,6 +229,7 @@ unsigned long high_scores_vs_value[ATTACK_NUM][4][3] =
         { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
     },
 };
+#endif // #if !VS_SRAM_ENABLED
 unsigned char cur_initial_index;
 #endif
 
