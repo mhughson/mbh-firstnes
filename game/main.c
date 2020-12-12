@@ -195,6 +195,7 @@ DIP SWITCHES:
 All defaults will be 0.
 
 FREE PLAY				|	1	-	-	-	-	-	-	-
+
 CREDIT/COIN	1/1			|	-	0	-	-	-	-	-	-
 CREDIT/COIN	1/2			|	-	1	-	-	-	-	-	-
 
@@ -217,7 +218,7 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* PPU support
+* PPU support (only 2C03/2C05 remains)
 * Consider hard drop (setting, dip, hold by default, etc).
 * Artwork.
 * Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
@@ -250,20 +251,6 @@ VERSUS TODO:
 * [done] Auto-advance all menus to avoid burn in.
 * [done] More buttons (not just 1) for entering initials. A to enter, B go back. Maybe 1 to skip.
 * [done] Button 1 and Button 2 go to leaderbaords. Should just be 2.
-* Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
-* Shared leaderboard on dual system.
-* Prefer credit style of 1/2
-* White text is hard to read.
-* Press Start should be Press Any Button
-* Hide coin display in Free Play mode.
-* On gameover, continue should go to Mode select, not title screen.
-* Tapping button should speed up countdown.
-* Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
-* Countdown timer on entering initials.
-* Auto-forward if no input on the leaderboards for too long.
-* Arrow sprites on leaderboards.
-* Font outline.
-* Block highlight.
 
 
 SRAM:
@@ -389,11 +376,17 @@ void main (void)
 	cur_garbage_type = 0;
 #if VS_SYS_ENABLED
 	credits_remaining = 0;
-	free_play_enabled = DIP0;
-	game_cost = (DIP1 == 0) ? 1 : 2;
-	music_on = DIP5 == 0;
-	sfx_on = DIP6 == 0;
+	free_play_enabled = (DIP1 != 0);
+	game_cost = (DIP2 == 0) ? 1 : 2;
+	music_on = DIP6 == 0;
+	sfx_on = DIP7 == 0;
 	high_score_entry_placement = 0xff;
+	// DIP	Val	PPU
+	// 000 	0	RP2C04-0001
+	// 001 	1	RP2C04-0002
+	// 010 	2	RP2C04-0003
+	// 011 	3 	RP2C04-0004
+	PPU_VERSION = ((DIP5!=0)<<2) | ((DIP4 != 0)<<1) | (DIP3 != 0);
 #endif //#if VS_SYS_ENABLED
 	pal_bright(0);
 	go_to_state(STATE_BOOT);
@@ -597,6 +590,7 @@ void main (void)
 #endif
 				}
 
+#if !VS_SYS_ENABLED
 				if (pad_all_new != 0)
 				{
 					if (pad_all_new & konami_code[cur_konami_index])
@@ -608,7 +602,7 @@ void main (void)
 						cur_konami_index = 0;
 					}
 				}
-
+#endif //#if !VS_SYS_ENABLED
 #if VS_SYS_ENABLED
 				// 2
 				if (pad2_new & (PAD_SELECT))
@@ -625,6 +619,7 @@ void main (void)
 				{
 					srand(tick_count_large);
 
+#if !VS_SYS_ENABLED
 					if (cur_konami_index >= KONAMI_CODE_LEN)
 					{
 						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
@@ -632,6 +627,7 @@ void main (void)
 						go_to_state(STATE_SOUND_TEST);
 					}
 					else
+#endif //#if !VS_SYS_ENABLED
 					{
 						fade_to_black();
 						go_to_state(STATE_OPTIONS);
@@ -1186,8 +1182,9 @@ void main (void)
 				break;
 			}
 
+#if !VS_SYS_ENABLED		
 			case STATE_PAUSE:
-			{
+			{		
 				oam_clear();
 
 				// if ((tick_count % 60) < 30)
@@ -1206,7 +1203,7 @@ void main (void)
 				}
 				break;
 			}
-
+#endif //#if !VS_SYS_ENABLED		
 			case STATE_OVER:
 			{
 #if VS_SYS_ENABLED
@@ -1234,6 +1231,7 @@ void main (void)
 				break;
 			}
 
+#if !VS_SYS_ENABLED		
 			case STATE_SOUND_TEST:
 			{
 				// MUSIC
@@ -1295,6 +1293,7 @@ void main (void)
 				}
 				break;
 			}
+#endif // #if !VS_SYS_ENABLED		
 
 #if VS_SYS_ENABLED
 			case STATE_HIGH_SCORE_TABLE:
@@ -2567,6 +2566,7 @@ void go_to_state(unsigned char new_state)
 			break;
 		}
 
+#if !VS_SYS_ENABLED		
 		case STATE_SOUND_TEST:
 		{
 			oam_clear();
@@ -2586,6 +2586,7 @@ void go_to_state(unsigned char new_state)
 
 			break;
 		}
+#endif //#if !VS_SYS_ENABLED		
 
 		case STATE_GAME:
 		{
@@ -2655,13 +2656,14 @@ void go_to_state(unsigned char new_state)
 
 			break;
 		}
-
+#if !VS_SYS_ENABLED		
 		case STATE_PAUSE:
 		{
 			pal_bright(2);
 			MUSIC_PLAY_WRAPPER(MUSIC_PAUSE);
 			break;
 		}
+#endif //#if !VS_SYS_ENABLED				
 		case STATE_OVER:
 		{
 			// fix bug where mashing up/down to quickly hit gamover would case nametable coruption.
@@ -2935,6 +2937,8 @@ void display_score()
     }
 }
 
+
+#if !VS_SYS_ENABLED		
 void display_highscore()
 {
 	static unsigned long temp_score;
@@ -2955,6 +2959,7 @@ void display_highscore()
 		++i;
     }
 }
+#endif //#if !VS_SYS_ENABLED
 
 void display_level()
 {
@@ -3410,6 +3415,7 @@ void reset_gameplay_area()
 	copy_board_to_nt();
 }
 
+#if !VS_SYS_ENABLED	
 void display_song()
 {
 	static unsigned char temp;
@@ -3486,7 +3492,7 @@ void display_options()
 	delay(1);
 	clear_vram_buffer();
 }
-
+#endif //#if !VS_SYS_ENABLED		
 
 void fade_to_black()
 {

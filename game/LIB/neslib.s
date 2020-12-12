@@ -109,12 +109,12 @@ nmi:
 	ldx #0
 	stx <PAL_UPDATE
 
-	lda #$3f
+	lda #$3f ; 63
 	sta PPU_ADDR
 	stx PPU_ADDR
 
 	ldy PAL_BUF				;background color, remember it in X
-	lda (PAL_BG_PTR),y
+	lda (PAL_BG_PTR),y		;pointer to palBrightTable
 	sta PPU_DATA
 	tax
 	
@@ -289,10 +289,52 @@ _pal_clear:
 _pal_spr_bright:
 
 	tax
+
+.if(VS_SYS_ENABLED)	
+	lda PPU_VERSION
+	beq @PPU0
+	
+	cmp #1
+	beq @PPU1
+	
+	cmp #2
+	beq @PPU2
+	
+	cmp #3
+	beq @PPU3
+
+.endif ;.if(VS_SYS_ENABLED)	
+
+@PPU0:
 	lda palBrightTableL,x
 	sta <PAL_SPR_PTR
 	lda palBrightTableH,x	;MSB is never zero
 	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+
+.if(VS_SYS_ENABLED)	
+@PPU1:
+	lda palBrightTableL_RP2C04_0002,x
+	sta <PAL_SPR_PTR
+	lda palBrightTableH_RP2C04_0002,x	;MSB is never zero
+	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+	
+@PPU2:
+	lda palBrightTableL_RP2C04_0003,x
+	sta <PAL_SPR_PTR
+	lda palBrightTableH_RP2C04_0003,x	;MSB is never zero
+	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+	
+@PPU3:
+	lda palBrightTableL_RP2C04_0004,x
+	sta <PAL_SPR_PTR
+	lda palBrightTableH_RP2C04_0004,x	;MSB is never zero
+	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+.endif ;.if(VS_SYS_ENABLED)	
+@PPU_END:
 	sta <PAL_UPDATE
 	rts
 
@@ -303,10 +345,54 @@ _pal_spr_bright:
 _pal_bg_bright:
 
 	tax
+
+.if(VS_SYS_ENABLED)		
+	lda PPU_VERSION
+	beq @PPU0
+	
+	cmp #1
+	beq @PPU1
+	
+	cmp #2
+	beq @PPU2
+	
+	cmp #3
+	beq @PPU3
+
+.endif ;.if(VS_SYS_ENABLED)	
+
+@PPU0:
 	lda palBrightTableL,x
 	sta <PAL_BG_PTR
 	lda palBrightTableH,x	;MSB is never zero
 	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+	
+.if(VS_SYS_ENABLED)	
+@PPU1:
+	lda palBrightTableL_RP2C04_0002,x
+	sta <PAL_BG_PTR
+	lda palBrightTableH_RP2C04_0002,x	;MSB is never zero
+	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+	
+@PPU2:
+	lda palBrightTableL_RP2C04_0003,x
+	sta <PAL_BG_PTR
+	lda palBrightTableH_RP2C04_0003,x	;MSB is never zero
+	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+	
+@PPU3:
+	lda palBrightTableL_RP2C04_0004,x
+	sta <PAL_BG_PTR
+	lda palBrightTableH_RP2C04_0004,x	;MSB is never zero
+	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+.endif ;.if(VS_SYS_ENABLED)	
+
+@PPU_END:
+
 	sta <PAL_UPDATE
 	rts
 
@@ -1323,8 +1409,47 @@ palBrightTableH:
 	.byte >palBrightTable3,>palBrightTable4,>palBrightTable5
 	.byte >palBrightTable6,>palBrightTable7,>palBrightTable8
 
+.if(VS_SYS_ENABLED)	
+palBrightTableL_RP2C04_0002:
+
+	.byte <palBrightTable0_RP2C04_0002,<palBrightTable1_RP2C04_0002,<palBrightTable2_RP2C04_0002
+	.byte <palBrightTable3_RP2C04_0002,<palBrightTable4_RP2C04_0002,<palBrightTable5_RP2C04_0002
+	.byte <palBrightTable6_RP2C04_0002,<palBrightTable7_RP2C04_0002,<palBrightTable8_RP2C04_0002
+
+palBrightTableH_RP2C04_0002:
+
+	.byte >palBrightTable0_RP2C04_0002,>palBrightTable1_RP2C04_0002,>palBrightTable2_RP2C04_0002
+	.byte >palBrightTable3_RP2C04_0002,>palBrightTable4_RP2C04_0002,>palBrightTable5_RP2C04_0002
+	.byte >palBrightTable6_RP2C04_0002,>palBrightTable7_RP2C04_0002,>palBrightTable8_RP2C04_0002
+
+palBrightTableL_RP2C04_0003:
+
+	.byte <palBrightTable0_RP2C04_0003,<palBrightTable1_RP2C04_0003,<palBrightTable2_RP2C04_0003
+	.byte <palBrightTable3_RP2C04_0003,<palBrightTable4_RP2C04_0003,<palBrightTable5_RP2C04_0003
+	.byte <palBrightTable6_RP2C04_0003,<palBrightTable7_RP2C04_0003,<palBrightTable8_RP2C04_0003
+
+palBrightTableH_RP2C04_0003:
+
+	.byte >palBrightTable0_RP2C04_0003,>palBrightTable1_RP2C04_0003,>palBrightTable2_RP2C04_0003
+	.byte >palBrightTable3_RP2C04_0003,>palBrightTable4_RP2C04_0003,>palBrightTable5_RP2C04_0003
+	.byte >palBrightTable6_RP2C04_0003,>palBrightTable7_RP2C04_0003,>palBrightTable8_RP2C04_0003
+
+palBrightTableL_RP2C04_0004:
+
+	.byte <palBrightTable0_RP2C04_0004,<palBrightTable1_RP2C04_0004,<palBrightTable2_RP2C04_0004
+	.byte <palBrightTable3_RP2C04_0004,<palBrightTable4_RP2C04_0004,<palBrightTable5_RP2C04_0004
+	.byte <palBrightTable6_RP2C04_0004,<palBrightTable7_RP2C04_0004,<palBrightTable8_RP2C04_0004
+
+palBrightTableH_RP2C04_0004:
+
+	.byte >palBrightTable0_RP2C04_0004,>palBrightTable1_RP2C04_0004,>palBrightTable2_RP2C04_0004
+	.byte >palBrightTable3_RP2C04_0004,>palBrightTable4_RP2C04_0004,>palBrightTable5_RP2C04_0004
+	.byte >palBrightTable6_RP2C04_0004,>palBrightTable7_RP2C04_0004,>palBrightTable8_RP2C04_0004
+.endif ;.if(VS_SYS_ENABLED)	
+
 
 .if(VS_SYS_ENABLED)
+; Treat RP2C04_0001 as the default, for easier code compatitbility with NES.
 palBrightTable0:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	;black
 palBrightTable1:
@@ -1333,19 +1458,104 @@ palBrightTable2:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
 palBrightTable3:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+
+; Remapping (rgb: 772) to [54] (rgb: 770).
 palBrightTable4:
-	.byte $09,$1f,$2d,$35,$0c,$0b,$2b,$29,$0e,$05,$33,$3a,$25,$30,$30,$30
+        .byte $9,$1f,$2d,$35,$c,$b,$2b,$29,$e,$5,$33,$3a,$25,$1a,$1a,$1a
 palBrightTable5:
-	.byte $32,$39,$17,$2c,$27,$07,$02,$37,$3e,$31,$3a,$26,$04,$30,$30,$30
+        .byte $32,$39,$17,$2c,$27,$7,$2,$37,$3e,$31,$3a,$26,$4,$1a,$1a,$1a
 palBrightTable6:
-	.byte $0f,$10,$03,$01,$0e,$3d,$2e,$0a,$0d,$13,$23,$19,$24,$30,$30,$30
+        .byte $8,$10,$3,$1,$1e,$3d,$2e,$a,$d,$13,$23,$19,$24,$1d,$1a,$1a
 palBrightTable7:
-	.byte $0f,$21,$15,$22,$2a,$00,$36,$16,$3c,$34,$0f,$19,$14,$30,$30,$30
+        .byte $8,$21,$15,$22,$2a,$0,$16,$36,$3c,$34,$3f,$19,$14,$1c,$1a,$1a
+
 palBrightTable8:
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;white
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+palBrightTable0_RP2C04_0002:
+	.byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00	;black
+palBrightTable1_RP2C04_0002:
+	.byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+palBrightTable2_RP2C04_0002:
+	.byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+palBrightTable3_RP2C04_0002:
+	.byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+
+; Remapping (rgb: 772) to [59] (rgb: 770).
+palBrightTable4_RP2C04_0002:
+        .byte $2a,$35,$27,$1f,$20,$3d,$12,$3a,$1d,$2b,$3e,$f,$34,$0,$0,$0
+palBrightTable5_RP2C04_0002:
+        .byte $26,$24,$2c,$9,$28,$36,$8,$33,$2,$37,$f,$14,$6,$0,$0,$0
+palBrightTable6_RP2C04_0002:
+        .byte $c,$11,$17,$d,$19,$5,$22,$1,$2e,$15,$32,$1b,$39,$3f,$0,$0
+palBrightTable7_RP2C04_0002:
+        .byte $c,$7,$1c,$23,$b,$3c,$21,$3b,$a,$3,$4,$1b,$e,$13,$0,$0
+
+palBrightTable8_RP2C04_0002:
+	.byte $0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c	;white
+	.byte $0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c
+	.byte $0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c
+	.byte $0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+palBrightTable0_RP2C04_0003:
+	.byte $09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09	;black
+palBrightTable1_RP2C04_0003:
+	.byte $09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09
+palBrightTable2_RP2C04_0003:
+	.byte $09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09
+palBrightTable3_RP2C04_0003:
+	.byte $09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09,$09
+
+; Remapping (rgb: 772) to [35] (rgb: 770).
+palBrightTable4_RP2C04_0003:
+        .byte $18,$8,$1b,$19,$29,$12,$1d,$34,$b,$7,$38,$4,$3f,$9,$9,$9
+palBrightTable5_RP2C04_0003:
+        .byte $3,$2c,$13,$3c,$0,$c,$1c,$16,$15,$14,$4,$17,$11,$9,$9,$9
+palBrightTable6_RP2C04_0003:
+        .byte $5,$2a,$10,$20,$2b,$1,$26,$25,$36,$28,$35,$3d,$30,$2d,$9,$9
+palBrightTable7_RP2C04_0003:
+        .byte $5,$6,$3a,$33,$1e,$1f,$a,$23,$3b,$32,$2,$3d,$f,$d,$9,$9
+
+palBrightTable8_RP2C04_0003:
+	.byte $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05	;white
+	.byte $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+	.byte $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05
+	.byte $05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05	
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+palBrightTable0_RP2C04_0004:
+	.byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04	;black
+palBrightTable1_RP2C04_0004:
+	.byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+palBrightTable2_RP2C04_0004:
+	.byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+palBrightTable3_RP2C04_0004:
+	.byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04
+
+; Remapping (rgb: 772) to [13] (rgb: 770).
+palBrightTable4_RP2C04_0004:
+        .byte $26,$6,$23,$1,$1c,$20,$16,$22,$32,$3f,$21,$e,$28,$4,$4,$4
+palBrightTable5_RP2C04_0004:
+        .byte $8,$2a,$12,$24,$25,$27,$33,$7,$0,$1b,$e,$19,$2,$4,$4,$4
+palBrightTable6_RP2C04_0004:
+        .byte $31,$1f,$1a,$3a,$2f,$10,$17,$39,$3,$3c,$a,$35,$3e,$2e,$4,$4
+palBrightTable7_RP2C04_0004:
+        .byte $31,$3b,$3d,$30,$13,$5,$c,$d,$2d,$f,$1e,$35,$37,$29,$4,$4
+
+palBrightTable8_RP2C04_0004:
+	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31	;white
+	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
+	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
+	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31			
+	
 .else
 palBrightTable0:
 	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;black

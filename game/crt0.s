@@ -70,6 +70,7 @@ NAME_UPD_ENABLE: 	.res 1
 PAL_UPDATE: 		.res 1
 PAL_BG_PTR: 		.res 2
 PAL_SPR_PTR: 		.res 2
+PAL_PPU_PAL_PTR:	.res 2
 SCROLL_X: 			.res 1
 SCROLL_Y: 			.res 1
 SCROLL_X1: 			.res 1
@@ -117,6 +118,11 @@ _CREDITS_QUEUED = CREDITS_QUEUED ; alias with a _
 
 CREDITS1_PREV: 	.res 1
 CREDITS2_PREV:	.res 1
+
+; used by vs system with multiple possible ppu types.
+PPU_VERSION: .res 1
+_PPU_VERSION = PPU_VERSION ; alias with a _
+.export _PPU_VERSION
 
 .segment "HEADER"
     .byte $4e,$45,$53,$1a
