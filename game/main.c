@@ -221,19 +221,19 @@ VERSUS TODO:
 * PPU support (only 2C03/2C05 remains)
 * Consider hard drop (setting, dip, hold by default, etc).
 * Artwork.
-* Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
-* Shared leaderboard on dual system (with save).
-* Prefer credit style of 1/2
 * White text is hard to read.
-* Press Start should say Press Any Button
-* Hide coin display in Free Play mode.
-* On gameover, continue should go to Mode select, not title screen.
-* Tapping button should speed up countdown.
-* Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
 * Countdown timer on entering initials.
 * Auto-forward if no input on the leaderboards for too long.
 * Arrow sprites on leaderboards.
 * Font outline.
+* [cut] On gameover, continue should go to Mode select, not title screen.
+* [cut] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
+* [cut] Shared leaderboard on dual system (with save).
+* [cut] Hide coin display in Free Play mode.
+* [done] Prefer credit style of 1/2
+* [done] Press Start should say Press Any Button
+* [done] Updated block art.
+* [done] Skull transition feels odd to still have a full timer - jump to 5 seconds or something.
 * [done] Leaderboards
 * [done] Title Screen with "Vs."
 * [done] Game Mode Screen art.
@@ -560,21 +560,21 @@ void main (void)
 #if VS_SYS_ENABLED
 					if (free_play_enabled) // free play
 					{
-						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 9<<3, 12<<3));
+						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 8<<3, 12<<3));
 					}
 					else if (credits_remaining >= game_cost)
 					{
-						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
 					}
 					else
 					{
 						if (game_cost -  credits_remaining == 1)
 						{
-							multi_vram_buffer_horz(text_insert_1_coin, sizeof(text_insert_1_coin)-1, get_ppu_addr(0, 9<<3, 12<<3));
+							multi_vram_buffer_horz(text_insert_1_coin, sizeof(text_insert_1_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
 						}
 						else
 						{
-							multi_vram_buffer_horz(text_insert_2_coin, sizeof(text_insert_2_coin)-1, get_ppu_addr(0, 9<<3, 12<<3));
+							multi_vram_buffer_horz(text_insert_2_coin, sizeof(text_insert_2_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
 						}
 					}
 #else
@@ -584,7 +584,7 @@ void main (void)
 				else if (tick_count % 128 == 96)
 				{
 #if VS_SYS_ENABLED
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
 #else
 					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif
@@ -746,6 +746,7 @@ void main (void)
 										SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI)
 										cur_level_vs_setting = 3;
 										pal_bg(palette_vs_options_skulls);
+										ticks_in_state_large = MAX(ticks_in_state_large, AUTO_FORWARD_DELAY - (5*60));
 									}
 								}
 								else
@@ -1545,14 +1546,13 @@ void draw_menu_sprites(void)
 	//3<<3, 26<<3
 	t = credits_remaining;
 	d = (t) % 10;
-	oam_spr(5<<3, 27<<3, '0' + d, 0);
+	oam_spr(6<<3, 27<<3, '0' + d, 0);
 	t = t / 10;
 	d = (t) % 10;
-	oam_spr(4<<3, 27<<3, '0' + d, 0);
+	oam_spr(5<<3, 27<<3, '0' + d, 0);
 
-	oam_spr(6 << 3, 27 << 3, 0x28, 0);
-	oam_spr(7 << 3, 27 << 3, 0x30 + game_cost, 0);
-	oam_spr(8 << 3, 27 << 3, 0x29, 0);
+	oam_spr(7 << 3, 27 << 3, 0x2F, 0);
+	oam_spr(8 << 3, 27 << 3, 0x30 + game_cost, 0);
 
 	oam_meta_spr(22<<3, 3<<3, metasprite_vs_logo);
 //	oam_meta_spr(27<<3, 27<<3, metasprite_button2);
@@ -2467,7 +2467,7 @@ void go_to_state(unsigned char new_state)
 				vram_unrle(title_screen);
 				ppu_on_all();
 #if VS_SYS_ENABLED
-				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif
@@ -2488,7 +2488,7 @@ void go_to_state(unsigned char new_state)
 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED
-				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 9<<3, 12<<3));
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
 #else
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif

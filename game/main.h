@@ -687,11 +687,11 @@ unsigned char maintenance_counter;
 unsigned char screen_shake_remaining;
 
 #if VS_SYS_ENABLED
-const unsigned char text_insert_1_coin[] = { "\xDB INSERT  COIN \xDC" }; // { "PUSH START" };
-const unsigned char text_insert_2_coin[] = { "\xDBINSERT 2 COINS\xDC" }; // { "PUSH START" };
-const unsigned char text_free_play[] = {     "\xdb  FREE  PLAY  \xDC" }; // { "PUSH START" };
-const unsigned char text_push_start[] = {    "\xDB PRESS  START \xDC" }; // { "PUSH START" };
-const unsigned char clear_push_start[] = {   "\xDB              \xDC" }; //{ "          " };
+const unsigned char text_insert_1_coin[] = { "\xDB  INSERT COIN  \xDC" }; // { "PUSH START" };
+const unsigned char text_insert_2_coin[] = { "\xDB INSERT  COINS \xDC" }; // { "PUSH START" };
+const unsigned char text_free_play[] = {     "\xdb  FREE   PLAY  \xDC" }; // { "PUSH START" };
+const unsigned char text_push_start[] = {    "\xDBPUSH ANY BUTTON\xDC" }; // { "PUSH START" };
+const unsigned char clear_push_start[] = {   "\xDB               \xDC" }; //{ "          " };
 #else
 const unsigned char text_push_start[] =  { "PUSH START" };
 const unsigned char clear_push_start[] = { "          " };
