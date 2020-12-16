@@ -302,6 +302,12 @@ _pal_spr_bright:
 	
 	cmp #3
 	beq @PPU3
+	
+	cmp #4
+	beq @PPU4
+	
+	cmp #5
+	beq @PPU5
 
 .endif ;.if(VS_SYS_ENABLED)	
 
@@ -331,6 +337,20 @@ _pal_spr_bright:
 	lda palBrightTableL_RP2C04_0004,x
 	sta <PAL_SPR_PTR
 	lda palBrightTableH_RP2C04_0004,x	;MSB is never zero
+	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+	
+@PPU4:
+	lda palBrightTableL_2C03,x
+	sta <PAL_SPR_PTR
+	lda palBrightTableH_2C03,x	;MSB is never zero
+	sta <PAL_SPR_PTR+1
+	jmp @PPU_END
+	
+@PPU5:
+	lda palBrightTableL_2C02,x
+	sta <PAL_SPR_PTR
+	lda palBrightTableH_2C02,x	;MSB is never zero
 	sta <PAL_SPR_PTR+1
 	jmp @PPU_END
 .endif ;.if(VS_SYS_ENABLED)	
@@ -358,6 +378,12 @@ _pal_bg_bright:
 	
 	cmp #3
 	beq @PPU3
+	
+	cmp #4
+	beq @PPU4
+	
+	cmp #5
+	beq @PPU5
 
 .endif ;.if(VS_SYS_ENABLED)	
 
@@ -387,6 +413,20 @@ _pal_bg_bright:
 	lda palBrightTableL_RP2C04_0004,x
 	sta <PAL_BG_PTR
 	lda palBrightTableH_RP2C04_0004,x	;MSB is never zero
+	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+	
+@PPU4:
+	lda palBrightTableL_2C03,x
+	sta <PAL_BG_PTR
+	lda palBrightTableH_2C03,x	;MSB is never zero
+	sta <PAL_BG_PTR+1
+	jmp @PPU_END
+	
+@PPU5:
+	lda palBrightTableL_2C02,x
+	sta <PAL_BG_PTR
+	lda palBrightTableH_2C02,x	;MSB is never zero
 	sta <PAL_BG_PTR+1
 	jmp @PPU_END
 .endif ;.if(VS_SYS_ENABLED)	
@@ -1445,6 +1485,30 @@ palBrightTableH_RP2C04_0004:
 	.byte >palBrightTable0_RP2C04_0004,>palBrightTable1_RP2C04_0004,>palBrightTable2_RP2C04_0004
 	.byte >palBrightTable3_RP2C04_0004,>palBrightTable4_RP2C04_0004,>palBrightTable5_RP2C04_0004
 	.byte >palBrightTable6_RP2C04_0004,>palBrightTable7_RP2C04_0004,>palBrightTable8_RP2C04_0004
+
+palBrightTableL_2C03:
+
+	.byte <palBrightTable0_2C03,<palBrightTable1_2C03,<palBrightTable2_2C03
+	.byte <palBrightTable3_2C03,<palBrightTable4_2C03,<palBrightTable5_2C03
+	.byte <palBrightTable6_2C03,<palBrightTable7_2C03,<palBrightTable8_2C03
+
+palBrightTableH_2C03:
+
+	.byte >palBrightTable0_2C03,>palBrightTable1_2C03,>palBrightTable2_2C03
+	.byte >palBrightTable3_2C03,>palBrightTable4_2C03,>palBrightTable5_2C03
+	.byte >palBrightTable6_2C03,>palBrightTable7_2C03,>palBrightTable8_2C03
+
+palBrightTableL_2C02:
+
+	.byte <palBrightTable0_2C02,<palBrightTable1_2C02,<palBrightTable2_2C02
+	.byte <palBrightTable3_2C02,<palBrightTable4_2C02,<palBrightTable5_2C02
+	.byte <palBrightTable6_2C02,<palBrightTable7_2C02,<palBrightTable8_2C02
+
+palBrightTableH_2C02:
+
+	.byte >palBrightTable0_2C02,>palBrightTable1_2C02,>palBrightTable2_2C02
+	.byte >palBrightTable3_2C02,>palBrightTable4_2C02,>palBrightTable5_2C02
+	.byte >palBrightTable6_2C02,>palBrightTable7_2C02,>palBrightTable8_2C02
 .endif ;.if(VS_SYS_ENABLED)	
 
 
@@ -1554,7 +1618,64 @@ palBrightTable8_RP2C04_0004:
 	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31	;white
 	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
 	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
-	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31			
+	.byte $31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31	
+
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;NOTE: 	This is basically indenticle to the NES except that 2d and 3d are black on this PPU (instead of grey).
+;		You will find that some of the mappings are different too, but that is arbitrary. The alorithm to generate
+;		this data just happen to choose (for instance) a different identicle white.
+palBrightTable0_2C03:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;black
+palBrightTable1_2C03:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+palBrightTable2_2C03:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+palBrightTable3_2C03:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+
+; Remapping (rgb: 444) to [0] (rgb: 333).
+; Remapping (rgb: 666) to [49] (rgb: 567).
+palBrightTable4_2C03:
+        .byte $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$d,$d
+palBrightTable5_2C03:
+        .byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$b,$1b,$1c,$d,$d,$d
+palBrightTable6_2C03:
+        .byte $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2a,$2b,$2c,$0,$d,$d
+palBrightTable7_2C03:
+        .byte $20,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3a,$2b,$3c,$31,$d,$d
+
+palBrightTable8_2C03:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	;white
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; 1:1 NES PPU.
+palBrightTable0_2C02:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f	;black
+palBrightTable1_2C02:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+palBrightTable2_2C02:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+palBrightTable3_2C02:
+	.byte $0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+palBrightTable4_2C02:
+	.byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0f,$0f,$0f	;normal colors
+palBrightTable5_2C02:
+	.byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1a,$1b,$1c,$00,$00,$00
+palBrightTable6_2C02:
+	.byte $10,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2a,$2b,$2c,$10,$10,$10	;$10 because $20 is the same as $30
+palBrightTable7_2C02:
+	.byte $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3a,$3b,$3c,$20,$20,$20
+palBrightTable8_2C02:
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	;white
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30	
 	
 .else
 palBrightTable0:

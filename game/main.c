@@ -199,11 +199,12 @@ FREE PLAY				|	1	-	-	-	-	-	-	-
 CREDIT/COIN	1/1			|	-	0	-	-	-	-	-	-
 CREDIT/COIN	1/2			|	-	1	-	-	-	-	-	-
 
-PPU1					|	-	-	0	0	0	-	-	-	*
-PPU2					|	-	-	1	0	0	-	-	-	*
-PPU3					|	-	-	0	1	0	-	-	-	*
-PPU4					|	-	-	1	1	0	-	-	-	*
-PPU...					|	-	-	0	0	0	-	-	-	*
+PPU RP2C04-0001			|	-	-	0	0	0	-	-	-
+PPU RP2C04-0002			|	-	-	1	0	0	-	-	-
+PPU RP2C04-0003			|	-	-	0	1	0	-	-	-
+PPU RP2C04-0004			|	-	-	1	1	0	-	-	-
+PPU 2C03/2C05			|	-	-	0	0	1	-	-	-
+PPU 2C02 (NES)			|	-	-	1	0	1	-	-	-
 
 DISABLE MUSIC			|	-	-	-	-	-	1	-	-
 DISABLE SFX				|	-	-	-	-	-	-	1	-
@@ -218,18 +219,17 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* PPU support (only 2C03/2C05 remains)
-* Consider hard drop (setting, dip, hold by default, etc).
-* Artwork.
-* White text is hard to read.
 * Countdown timer on entering initials.
 * Auto-forward if no input on the leaderboards for too long.
 * Arrow sprites on leaderboards.
-* Font outline.
+* Artwork.
+* [cut] Font outline.
+* [cut] Consider hard drop (setting, dip, hold by default, etc). [tested - no issues]
 * [cut] On gameover, continue should go to Mode select, not title screen.
 * [cut] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] PPU support (incl. NES!)
 * [done] Prefer credit style of 1/2
 * [done] Press Start should say Press Any Button
 * [done] Updated block art.
@@ -386,6 +386,7 @@ void main (void)
 	// 001 	1	RP2C04-0002
 	// 010 	2	RP2C04-0003
 	// 011 	3 	RP2C04-0004
+	// 100 	4 	2C03 and 2C05
 	PPU_VERSION = ((DIP5!=0)<<2) | ((DIP4 != 0)<<1) | (DIP3 != 0);
 #endif //#if VS_SYS_ENABLED
 	pal_bright(0);
