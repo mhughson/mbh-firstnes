@@ -849,7 +849,7 @@ button,
   -webkit-transition: opacity 0.5s ease-in-out;
   -ms-transition: opacity 0.5s ease-in-out;
   transition: opacity 0.5s ease-in-out;
-  bottom: 4em;
+  bottom: 0em;
   color: rgba(255, 255, 255, 0.5);
   left: 4em;
   opacity: 0.5;
@@ -888,7 +888,7 @@ button,
     #footer {
       bottom: 1.25em;
       left: 1.25em; } }
-  @media screen and (max-height: 640px) {
+  @media screen and (max-height: 800px) {
     #footer {
       bottom: auto;
       left: auto;
