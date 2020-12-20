@@ -219,8 +219,6 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* Countdown timer on entering initials.
-* Auto-forward if no input on the leaderboards for too long.
 * Arrow sprites on leaderboards.
 * Artwork.
 * [cut] Font outline.
@@ -229,6 +227,8 @@ VERSUS TODO:
 * [cut] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Auto-forward if no input on the leaderboards for too long.
+* [done] Countdown timer on entering initials. (not visible to player)
 * [done] PPU support (incl. NES!)
 * [done] Prefer credit style of 1/2
 * [done] Press Start should say Press Any Button
@@ -609,6 +609,7 @@ void main (void)
 				if (pad2_new & (PAD_SELECT))
 				{
 						fade_to_black();
+						auto_forward_leaderboards = 1;
 						go_to_state(STATE_HIGH_SCORE_TABLE);
 						fade_from_black();
 				}
@@ -1348,6 +1349,18 @@ void main (void)
 						}
 					}
 
+					// If the user takes to long to enter their initials auto complete it.
+					// NOTE: The tick counter is reset every time they press a button, so it's really just
+					//		 here to handle cases where they walk away in the middle of entering initials.
+					if (ticks_in_state_large > AUTO_FORWARD_DELAY)
+					{
+						SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+						fade_to_black();
+						auto_forward_leaderboards = 1;
+						go_to_state(STATE_HIGH_SCORE_TABLE);
+						fade_from_black();
+					}
+
 					if (pad_all_new & PAD_RIGHT)
 					{
 						// Reset the timer on movement, like on a modern OS.
@@ -1381,7 +1394,7 @@ void main (void)
 						{
 							SFX_PLAY_WRAPPER(SOUND_LEVELUP);
 							fade_to_black();
-							auto_forward_leaderboards = 0;
+							auto_forward_leaderboards = 1;
 							go_to_state(STATE_HIGH_SCORE_TABLE);
 							fade_from_black();
 						}
@@ -1438,7 +1451,7 @@ void main (void)
 						attack_style = ATTACK_NUM - 1;
 					}
 
-					auto_forward_leaderboards = 0;
+					auto_forward_leaderboards = 1;
 					fade_to_black();
 					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
@@ -1454,7 +1467,7 @@ void main (void)
 						attack_style = 0;
 					}
 
-					auto_forward_leaderboards = 0;
+					auto_forward_leaderboards = 1;
 					fade_to_black();
 					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
@@ -2375,6 +2388,7 @@ void go_to_state(unsigned char new_state)
 			// to exit the game (eg. from pause).
 #if VS_SYS_ENABLED
 			high_score_entry_placement = 0xff;
+			auto_forward_leaderboards = 1; // auto forward after 10 seconds.
 			if (cur_score > 0 && IS_PRIMARY_CPU)
 			{
 #if VS_SRAM_ENABLED				
