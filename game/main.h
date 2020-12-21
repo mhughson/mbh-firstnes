@@ -42,7 +42,7 @@
 #define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
 #if VS_SYS_ENABLED
-#define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && DIP8 == 0) { music_play((id)); }
+#define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && (DIP8 == 0 || credits_remaining >= game_cost)) { music_play((id)); }
 #else
 // No attract mode.
 #define MUSIC_PLAY_ATTRACT_WRAPPER(id) MUSIC_PLAY_WRAPPER(id)
@@ -720,7 +720,7 @@ const unsigned char metasprite_vs_logo[]={
 // 	128
 // };
 
-
+unsigned char attract_gameplay_enabled = 0;
 
 #endif // VS_SYS_ENABLED
 

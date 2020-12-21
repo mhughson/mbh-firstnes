@@ -219,6 +219,7 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
+* Better gameover display. (remove press 1)
 * Arrow sprites on leaderboards.
 * Artwork.
 * [cut] Font outline.
@@ -227,6 +228,7 @@ VERSUS TODO:
 * [cut] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Attract gameplay.
 * [done] Auto-forward if no input on the leaderboards for too long.
 * [done] Countdown timer on entering initials. (not visible to player)
 * [done] PPU support (incl. NES!)
@@ -460,6 +462,41 @@ void main (void)
 		pad_all_new = pad1_new | pad2_new;
 
 #if VS_SYS_ENABLED
+		if (attract_gameplay_enabled)
+		{
+			if ((state == STATE_OPTIONS || state == STATE_GAME))
+			{
+				if (pad_all_new != 0)
+				{
+					fade_to_black();
+					go_to_state(STATE_MENU);
+					fade_from_black();
+					// clear input so that we don't process it again in the new state.
+					pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
+					goto skip_attract_input;
+				}
+				pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
+
+				// move faster based on the current difficulty level.
+				if (ticks_in_state_large % (30 - cur_level) == 0)
+				{
+					if (rand() % 2 == 0)
+					{
+						pad_all_new |= PAD_LEFT;
+					}
+					else
+					{
+						pad_all_new |= PAD_RIGHT; 
+					}
+					pad_all_new |= (rand() % 4 == 0) ? PAD_A : 0;
+				}
+			}
+		}
+
+skip_attract_input:
+#endif // #if VS_SYS_ENABLED
+
+#if VS_SYS_ENABLED
 
 		// Don't start counting credits until the physical counter is cleared
 		// from the previous coin.
@@ -475,6 +512,15 @@ void main (void)
 					// this frame.
 					tick_count = 0;
 					++credits_remaining;
+
+					// If attract music is disabled, the title music will not have been started.
+					// If this credit is the amount needed to leave attract mode, trigger the music to
+					// starts.
+					if ((state == STATE_MENU || state == STATE_HIGH_SCORE_TABLE) && (DIP8 != 0 && credits_remaining == game_cost))
+					{
+						MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+					}
+
 					// If this was triggered with maintenance button, the dequeue might be 0, and this would
 					// send it to 255, which can never be dequeued again.
 					if (CREDITS_QUEUED > 0)
@@ -495,6 +541,13 @@ void main (void)
 					{
 						screen_shake_remaining = 5;
 						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+					}
+					
+					if (attract_gameplay_enabled && (state == STATE_OPTIONS || state == STATE_GAME))
+					{
+						fade_to_black();
+						go_to_state(STATE_MENU);
+						fade_from_black();
 					}
 				}
 			}
@@ -553,7 +606,6 @@ void main (void)
 			}
 			case STATE_MENU:
 			{
-
 				draw_menu_sprites();
 
 				if (tick_count % 128 == 0)
@@ -640,16 +692,12 @@ void main (void)
 #if VS_SYS_ENABLED
 				// "attract mode" to avoid burn in. Just go back to the start.
 				// Timed to be when the title track finishes for a 2nd time.
-				if (ticks_in_state_large > (48*60*2))
+				if ((credits_remaining < game_cost) && ticks_in_state_large > (30*60*1))
 				{
-					//tick_count = tick_count_large = 0;
-					fade_to_black();
-					//oam_clear();
-					//music_stop();
-					auto_forward_leaderboards = 3;
-					go_to_state(STATE_HIGH_SCORE_TABLE);
-					fade_from_black();
-					//return;
+						fade_to_black();
+						attract_gameplay_enabled = 1;
+						go_to_state(STATE_OPTIONS);
+						fade_from_black();
 				}
 #endif //#if VS_SYS_ENABLED
 				break;
@@ -711,7 +759,7 @@ void main (void)
 									}
 								}
 						}
-						else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || ticks_in_state_large > AUTO_FORWARD_DELAY)
+						if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || ticks_in_state_large > AUTO_FORWARD_DELAY)
 						{
 							fade_to_black();
 							oam_clear();
@@ -801,7 +849,7 @@ void main (void)
 									}
 								}
 						}
-						else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
+						if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
 						{
 							music_stop();
 							SFX_PLAY_WRAPPER(SOUND_START);
@@ -1134,27 +1182,32 @@ void main (void)
 
 				// STRESS MUSIC!
 
-				local_t = 0;
-				for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
+#if VS_SYS_ENABLED
+				if (!attract_gameplay_enabled)
+#endif // #if VS_SYS_ENABLED				
 				{
-					if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
+					local_t = 0;
+					for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
 					{
-						// music is stressed even if it doesn't start playing this frame.
-						local_t = 1;
-
-						if (cur_gameplay_music == MUSIC_GAMEPLAY)
+						if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
 						{
-							cur_gameplay_music = MUSIC_STRESS;
-							MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
-							break;
+							// music is stressed even if it doesn't start playing this frame.
+							local_t = 1;
+
+							if (cur_gameplay_music == MUSIC_GAMEPLAY)
+							{
+								cur_gameplay_music = MUSIC_STRESS;
+								MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
+								break;
+							}
 						}
 					}
-				}
 
-				if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
-				{
-					cur_gameplay_music = MUSIC_GAMEPLAY;
-					MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
+					if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
+					{
+						cur_gameplay_music = MUSIC_GAMEPLAY;
+						MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
+					}
 				}
 
 // No pause in the arcade, fool!
@@ -2388,8 +2441,15 @@ void go_to_state(unsigned char new_state)
 			// to exit the game (eg. from pause).
 #if VS_SYS_ENABLED
 			high_score_entry_placement = 0xff;
-			auto_forward_leaderboards = 1; // auto forward after 10 seconds.
-			if (cur_score > 0 && IS_PRIMARY_CPU)
+			if (attract_gameplay_enabled)
+			{
+				auto_forward_leaderboards = 3; // cycle through all boards.
+			}
+			else
+			{
+				auto_forward_leaderboards = 1; // auto forward after 10 seconds.
+			}
+			if (cur_score > 0 && IS_PRIMARY_CPU && !attract_gameplay_enabled)
 			{
 #if VS_SRAM_ENABLED				
 				// take control of SRAM.
@@ -2417,6 +2477,8 @@ void go_to_state(unsigned char new_state)
 				
 				// Reliquish control of SRAM.
 				POKE(0x4016, 0);
+
+				attract_gameplay_enabled = 0;
 			}
 #else
 			if (cur_score > high_scores[attack_style])
@@ -2471,6 +2533,9 @@ void go_to_state(unsigned char new_state)
 			scroll_y = 0x1df;
 			time_of_day = 0;
 			cur_konami_index = 0;
+#if VS_SYS_ENABLED
+			attract_gameplay_enabled = 0;
+#endif // #if VS_SYS_ENABLED			
 
 			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST || prev_state == STATE_HIGH_SCORE_TABLE)
 			{
@@ -2616,7 +2681,7 @@ void go_to_state(unsigned char new_state)
 				oam_clear();
 
 #if VS_SYS_ENABLED
-				if (credits_remaining >= game_cost)
+				if (!attract_gameplay_enabled && credits_remaining >= game_cost)
 				{
 					credits_remaining-=game_cost;
 				}
@@ -2663,11 +2728,16 @@ void go_to_state(unsigned char new_state)
 				}
 			}
 
-			// Do this at the end of the state change so that
-			// the up beat music doesn't kick in until after
-			// everything transitions in.
-			cur_gameplay_music = MUSIC_GAMEPLAY;
-			MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
+#if VS_SYS_ENABLED
+			if (!attract_gameplay_enabled)
+#endif // #if VS_SYS_ENABLED			
+			{
+				// Do this at the end of the state change so that
+				// the up beat music doesn't kick in until after
+				// everything transitions in.
+				cur_gameplay_music = MUSIC_GAMEPLAY;
+				MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
+			}
 
 			break;
 		}
