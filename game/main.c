@@ -219,16 +219,16 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* Shorten attract timer to 20-30 seconds.
+* Better initial entry UI.
 * Final Artwork from Duey.
 * Package up artwork and dip sheet in zip (maybe zip everything including NES?)
-* Add lidnariq to thanks if possible.
-* Better initial entry UI.
 * [cut] Font outline.
 * [cut] Consider hard drop (setting, dip, hold by default, etc). [tested - no issues]
 * [cut] On gameover, continue should go to Mode select, not title screen.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Add lidnariq to thanks if possible.
+* [done] Shorten attract timer to 20-30 seconds.
 * [done] Arrow sprites on leaderboards.
 * [done] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [done] Better gameover display. (remove press 1)
@@ -696,7 +696,7 @@ skip_attract_input:
 #if VS_SYS_ENABLED
 				// "attract mode" to avoid burn in. Just go back to the start.
 				// Timed to be when the title track finishes for a 2nd time.
-				if ((credits_remaining < game_cost) && ticks_in_state_large > (30*60*1))
+				if ((credits_remaining < game_cost) && ticks_in_state_large > (15*60*1))
 				{
 						fade_to_black();
 						attract_gameplay_enabled = 1;
