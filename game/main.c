@@ -219,15 +219,16 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* Better gameover display. (remove press 1)
 * Arrow sprites on leaderboards.
-* Artwork.
+* Shorten attract timer to 20-30 seconds.
+* Final Artwork from Duey.
 * [cut] Font outline.
 * [cut] Consider hard drop (setting, dip, hold by default, etc). [tested - no issues]
 * [cut] On gameover, continue should go to Mode select, not title screen.
-* [cut] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
+* [done] Better gameover display. (remove press 1)
 * [done] Attract gameplay.
 * [done] Auto-forward if no input on the leaderboards for too long.
 * [done] Countdown timer on entering initials. (not visible to player)
@@ -2787,10 +2788,7 @@ void go_to_state(unsigned char new_state)
 
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("GAME OVER!", 10, address);
-#if VS_SYS_ENABLED
-			address = get_ppu_addr(cur_nt, 96, 15<<3);
-			multi_vram_buffer_horz("PRESS 1   ", 10, address);
-#else
+#if !VS_SYS_ENABLED
 			address = get_ppu_addr(cur_nt, 96, 15<<3);
 			multi_vram_buffer_horz("A-RESTART ", 10, address);
 			address = get_ppu_addr(cur_nt, 96, 16<<3);
