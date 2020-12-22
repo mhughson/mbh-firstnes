@@ -219,16 +219,17 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* Arrow sprites on leaderboards.
 * Shorten attract timer to 20-30 seconds.
 * Final Artwork from Duey.
 * Package up artwork and dip sheet in zip (maybe zip everything including NES?)
 * Add lidnariq to thanks if possible.
+* Better initial entry UI.
 * [cut] Font outline.
 * [cut] Consider hard drop (setting, dip, hold by default, etc). [tested - no issues]
 * [cut] On gameover, continue should go to Mode select, not title screen.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Arrow sprites on leaderboards.
 * [done] Re-enable music (when attact sound is disable) after inserting a coin. Leave disabled for Free Play.
 * [done] Better gameover display. (remove press 1)
 * [done] Attract gameplay.
@@ -1357,6 +1358,7 @@ skip_attract_input:
 #if VS_SYS_ENABLED
 			case STATE_HIGH_SCORE_TABLE:
 			{
+				oam_clear();
 				if (IS_PRIMARY_CPU && high_score_entry_placement < 3)
 				{
 #if VS_SRAM_ENABLED					
@@ -1371,7 +1373,6 @@ skip_attract_input:
 						temp_table[cur_initial_index] = 'A';
 					}
 
-					oam_clear();
 					if (ticks_in_state_large % 128 < 64)
 					{
 						switch (cur_level_vs_setting)
@@ -1469,75 +1470,82 @@ skip_attract_input:
 					POKE(0x4016, 0);	
 #endif // #if VS_SRAM_ENABLED
 				}
-				else if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
+				else 
 				{
-					if (attack_style > 0)
-					{
-						--attack_style;
-					}
-					else
-					{
-						attack_style = ATTACK_NUM - 1;
-					}
+					// arrow sprites.
+					oam_spr(80 + tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0);
+					oam_spr(160 - tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0|OAM_FLIP_H);
 
-					--auto_forward_leaderboards;
+					if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
+					{
+						if (attack_style > 0)
+						{
+							--attack_style;
+						}
+						else
+						{
+							attack_style = ATTACK_NUM - 1;
+						}
 
-					if (auto_forward_leaderboards == 0)
+						--auto_forward_leaderboards;
+
+						if (auto_forward_leaderboards == 0)
+						{
+							fade_to_black();
+							go_to_state(STATE_MENU);
+							fade_from_black();
+						}
+						else
+						{
+							ticks_in_state_large = 0;
+							fade_to_black();
+							go_to_state(STATE_HIGH_SCORE_TABLE);
+							fade_from_black();
+						}
+					}
+					else if ( pad_all_new & PAD_LEFT)
+					{
+						if (attack_style > 0)
+						{
+							--attack_style;
+						}
+						else
+						{
+							attack_style = ATTACK_NUM - 1;
+						}
+
+						auto_forward_leaderboards = 1;
+						fade_to_black();
+						go_to_state(STATE_HIGH_SCORE_TABLE);
+						fade_from_black();
+					}
+					else if ( pad_all_new & PAD_RIGHT)
+					{
+						if (attack_style < ATTACK_NUM - 1)
+						{
+							++attack_style;
+						}
+						else
+						{
+							attack_style = 0;
+						}
+
+						auto_forward_leaderboards = 1;
+						fade_to_black();
+						go_to_state(STATE_HIGH_SCORE_TABLE);
+						fade_from_black();
+					}
+					// else if (pad_all_new & PAD_A)
+					// {
+					// 	// stop auto-forwarding.
+					// 	auto_forward_leaderboards = 0;
+					// }
+					else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
 					{
 						fade_to_black();
 						go_to_state(STATE_MENU);
 						fade_from_black();
 					}
-					else
-					{
-						ticks_in_state_large = 0;
-						fade_to_black();
-						go_to_state(STATE_HIGH_SCORE_TABLE);
-						fade_from_black();
-					}
-				}
-				else if ( pad_all_new & PAD_LEFT)
-				{
-					if (attack_style > 0)
-					{
-						--attack_style;
-					}
-					else
-					{
-						attack_style = ATTACK_NUM - 1;
-					}
-
-					auto_forward_leaderboards = 1;
-					fade_to_black();
-					go_to_state(STATE_HIGH_SCORE_TABLE);
-					fade_from_black();
-				}
-				else if ( pad_all_new & PAD_RIGHT)
-				{
-					if (attack_style < ATTACK_NUM - 1)
-					{
-						++attack_style;
-					}
-					else
-					{
-						attack_style = 0;
-					}
-
-					auto_forward_leaderboards = 1;
-					fade_to_black();
-					go_to_state(STATE_HIGH_SCORE_TABLE);
-					fade_from_black();
-				}
-				// else if (pad_all_new & PAD_A)
-				// {
-				// 	// stop auto-forwarding.
-				// 	auto_forward_leaderboards = 0;
-				// }
-				else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
-				{
-					fade_to_black();
-					go_to_state(STATE_MENU);
-					fade_from_black();
 				}
 				break;
 			}
