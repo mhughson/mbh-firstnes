@@ -222,6 +222,8 @@ VERSUS TODO:
 * Arrow sprites on leaderboards.
 * Shorten attract timer to 20-30 seconds.
 * Final Artwork from Duey.
+* Package up artwork and dip sheet in zip (maybe zip everything including NES?)
+* Add lidnariq to thanks if possible.
 * [cut] Font outline.
 * [cut] Consider hard drop (setting, dip, hold by default, etc). [tested - no issues]
 * [cut] On gameover, continue should go to Mode select, not title screen.
