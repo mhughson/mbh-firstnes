@@ -788,6 +788,7 @@ void display_options();
 void fade_to_black();
 void fade_from_black();
 
+void difficulty_to_leaderboard_pos(unsigned char dif);
 
 // DEBUG
 #if DEBUG_ENABLED

@@ -40,9 +40,6 @@ FEATURES:
 	* Kraken, Classic, Kraken Alt* Description of modes in option screen.
 * Game over screen (polished).
 * Points kicker
-* Trigger sound test on Konami Code.
-* Special Thanks screen
-* Allow players to start on any level up to 29.
 
 //investigate
 * Number of rows that hit the tentacle adds a delay to next attack.
@@ -57,6 +54,9 @@ FEATURES:
 
 
 COMPLETE:
+* Trigger sound test on Konami Code.
+* Special Thanks screen
+* Allow players to start on any level up to 29.
 * Start level 29.
 	* Select + Start on level 9.
 * Disable hard drop (not on hold - People either want it or not).
@@ -1373,38 +1373,20 @@ skip_attract_input:
 						temp_table[cur_initial_index] = 'A';
 					}
 
-					if (ticks_in_state_large % 128 < 64)
-					{
-						switch (cur_level_vs_setting)
-						{
-						case 0:
-							in_x = 4;
-							in_y = 12;
-							break;
-						case 1:
-							in_x = 18;
-							in_y = 12;
-							break;
-						case 2:
-							in_x = 4;
-							in_y = 22;
-							break;
-						case 3:
-							in_x = 18;
-							in_y = 22;
-							break;
-						}
+					// output to in_x, in_y
+					difficulty_to_leaderboard_pos (cur_level_vs_setting);
 
-						oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, temp_table[0], 0);
+					in_id = (ticks_in_state_large % 128 < 64) ? 0 : 2;
+
+					oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[0]],  (cur_initial_index == 0) ? in_id : 2);
 						if (cur_initial_index > 0)
 						{
-							oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, temp_table[1], 0);
+						oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[1]], (cur_initial_index == 1) ? in_id : 2);
 						}
 						if (cur_initial_index > 1)
 						{
-							oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], 0);
+						oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[2]], in_id);
 						}
-					}
 
 					// If the user takes to long to enter their initials auto complete it.
 					// NOTE: The tick counter is reset every time they press a button, so it's really just
@@ -2440,11 +2422,13 @@ void go_to_state(unsigned char new_state)
 			break;
 		}
 
+#if !VS_SYS_ENABLED
 		case STATE_PAUSE:
 		{
 			pal_bright(4);
 			break;
 		}
+#endif // #if !VS_SYS_ENABLED
 
 		case STATE_GAME:
 		{
@@ -2835,6 +2819,7 @@ void go_to_state(unsigned char new_state)
 			scroll(0, scroll_y);
 
 			pal_bg(palette_vs_highscore_table);
+			pal_spr(palette_vs_highscore_table);
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(high_score_screen);
 
@@ -2852,25 +2837,9 @@ void go_to_state(unsigned char new_state)
 			// difficulty
 			for (i = 0; i < 4; ++i)
 			{
-				switch (i)
-				{
-				case 0:
-					in_x = 4;
-					in_y = 12;
-					break;
-				case 1:
-					in_x = 18;
-					in_y = 12;
-					break;
-				case 2:
-					in_x = 4;
-					in_y = 22;
-					break;
-				case 3:
-					in_x = 18;
-					in_y = 22;
-					break;
-				}
+				// output to in_x, in_y
+				difficulty_to_leaderboard_pos(i);
+
 				// Scores from 1st place to last place.
 				for (j = 0; j < 3; ++j)
 				{
@@ -3609,6 +3578,29 @@ void fade_from_black()
 	delay(2);
 	pal_bright(4);
 	delay(2);
+}
+
+void difficulty_to_leaderboard_pos(unsigned char dif)
+{
+	switch (dif)
+	{
+	case 0:
+		in_x = 4;
+		in_y = 12;
+		break;
+	case 1:
+		in_x = 18;
+		in_y = 12;
+		break;
+	case 2:
+		in_x = 4;
+		in_y = 22;
+		break;
+	case 3:
+		in_x = 18;
+		in_y = 22;
+		break;
+	}
 }
 
 // DEBUG
