@@ -1378,15 +1378,15 @@ skip_attract_input:
 
 					in_id = (ticks_in_state_large % 128 < 64) ? 0 : 2;
 
-					oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[0]],  (cur_initial_index == 0) ? in_id : 2);
-						if (cur_initial_index > 0)
-						{
-						oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[1]], (cur_initial_index == 1) ? in_id : 2);
-						}
-						if (cur_initial_index > 1)
-						{
-						oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, initials_table[temp_table[2]], in_id);
-						}
+					oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, temp_table[0],  (cur_initial_index == 0) ? in_id : 2);
+					if (cur_initial_index > 0)
+					{
+					oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, temp_table[1], (cur_initial_index == 1) ? in_id : 2);
+					}
+					if (cur_initial_index > 1)
+					{
+					oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], in_id);
+					}
 
 					// If the user takes to long to enter their initials auto complete it.
 					// NOTE: The tick counter is reset every time they press a button, so it's really just
