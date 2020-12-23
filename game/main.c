@@ -1941,6 +1941,19 @@ void movement(void)
 	if (cur_block.x != old_x && is_cluster_colliding())
 	{
 		cur_block.x = old_x;
+
+		// This pains me, but I am NOT implementing this fix for the NES version to avoid
+		// complicating high scores ("which version did you get the score on!?").
+#if VS_SYS_ENABLED
+		// If we are charging into a wall, instantly clear the button delay.
+		// this is because we WANT pieces to tuck into walls when charged against them.
+		// Without this, it will only TRY to tuck when horz_button_delay reaches 0 with DAS,
+		// Meaning it will check frame 0,10,15,20,25... which feels very wrong. It can skip
+		// over large gaps when playing at high levels where the piece travels multiple spaces
+		// in a 5 frames, let alone 10.
+		// https://discord.com/channels/731554439055278221/731554439793606709/791440637814636634
+		horz_button_delay = 0;
+#endif //VS_SYS_ENABLED
 	}
 
 	// FALLING
