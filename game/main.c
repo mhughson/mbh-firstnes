@@ -219,7 +219,6 @@ Arcade Buttons:
 4: p2 start
 
 VERSUS TODO:
-* Better initial entry UI.
 * Final Artwork from Duey.
 * Package up artwork and dip sheet in zip (maybe zip everything including NES?)
 * [cut] Font outline.
@@ -227,6 +226,7 @@ VERSUS TODO:
 * [cut] On gameover, continue should go to Mode select, not title screen.
 * [cut] Shared leaderboard on dual system (with save).
 * [cut] Hide coin display in Free Play mode.
+* [done] Better initial entry UI.
 * [done] Add lidnariq to thanks if possible.
 * [done] Shorten attract timer to 20-30 seconds.
 * [done] Arrow sprites on leaderboards.
