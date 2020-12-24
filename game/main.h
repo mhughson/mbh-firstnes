@@ -161,6 +161,7 @@ unsigned char attack_style;
 
 // Temporary table used for manipulating high score table.
 unsigned char *temp_table;
+unsigned char last_initials[3] = "AAA";
 
 #if !VS_SRAM_ENABLED
 unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 

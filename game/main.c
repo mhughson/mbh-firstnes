@@ -1370,7 +1370,7 @@ skip_attract_input:
 
 					if (temp_table[cur_initial_index] == '-')
 					{
-						temp_table[cur_initial_index] = 'A';
+						temp_table[cur_initial_index] = last_initials[cur_initial_index];
 					}
 
 					// output to in_x, in_y
@@ -1388,22 +1388,10 @@ skip_attract_input:
 					oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], in_id);
 					}
 
-					// If the user takes to long to enter their initials auto complete it.
-					// NOTE: The tick counter is reset every time they press a button, so it's really just
-					//		 here to handle cases where they walk away in the middle of entering initials.
-					if (ticks_in_state_large > AUTO_FORWARD_DELAY)
-					{
-						SFX_PLAY_WRAPPER(SOUND_LEVELUP);
-						fade_to_black();
-						auto_forward_leaderboards = 1;
-						go_to_state(STATE_HIGH_SCORE_TABLE);
-						fade_from_black();
-					}
-
 					if (pad_all_new & PAD_RIGHT)
 					{
 						// Reset the timer on movement, like on a modern OS.
-						ticks_in_state_large = 0;
+						//ticks_in_state_large = 0;
 
 						// Increment the character. Works because A-Z is in order.
 						++temp_table[cur_initial_index];
@@ -1416,7 +1404,7 @@ skip_attract_input:
 					}
 					else if (pad_all_new & PAD_LEFT)
 					{
-						ticks_in_state_large = 0;
+						//ticks_in_state_large = 0;
 						--temp_table[cur_initial_index];
 
 						if (temp_table[cur_initial_index] < 'A')
@@ -1424,28 +1412,33 @@ skip_attract_input:
 							temp_table[cur_initial_index] = 'Z';
 						}
 					}
-					else if (pad_all_new & PAD_A)
+					else if ((pad_all_new & PAD_A) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
 					{
-						ticks_in_state_large = 0;
+						//ticks_in_state_large = 0;
+						// Overflow caught below.
 						++cur_initial_index;
-
-						if (cur_initial_index >= 3)
-						{
-							SFX_PLAY_WRAPPER(SOUND_LEVELUP);
-							fade_to_black();
-							auto_forward_leaderboards = 1;
-							go_to_state(STATE_HIGH_SCORE_TABLE);
-							fade_from_black();
-						}
 					}
 					else if (pad_all_new & PAD_B)
 					{
 						if (cur_initial_index > 0)
 						{
-							ticks_in_state_large = 0;
+							//ticks_in_state_large = 0;
 							temp_table[cur_initial_index] = '-';
 							--cur_initial_index;
 						}
+					}
+
+					// If the user takes to long to enter their initials auto complete it.
+					// NOTE: The tick counter is reset every time they press a button, so it's really just
+					//		 here to handle cases where they walk away in the middle of entering initials.
+					if (cur_initial_index >= 3)
+					{
+						memcpy(last_initials, temp_table, 3);
+						SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+						fade_to_black();
+						auto_forward_leaderboards = 1;
+						go_to_state(STATE_HIGH_SCORE_TABLE);
+						fade_from_black();
 					}
 #if VS_SRAM_ENABLED
 					// Reliquish control.
@@ -1843,8 +1836,8 @@ void movement(void)
 	if (pad_all_new & PAD_SELECT)
 #endif
 	{
-		// cur_score += 100;
-		// display_score();
+		cur_score += 100;
+		display_score();
 		//hit_reaction_remaining = 60;
 		//  inc_lines_cleared();
 		//  delay(1);
