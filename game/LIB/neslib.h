@@ -283,6 +283,7 @@ void __fastcall__ delay(unsigned char frames);
 #define PAD_LEFT		0x02
 #define PAD_RIGHT		0x01
 #define PAD_ALL         0xff
+#define PAD_ALL_BUTTONS (PAD_A|PAD_B|PAD_SELECT|PAD_START)
 
 #define OAM_FLIP_V		0x80
 #define OAM_FLIP_H		0x40

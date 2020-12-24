@@ -589,7 +589,7 @@ skip_attract_input:
 		{
 			case STATE_BOOT:
 			{
-				if (tick_count == 120 || pad_all_new & PAD_START)
+				if (tick_count == 120 || pad_all_new & PAD_ALL_BUTTONS)
 				{
 					fade_to_black();
 					go_to_state(STATE_TY);
@@ -600,7 +600,7 @@ skip_attract_input:
 			case STATE_TY:
 			{
 				// 120, means wait 240 frames from 120 (previous state).
-				if (tick_count == 104 || pad_all_new & PAD_START)
+				if (tick_count == 104 || pad_all_new & PAD_ALL_BUTTONS)
 				{
 					fade_to_black();
 					go_to_state(STATE_MENU);
