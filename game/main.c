@@ -3138,14 +3138,26 @@ void clear_rows_in_data(unsigned char start_y)
 	{
 		if (prev_level != cur_level)
 		{
-			SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+			if (i == 4)
+			{
+				screen_shake_remaining = 5;
+				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+			}
+			else
+			{
+				SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+			}
 		}
 		else if (i == 4)
 		{
+			// play a shake on big drops. This will happen after the rows are cleared
+			// and the pieces fall.
+			screen_shake_remaining = 5;
 			SFX_PLAY_WRAPPER(SOUND_MULTIROW);
 		}
 		else
 		{
+			//screen_shake_remaining = 5;
 			SFX_PLAY_WRAPPER(SOUND_ROW);
 		}
 
