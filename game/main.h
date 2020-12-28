@@ -725,6 +725,18 @@ unsigned char attract_gameplay_enabled = 0;
 
 #endif // VS_SYS_ENABLED
 
+const unsigned char metasprite_tentacle_title[]={
+	  0,  0,0x60,1,
+	  8,  0,0x61,1,
+	  0,  8,0x70,1,
+	  8,  8,0x71,1,
+	  0, 16,0x80,1,
+	  8, 16,0x81,1,
+	  0, 24,0x90,1,
+	  8, 24,0x91,1,
+	128
+};
+
 // PROTOTYPES
 void draw_menu_sprites(void);
 void draw_gameplay_sprites(void);
