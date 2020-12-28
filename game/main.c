@@ -1436,6 +1436,16 @@ skip_attract_input:
 					else if ((pad_all_new & PAD_A) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
 					{
 						ticks_in_state_large = 0;
+
+						// If the users changes away from the default, assume they don't want to continue
+						// using the previous initials.
+						if (temp_table[cur_initial_index] != last_initials[cur_initial_index])
+						{
+							// NOTE: last_initials doesn't get populated for this entry until the end of
+							//		 the name entry sequence.
+							memfill(last_initials, 'A', 3);
+						}
+
 						// Overflow caught below.
 						++cur_initial_index;
 					}
@@ -1843,8 +1853,8 @@ void movement(void)
 	if (pad_all_new & PAD_SELECT)
 #endif
 	{
-		cur_score += 100;
-		display_score();
+		// cur_score += 100;
+		// display_score();
 		//hit_reaction_remaining = 60;
 		//  inc_lines_cleared();
 		//  delay(1);
