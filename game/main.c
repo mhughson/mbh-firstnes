@@ -195,10 +195,10 @@ DIP SWITCHES:
 
 All defaults will be 0.
 
-FREE PLAY				|	1	-	-	-	-	-	-	-
-
-CREDIT/COIN	1/1			|	-	0	-	-	-	-	-	-
-CREDIT/COIN	1/2			|	-	1	-	-	-	-	-	-
+FREE PLAY				|	0	0	-	-	-	-	-	-
+CREDIT/COIN	1/1			|	0	1	-	-	-	-	-	-
+CREDIT/COIN	1/2			|	1	0	-	-	-	-	-	-
+CREDIT/COIN	1/4			|	1	1	-	-	-	-	-	-
 
 PPU RP2C04-0001			|	-	-	0	0	0	-	-	-
 PPU RP2C04-0002			|	-	-	1	0	0	-	-	-
@@ -383,8 +383,12 @@ void main (void)
 	cur_garbage_type = 0;
 #if VS_SYS_ENABLED
 	credits_remaining = 0;
-	free_play_enabled = (DIP1 != 0);
-	game_cost = (DIP2 == 0) ? 1 : 2;
+	free_play_enabled = (DIP1 == 0 && DIP2 == 0);
+	game_cost = ((DIP1 != 0) << 1) | (DIP2 != 0);
+	if (game_cost == 3)
+	{
+		game_cost = 4; // cost of 3 seems odd.
+	}
 	music_on = DIP6 == 0;
 	sfx_on = DIP7 == 0;
 	high_score_entry_placement = 0xff;
@@ -859,26 +863,9 @@ skip_attract_input:
 							music_stop();
 							SFX_PLAY_WRAPPER(SOUND_START);
 
-							switch (cur_level_vs_setting)
-							{
-							case 0:
-								cur_level = 0;
-								break;
-							case 1:
-								cur_level = 9;
-								break;
-							case 2:
-								cur_level = 19;
-								break;
-							case 3:
-								//cur_level_vs_setting = 2; // reset it back to normal value.
-								cur_level = 29;
-								break;
-
-							default:
-								cur_level = 0;
-								break;
-							}
+							// 0, 9, 19, 29.
+							// MAX to ensure setting 0 doesn't wrap around.
+							cur_level = MAX(1, (cur_level_vs_setting * 10)) - 1;
 
 							fade_to_black();
 							ppu_off();
@@ -1613,16 +1600,19 @@ void draw_menu_sprites(void)
 
 
 #if VS_SYS_ENABLED
-	//3<<3, 26<<3
-	t = credits_remaining;
-	d = (t) % 10;
-	oam_spr(6<<3, 27<<3, '0' + d, 0);
-	t = t / 10;
-	d = (t) % 10;
-	oam_spr(5<<3, 27<<3, '0' + d, 0);
+	// if (!free_play_enabled)
+	// {
+		//3<<3, 26<<3
+		t = credits_remaining;
+		d = (t) % 10;
+		oam_spr(6<<3, 27<<3, '0' + d, 0);
+		t = t / 10;
+		d = (t) % 10;
+		oam_spr(5<<3, 27<<3, '0' + d, 0);
 
-	oam_spr(7 << 3, 27 << 3, 0x2F, 0);
-	oam_spr(8 << 3, 27 << 3, 0x30 + game_cost, 0);
+		oam_spr(7 << 3, 27 << 3, 0x2F, 0);
+		oam_spr(8 << 3, 27 << 3, 0x30 + game_cost, 0);
+	// }
 
 	oam_meta_spr(22<<3, 3<<3, metasprite_vs_logo);
 //	oam_meta_spr(27<<3, 27<<3, metasprite_button2);

@@ -168,24 +168,24 @@ unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] =
 { 
     // ATTACK_ON_LAND/FIXED
     {
-        { "---", "---", "---" }, // EASY
-        { "---", "---", "---" }, // MED
-        { "---", "---", "---" }, // INSANE
-        { "---", "---", "---" }, // DEATH
+        { "PMY", "---", "---" }, // EASY
+        { "PEL", "---", "---" }, // MED
+        { "NAH", "---", "---" }, // INSANE
+        { "PEL", "---", "---" }, // DEATH
     },
     // ATTACK_ON_TIME/TIMED
     {
-        { "---", "---", "---" }, // EASY
-        { "---", "---", "---" }, // MED
-        { "---", "---", "---" }, // INSANE
-        { "---", "---", "---" }, // DEATH
+        { "NAH", "---", "---" }, // EASY
+        { "PEL", "---", "---" }, // MED
+        { "KRB", "---", "---" }, // INSANE
+        { "PMY", "---", "---" }, // DEATH
     },
     // ATTACK_NEVER/CLASSIC
     {
-        { "---", "---", "---" }, // EASY
-        { "---", "---", "---" }, // MED
-        { "---", "---", "---" }, // INSANE
-        { "---", "---", "---" }, // DEATH
+        { "PEL", "---", "---" }, // EASY
+        { "PEL", "---", "---" }, // MED
+        { "CHZ", "---", "---" }, // INSANE
+        { "PMY", "---", "---" }, // DEATH
     },
 };
 
@@ -216,24 +216,24 @@ unsigned long high_scores_vs_value[ATTACK_NUM][4][3] =
 { 
     // ATTACK_ON_LAND/FIXED
     {
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+        { 310000, NO_SCORE, NO_SCORE }, // Easy
+        { 596000, NO_SCORE, NO_SCORE }, // Med
+        { 431000, NO_SCORE, NO_SCORE }, // Insane
+        { 259000, NO_SCORE, NO_SCORE }, // Death
     },
     // ATTACK_ON_TIME/TIMED
     {
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+        { 806000, NO_SCORE, NO_SCORE }, // Easy
+        { 891000, NO_SCORE, NO_SCORE }, // Med
+        { 1529000, NO_SCORE, NO_SCORE }, // Insane
+        { 1024000, NO_SCORE, NO_SCORE }, // Death
     },
     // ATTACK_NEVER/CLASSIC
     {
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Easy
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Med
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Insane
-        { NO_SCORE, NO_SCORE, NO_SCORE }, // Death
+        { 1057000, NO_SCORE, NO_SCORE }, // Easy
+        { 1195000, NO_SCORE, NO_SCORE }, // Med
+        { 1510000, NO_SCORE, NO_SCORE }, // Insane
+        { 1460000, NO_SCORE, NO_SCORE }, // Death
     },
 };
 #endif // #if !VS_SRAM_ENABLED
