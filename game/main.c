@@ -2784,31 +2784,45 @@ void go_to_state(unsigned char new_state)
 			// vanish.
 			//oam_clear();
 
-			pal_bright(5);
-			delay(fade_delay);
+			// pal_bright(5);
+			// delay(fade_delay);
 			pal_bright(6);
 			delay(fade_delay);
-			pal_bright(7);
-			delay(fade_delay);
+			// pal_bright(7);
+			// delay(fade_delay);
 			pal_bright(8);
 			delay(fade_delay);
 
-			address = get_ppu_addr(cur_nt, 96, 14<<3);
-			multi_vram_buffer_horz("GAME OVER!", 10, address);
 #if !VS_SYS_ENABLED
-			address = get_ppu_addr(cur_nt, 96, 15<<3);
+			address = get_ppu_addr(cur_nt, 96, 14<<3);
+			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
+			//address = get_ppu_addr(cur_nt, 96, 15<<3);
+			address += 32;
+			multi_vram_buffer_horz("\xaa\xab\xca\xcb\x00\x3a\x68\xcb\xdf\xf9", 10, address);
+
+			// address = get_ppu_addr(cur_nt, 96, 14<<3);
+			// multi_vram_buffer_horz("GAME OVER!", 10, address);
+			//address = get_ppu_addr(cur_nt, 96, 15<<3);
+			address += 32;
 			multi_vram_buffer_horz("A-RESTART ", 10, address);
-			address = get_ppu_addr(cur_nt, 96, 16<<3);
+			//address = get_ppu_addr(cur_nt, 96, 16<<3);
+			address += 32;
 			multi_vram_buffer_horz("B-QUIT    ", 10, address);
-#endif //VS_SYS_ENABLED
-			pal_bright(7);
-			delay(fade_delay);
+#else
+			address = get_ppu_addr(cur_nt, 96, 14<<3);
+			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
+			//address = get_ppu_addr(cur_nt, 96, 15<<3);
+			address += 32;
+			multi_vram_buffer_horz("\xaa\xab\xca\xcb\x00\x3a\x68\xcb\xdf\xf9", 10, address);
+#endif //!VS_SYS_ENABLED
+			// pal_bright(7);
+			// delay(fade_delay);
 			pal_bright(6);
 			delay(fade_delay);
-			pal_bright(5);
-			delay(fade_delay);
+			// pal_bright(5);
+			// delay(fade_delay);
 			pal_bright(4);
-			delay(fade_delay);
+			//delay(fade_delay);
 			break;
 		}
 
@@ -3140,7 +3154,7 @@ void clear_rows_in_data(unsigned char start_y)
 		{
 			if (i == 4)
 			{
-				screen_shake_remaining = 5;
+				//screen_shake_remaining = 5;
 				SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
 			}
 			else
@@ -3152,7 +3166,7 @@ void clear_rows_in_data(unsigned char start_y)
 		{
 			// play a shake on big drops. This will happen after the rows are cleared
 			// and the pieces fall.
-			screen_shake_remaining = 5;
+			//screen_shake_remaining = 5;
 			SFX_PLAY_WRAPPER(SOUND_MULTIROW);
 		}
 		else
@@ -3590,7 +3604,7 @@ void fade_to_black()
 	pal_bright(1);
 	delay(2);
 	pal_bright(0);
-	delay(2);
+	//delay(2);
 }
 
 void fade_from_black()
@@ -3602,7 +3616,7 @@ void fade_from_black()
 	pal_bright(3);
 	delay(2);
 	pal_bright(4);
-	delay(2);
+	//delay(2);
 }
 
 void difficulty_to_leaderboard_pos(unsigned char dif)
