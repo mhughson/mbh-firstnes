@@ -70,20 +70,25 @@ function keyboard(callback, event){
 	var prevent = true;
 	switch(event.keyCode){
 		case 38: // UP
+		case 87: // W
 			callback(player, jsnes.Controller.BUTTON_UP); break;
 		case 40: // Down
+		case 83: // S
 			callback(player, jsnes.Controller.BUTTON_DOWN); break;
 		case 37: // Left
+		case 65: // A
 			callback(player, jsnes.Controller.BUTTON_LEFT); break;
 		case 39: // Right
+		case 68: // D
 			callback(player, jsnes.Controller.BUTTON_RIGHT); break;
-		case 90: // 'z' - qwerty
-		case 87: // 'w' - azerty
-		case 89: // 'y' - qwertz
-			callback(player, jsnes.Controller.BUTTON_A); break;
+		case 18: // 'alt'
 		case 88: // 'x'
+			callback(player, jsnes.Controller.BUTTON_A); break;
+		case 90: // 'z'
+		case 17: // 'ctrl'
 			callback(player, jsnes.Controller.BUTTON_B); break;
 		case 32: // Space
+		case 16: // Right Shift
 			callback(player, jsnes.Controller.BUTTON_SELECT); break;
 		case 13: // Return
 			callback(player, jsnes.Controller.BUTTON_START); break;
@@ -149,3 +154,178 @@ function nes_load_url(canvas_id, path){
 
 document.addEventListener('keydown', (event) => {keyboard(nes.buttonDown, event)});
 document.addEventListener('keyup', (event) => {keyboard(nes.buttonUp, event)});
+
+
+/////////////////////
+// GAMEPAD SUPPORT
+//
+// Based on documentation here: https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
+/////////////////////
+
+var haveEvents = 'ongamepadconnected' in window;
+var controllers = {};
+
+// Once the presses a button on one of the controllers, this will store
+// the index of that controller so that only that controller is checked
+// each frame. This is to avoid additional controllers triggering key_up
+// events when they are just sitting there inactive.
+var cur_controller_index = -1;
+
+function connecthandler(e) {
+  addgamepad(e.gamepad);
+}
+
+function addgamepad(gamepad) {
+  controllers[gamepad.index] = gamepad;
+  requestAnimationFrame(updateStatus);
+}
+
+function disconnecthandler(e) {
+  removegamepad(e.gamepad);
+}
+
+function removegamepad(gamepad) {
+  delete controllers[gamepad.index];
+}
+
+// Check all controllers to see if player has pressed any buttons.
+// If they have, store that as the current controller.
+function findController()
+{
+	var i = 0;
+	var j;
+
+	for (j in controllers) 
+	{
+		var controller = controllers[j];
+
+		for (i = 0; i < controller.buttons.length; i++) 
+		{
+			var val = controller.buttons[i];
+			var pressed = val == 1.0;
+			if (typeof(val) == "object") 
+			{
+				pressed = val.pressed;
+				val = val.value;
+			}
+
+			if (pressed) 
+			{
+				cur_controller_index = j;
+			}
+		}
+	}
+}
+
+function updateStatus() 
+{
+	if (!haveEvents) 
+	{
+		scangamepads();
+	}
+
+	// If a controller has not yet been chosen, check for one now.
+	if (cur_controller_index == -1)
+	{
+	  findController();
+	}
+
+	// Allow for case where controller was chosen this frame
+	if (cur_controller_index != -1)
+	{
+		var i = 0;
+		var j;
+
+		var controller = controllers[cur_controller_index];
+
+		for (i = 0; i < controller.buttons.length; i++) 
+		{
+			var val = controller.buttons[i];
+			var pressed = val == 1.0;
+			if (typeof(val) == "object") 
+			{
+				pressed = val.pressed;
+				val = val.value;
+			}
+
+			var player = 1 //parseInt(j,10) + 1;
+
+			if (pressed) 
+			{
+				var callback = nes.buttonDown;
+				switch(i)
+				{
+					case 12: // UP
+					callback(player, jsnes.Controller.BUTTON_UP); break;
+					case 13: // Down
+					callback(player, jsnes.Controller.BUTTON_DOWN); break;
+					case 14: // Left
+					callback(player, jsnes.Controller.BUTTON_LEFT); break;
+					case 15: // Right
+					callback(player, jsnes.Controller.BUTTON_RIGHT); break;
+					case 1: // 'A'
+					callback(player, jsnes.Controller.BUTTON_A); break;
+					case 0: // 'B'
+					callback(player, jsnes.Controller.BUTTON_B); break;
+					case 8: // Select
+					callback(player, jsnes.Controller.BUTTON_SELECT); break;
+					case 9: // Start
+					callback(player, jsnes.Controller.BUTTON_START); break;
+				}
+			} 
+			else 
+			{
+				var callback = nes.buttonUp;
+				switch(i)
+				{
+					case 12: // UP
+					callback(player, jsnes.Controller.BUTTON_UP); break;
+					case 13: // Down
+					callback(player, jsnes.Controller.BUTTON_DOWN); break;
+					case 14: // Left
+					callback(player, jsnes.Controller.BUTTON_LEFT); break;
+					case 15: // Right
+					callback(player, jsnes.Controller.BUTTON_RIGHT); break;
+					case 1: // 'A'
+					callback(player, jsnes.Controller.BUTTON_A); break;
+					case 0: // 'B'
+					callback(player, jsnes.Controller.BUTTON_B); break;
+					case 8: // Select
+					callback(player, jsnes.Controller.BUTTON_SELECT); break;
+					case 9: // Start
+					callback(player, jsnes.Controller.BUTTON_START); break;
+				}
+			}
+
+			// var axes = d.getElementsByClassName("axis");
+			// for (i = 0; i < controller.axes.length; i++)
+			// {
+				// var a = axes[i];
+				// a.innerHTML = i + ": " + controller.axes[i].toFixed(4);
+				// a.setAttribute("value", controller.axes[i] + 1);
+			// }
+		}
+	}
+		
+	requestAnimationFrame(updateStatus);
+}
+
+function scangamepads() {
+  var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+  for (var i = 0; i < gamepads.length; i++) {
+    if (gamepads[i]) {
+      if (gamepads[i].index in controllers) {
+        controllers[gamepads[i].index] = gamepads[i];
+      } else {
+        addgamepad(gamepads[i]);
+      }
+    }
+  }
+}
+
+window.addEventListener("gamepadconnected", connecthandler);
+window.addEventListener("gamepaddisconnected", disconnecthandler);
+
+if (!haveEvents) {
+ setInterval(scangamepads, 500);
+}
