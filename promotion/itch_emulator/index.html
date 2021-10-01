@@ -1,68 +1,111 @@
 <html><head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>From Below</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NES Platformer Engine - WIP</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/image-map-resizer@1.0.10/js/imageMapResizer.min.js"></script>
+    <script src="jsnes.js"></script>
+    <script src="nes-embed.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
 
-	<script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
-	<script src="nes-embed.js"></script>
-	<script>window.onload = function () { nes_load_url("nes-canvas", "from_below_2020_09_16_v_1_0_0.nes"); }</script>
+        canvas {
+            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: -o-crisp-edges;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+        }
+
+        #main {
+            width: 100%;
+            height: 100%;
+            background-color: #222;
+            justify-content: center;
+            align-items: center;
+            display: flex;
+        }
+
+        #emu-screen {
+            width: 256px;
+            max-width: 768px;
+            height: 240px;
+            max-height: 720px;
+            position: relative;
+            margin: auto;
+        }
+    </style>
 </head>
 <body>
-	<style>
-		body {
-			margin: 0;
-			padding: 0;
-			background-color: black;
-		}
+    <div id="main">
+        <!-- <p>asjdhsakjdhs</p><p>asjdhsakjdhs</p><p>asjdhsakjdhs</p><p>asjdhsakjdhs</p> -->
+        <div id="emu-screen">
+            <canvas id="emu-canvas" width="256" height="240"/>
+        </div>
+        <!-- <p>asjdhsakjdhs</p><p>asjdhsakjdhs</p><p>asjdhsakjdhs</p><p>asjdhsakjdhs</p> -->
+    </div>
 
-		.nes-div {
-			width: 768px;
-			max-width: 768px;
-			height: 720px;
-			max-height: 720px;
-			position: absolute;
-			left: 0;
-			right: 0;
-			top: 0;
-			bottom: 0;
-			margin: auto;
-		}
+    <!-- NinjaPad -->
+    <div id="ninjaPad">
+        <script src="ninjapad-config.js"></script>
+        <script src="ninjapad/lib/sha256.js"></script>
+        <script src="ninjapad/lib/fflate.min.js"></script>
+        <script src="ninjapad/lib/uint8-to-utf16.js"></script>
+        <script src="ninjapad/index.js"></script>
+        <script src="ninjapad/utils.js"></script>
+        <script src="ninjapad/layout.js"></script>
+        <script src="ninjapad/menu.js"></script>
+        <script src="ninjapad/pause.js"></script>
+        <script src="ninjapad/gamepad.js"></script>
+        <script src="ninjapad/interface.js"></script>
+        <script src="ninjapad/main.js"></script>
+        <link rel="stylesheet" href="ninjapad/ninjapad.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+        <div id="SCREEN">
+            <div id="OSD"></div>
+        </div>
+        <div id="GAMEPAD">
+            <div id="GAMEPAD-BUTTONS">
+                <div id="DPAD" class="dirButtons">
+                    <div class="dpad">
+                        <div id="MULTI_UL" class="box"></div>
+                        <div id="BUTTON_UP" class="box"></div>
+                        <div id="MULTI_UR" class="box"></div>
+                        <div id="BUTTON_LEFT" class="box"></div>
+                        <div id="DEADZONE" class="box"></div>
+                        <div id="BUTTON_RIGHT" class="box"></div>
+                        <div id="MULTI_DL" class="box"></div>
+                        <div id="BUTTON_DOWN" class="box"></div>
+                        <div id="MULTI_DR" class="box"></div>
+                    </div>
+                </div>
+                <div id="ANALOG" class="dirButtons" style="display: none">
+                    <div id="RING" class="analogRing"></div>
+                    <div id="ANALOG_STICK" class="analogStick"></div>
+                </div>
+                <div id="ACTION" class="actionButtons">
+                    <div id="MULTI_AB" class="button_AB"></div>
+                    <div id="BUTTON_B" class="button_B"></div>
+                    <div id="BUTTON_A" class="button_A"></div>
+                </div>
+                <div id="FUNCTIONAL" class="middleButtons">
+                    <div id="BUTTON_SELECT" class="button_SELECT"></div>
+                    <div id="BUTTON_START" class="button_START"></div>
+                    <div id="analogSwitch" class="analogSwitchButton"></div>
+                    <div id="menu" class="menuButton">
+                        <input type="file" accept=".nes" id="upload" style="display:none"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End of NinjaPad -->
 
-		canvas {
-			image-rendering: optimizeSpeed;
-			image-rendering: -moz-crisp-edges;
-			image-rendering: -webkit-optimize-contrast;
-			image-rendering: -o-crisp-edges;
-			image-rendering: crisp-edges;
-			-ms-interpolation-mode: nearest-neighbor;
-			image-rendering: pixelated;
-			width: 100%;
-			height: 100%;
-		}
-	</style>
-	<div class="nes-div">
-		<canvas id="nes-canvas" width="256" height="240">
-	</canvas></div>
 </body></html>
-
-
-<!--
-<!DOCTYPE html>
-
-<html>
-	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>Embedding Example</title>
-		
-		<script type="text/javascript" src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
-		<script type="text/javascript" src="nes-embed.js"></script>
-		<script>window.onload = function(){nes_load_url("nes-canvas", "from_below_2020_07_11.nes");}</script>
-	</head>
-	<body>
-		<div style="width:512px">
-			<canvas id="nes-canvas" width="256" height="240" style="width:100%"/>
-		</div>
-		<p>DPad: Arrow keys<br/>Start: Return, Select: Tab<br/>A Button: A, B Button: S</p>
-	</body>
-</html>
--->
