@@ -14,17 +14,6 @@
 // Should be set to 0 before shipping.
 #define DEBUG_ENABLED 0
 
-#define PAD_A			0x80
-#define PAD_B			0x40
-#define PAD_SELECT		0x20
-#define PAD_START		0x10
-#define PAD_UP			0x08
-#define PAD_DOWN		0x04
-#define PAD_LEFT		0x02
-#define PAD_RIGHT		0x01
-#define PAD_ALL         0xff
-#define PAD_ALL_BUTTONS (PAD_A|PAD_B|PAD_SELECT|PAD_START)
-
 #if DEBUG_ENABLED
 // Used to profile sections of code using emphasis bit.
 #define PROFILE_POKE(val) POKE((0x2001),(val));
@@ -949,9 +938,9 @@ const unsigned char metasprite_tentacle_title[]={
 
 // PROTOTYPES
 
-void draw_menu_sprites(void);
-void draw_gameplay_sprites(void);
-void movement(void);
+void draw_menu_sprites(void) { } // PLAT_GB
+void draw_gameplay_sprites(void) { } // PLAT_GB
+void movement(void) { } // PLAT_GB
 
 // Set a block in x, y (board space)
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/);
@@ -972,7 +961,7 @@ unsigned char is_block_free(unsigned char x, unsigned char y);
 unsigned char is_cluster_colliding();
 
 // creates a new cluster at the top of the play area.
-void spawn_new_cluster();
+void spawn_new_cluster() { } // PLAT_GB
 
 // Rotate the current cluster by 90degs.
 void rotate_cur_cluster(char dir);
@@ -982,14 +971,14 @@ void go_to_state(unsigned char new_state);
 
 void inc_lines_cleared();
 void display_lines_cleared();
-void display_score();
-void display_highscore();
-void display_level();
+void display_score() { } // PLAT_GB
+void display_highscore() { } // PLAT_GB
+void display_level() { } // PLAT_GB
 
 // CLEAR PHASES
 
 // First clear all the rows in CPU memory.
-void clear_rows_in_data(unsigned char start_y);
+void clear_rows_in_data(unsigned char start_y) { (void)start_y; } // PLAT_GB
 
 // Then show the empty rows, 2 columns at a time...
 void reveal_empty_rows_to_nt();
@@ -1000,14 +989,14 @@ void try_collapse_empty_row_data(void);
 // Finally reveal to resolved board with all blocks in final position.
 void copy_board_to_nt();
 
-void add_block_at_bottom();
-void add_row_at_bottom();
+void add_block_at_bottom() { } // PLAT_GB
+void add_row_at_bottom() { } // PLAT_GB
 
-void reset_gameplay_area();
+void reset_gameplay_area() { } // PLAT_GB
 
-void display_song();
-void display_sound();
-void display_options();
+void display_song() { } // PLAT_GB
+void display_sound() { } // PLAT_GB
+void display_options() { } // PLAT_GB
 
 void fade_to_black();
 void fade_from_black();

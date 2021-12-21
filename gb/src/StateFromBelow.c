@@ -1,8 +1,10 @@
 /** (C) Matt Hughson 2020 */
 
-#if PLAT_NES
+#define PLAT_GB 1
+
 #include "LIB/neslib.h"
 #include "LIB/nesdoug.h"
+#if PLAT_NES
 #include "BG/game_area.h"
 #if VS_SYS_ENABLED
 #include "BG/vs_boot_screen.h"
@@ -19,9 +21,38 @@
 #include "BG/ty_screen.h"
 #include "../include/stdlib.h"
 //#include "../include/string.h"
-#endif
 #include "main.h"
-#if PLAT_NES
+#endif
+
+#if PLAT_GB
+#include "Banks/SetAutoBank.h"
+
+#include "ZGBMain.h"
+#include "Scroll.h"
+#include "SpriteManager.h"
+#include "Fade.h"
+
+#include "StateFromBelow.h"
+// TEMP
+// stdlib.h
+void srand(unsigned int seed) { (void)seed; }
+unsigned int rand() { return 0; }
+
+//unsigned char title_screen[] = { 0 };
+//unsigned char game_area[] = { 0 };
+//unsigned char boot_screen[] = { 0 };
+unsigned char sound_screen[] = { 0 };
+//unsigned char options_screen[] = { 0 };
+//unsigned char ty_screen[] = { 0 };
+
+IMPORT_MAP(title_and_game_area);
+IMPORT_MAP(boot_screen);
+IMPORT_MAP(options_screen);
+IMPORT_MAP(ty_screen);
+
+
+#endif // PLAT_GB
+
 /*
 
 ..::TODO::..
@@ -320,10 +351,10 @@ CPU2:
 // };
 
 
-void main (void)
+void START() 
 {
-#if VS_SYS_ENABLED
 	static unsigned char i;
+#if VS_SYS_ENABLED
 	static unsigned int temp_secs;
 	static unsigned char digit;
 #endif
@@ -363,13 +394,24 @@ void main (void)
 	off_nt = 0;
 	cur_nt = 2;
 
+#if PLAT_GB
+	//vram_unrle(title_and_game_area);
+	InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+#else
 	vram_adr(NTADR_A(0,0));
 	vram_unrle(title_screen);
 	vram_adr(NTADR_C(0,0));
-	vram_unrle(game_area);
+	vram_unrle(game_area);	
+#endif // PLAT_GB
 
+#if PLAT_GB
+	scroll_y_game = 0;
+#else
 	scroll_y_game = 0x1df;
+#endif // PLAT_GB
+	
 	scroll(0, scroll_y_game); // shift the bg down 1 pixel
+
 	//set_scroll_y_game(0xff);
 
 	ppu_on_all(); // turn on screen
@@ -449,1121 +491,1128 @@ void main (void)
 		POKE(0x4016, 0);		
 	}	
 #endif // #if VS_SRAM_ENABLED
+}
 
-	// infinite loop
-	while (1)
-	{
-		ppu_wait_nmi(); // wait till beginning of the frame
+void UPDATE()
+{
+	ppu_wait_nmi(); // wait till beginning of the frame
 
-		//set_music_speed(1);
+	//set_music_speed(1);
 
-		++tick_count;
-		++tick_count_large;
-		++ticks_in_state_large;
+	++tick_count;
+	++tick_count_large;
+	++ticks_in_state_large;
 
-		pad1 = pad_poll(0); // read the first controller
-		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
+	pad1 = pad_poll(0); // read the first controller
+	pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 
-		pad2 = pad_poll(1);
-		pad2_new = get_pad_new(1);
+	pad2 = pad_poll(1);
+	pad2_new = get_pad_new(1);
 
-		// Combine both controllers into one. This is mostly for Vs system, but seems like
-		// a nice enough feature for NES as well. Co-op mode!
-		pad_all = pad1 | pad2;
-		pad_all_new = pad1_new | pad2_new;
+	// Combine both controllers into one. This is mostly for Vs system, but seems like
+	// a nice enough feature for NES as well. Co-op mode!
+	pad_all = pad1 | pad2;
+	pad_all_new = pad1_new | pad2_new;
 
 #if VS_SYS_ENABLED
-		if (attract_gameplay_enabled)
+	if (attract_gameplay_enabled)
+	{
+		if ((state == STATE_OPTIONS || state == STATE_GAME))
 		{
-			if ((state == STATE_OPTIONS || state == STATE_GAME))
+			if (pad_all_new != 0)
 			{
-				if (pad_all_new != 0)
-				{
-					fade_to_black();
-					go_to_state(STATE_MENU);
-					fade_from_black();
-					// clear input so that we don't process it again in the new state.
-					pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
-					goto skip_attract_input;
-				}
+				fade_to_black();
+				go_to_state(STATE_MENU);
+				fade_from_black();
+				// clear input so that we don't process it again in the new state.
 				pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
+				goto skip_attract_input;
+			}
+			pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
 
-				// move faster based on the current difficulty level.
-				if (ticks_in_state_large % (30 - cur_level) == 0)
+			// move faster based on the current difficulty level.
+			if (ticks_in_state_large % (30 - cur_level) == 0)
+			{
+				if (rand() % 2 == 0)
 				{
-					if (rand() % 2 == 0)
-					{
-						pad_all_new |= PAD_LEFT;
-					}
-					else
-					{
-						pad_all_new |= PAD_RIGHT; 
-					}
-					pad_all_new |= (rand() % 4 == 0) ? PAD_A : 0;
+					pad_all_new |= PAD_LEFT;
 				}
+				else
+				{
+					pad_all_new |= PAD_RIGHT; 
+				}
+				pad_all_new |= (rand() % 4 == 0) ? PAD_A : 0;
 			}
 		}
+	}
 
 skip_attract_input:
 #endif // #if VS_SYS_ENABLED
 
 #if VS_SYS_ENABLED
 
-		// Don't start counting credits until the physical counter is cleared
-		// from the previous coin.
-		if (maintenance_counter == 0)
+	// Don't start counting credits until the physical counter is cleared
+	// from the previous coin.
+	if (maintenance_counter == 0)
+	{
+		// Did the user drop at least 1 credit (maybe more) since the last update?
+		// Did the arcade owner press the maintenance button.
+		if (CREDITS_QUEUED > 0 || ((prev_4016 & 1<<2) && !(PEEK(0x4016) & 1<<2)))
 		{
-			// Did the user drop at least 1 credit (maybe more) since the last update?
-			// Did the arcade owner press the maintenance button.
-			if (CREDITS_QUEUED > 0 || ((prev_4016 & 1<<2) && !(PEEK(0x4016) & 1<<2)))
+			if (credits_remaining < 254)
 			{
-				if (credits_remaining < 254)
+				// Reset the timer so that the "insert coin" display updates
+				// this frame.
+				tick_count = 0;
+				++credits_remaining;
+
+				// If attract music is disabled, the title music will not have been started.
+				// If this credit is the amount needed to leave attract mode, trigger the music to
+				// starts.
+				if ((state == STATE_MENU || state == STATE_HIGH_SCORE_TABLE) && (DIP8 != 0 && credits_remaining == game_cost))
 				{
-					// Reset the timer so that the "insert coin" display updates
-					// this frame.
-					tick_count = 0;
-					++credits_remaining;
+					MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+				}
 
-					// If attract music is disabled, the title music will not have been started.
-					// If this credit is the amount needed to leave attract mode, trigger the music to
-					// starts.
-					if ((state == STATE_MENU || state == STATE_HIGH_SCORE_TABLE) && (DIP8 != 0 && credits_remaining == game_cost))
+				// If this was triggered with maintenance button, the dequeue might be 0, and this would
+				// send it to 255, which can never be dequeued again.
+				if (CREDITS_QUEUED > 0)
+				{
+					--CREDITS_QUEUED;
+
+					// We need 6 frames to set the counter. 3 on and 3 off.
+					maintenance_counter = 6;
+
+					// Set the phyical counter bit.
+					// NOTE: Overrides other values. Should this PEEK and OR?
+					// NOTE: This seems to have no impact in emulator. The value at $4020 does not change.
+					POKE(0x4020, 1);
+				}
+
+				// Don't play fx if in the gameplay state, as it could be distracting.
+				if (state != STATE_GAME)
+				{
+					screen_shake_remaining = 5;
+					SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+				}
+				
+				if (attract_gameplay_enabled && (state == STATE_OPTIONS || state == STATE_GAME))
+				{
+					fade_to_black();
+					go_to_state(STATE_MENU);
+					fade_from_black();
+				}
+			}
+		}
+	}
+	else
+	{
+		--maintenance_counter;
+		// Half way throught the physicial counter sequence.
+		// Turn off the bit, but it needs to stay off for 3 more
+		// frames.
+		if (maintenance_counter == 3)
+		{
+			POKE(0x4020, 0);
+		}
+	}
+
+	// Store this for next frame so that we can detect maintenance key released.
+	prev_4016 = PEEK(0x4016);
+#endif //VS_SYS_ENABLED
+
+	clear_vram_buffer(); // do at the beginning of each frame
+
+	// Quick reset when not on the VS system. I don't think it makes sense to have a quick reset there.
+#if !VS_SYS_ENABLED
+	if (state != STATE_MENU)
+	{
+		if (pad_all & PAD_A && pad_all & PAD_B && pad_all & PAD_SELECT && pad_all & PAD_START)
+		{
+			go_to_state(STATE_MENU);
+		}
+	}
+#endif // !VS_SYS_ENABLED
+
+	switch(state)
+	{
+		case STATE_BOOT:
+		{
+			if (tick_count == 120 || pad_all_new & PAD_ALL_BUTTONS)
+			{
+				fade_to_black();
+				go_to_state(STATE_TY);
+				fade_from_black();
+			}
+			break;
+		}
+		case STATE_TY:
+		{
+			// 120, means wait 240 frames from 120 (previous state).
+			if (tick_count == 104 || pad_all_new & PAD_ALL_BUTTONS)
+			{
+				fade_to_black();
+				go_to_state(STATE_MENU);
+				fade_from_black();
+			}
+			break;
+		}
+		case STATE_MENU:
+		{
+			draw_menu_sprites();
+
+			if (tick_count % 128 == 0)
+			{
+#if VS_SYS_ENABLED
+				if (free_play_enabled) // free play
+				{
+					multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 8<<3, 12<<3));
+				}
+				else if (credits_remaining >= game_cost)
+				{
+					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
+				}
+				else
+				{
+					if (game_cost -  credits_remaining == 1)
 					{
-						MUSIC_PLAY_WRAPPER(MUSIC_TITLE);
+						multi_vram_buffer_horz(text_insert_1_coin, sizeof(text_insert_1_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
+					}
+					else
+					{
+						multi_vram_buffer_horz(text_insert_2_coin, sizeof(text_insert_2_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
+					}
+				}
+#else
+				multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif
+			}
+			else if (tick_count % 128 == 96)
+			{
+#if VS_SYS_ENABLED
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
+#else
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+#endif
+			}
+
+#if !VS_SYS_ENABLED
+			if (pad_all_new != 0)
+			{
+				if (pad_all_new & konami_code[cur_konami_index])
+				{
+					++cur_konami_index;
+				}
+				else
+				{
+					cur_konami_index = 0;
+				}
+			}
+#endif //#if !VS_SYS_ENABLED
+#if VS_SYS_ENABLED
+			// 2
+			if (pad2_new & (PAD_SELECT))
+			{
+					fade_to_black();
+					auto_forward_leaderboards = 1;
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
+			}
+			// Any A or B, or 1, 3, 4.
+			else if (((pad1_new & PAD_SELECT) || (pad_all_new & (PAD_START | PAD_A | PAD_B))) && (credits_remaining >= game_cost || free_play_enabled)) // free play
+#else
+			if (pad_all_new & PAD_START)
+#endif //VS_SYS_ENABLED
+			{
+				srand(tick_count_large);
+
+#if !VS_SYS_ENABLED
+				if (cur_konami_index >= KONAMI_CODE_LEN)
+				{
+					SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+					music_stop();
+					go_to_state(STATE_SOUND_TEST);
+				}
+				else
+#endif //#if !VS_SYS_ENABLED
+				{
+					fade_to_black();
+					go_to_state(STATE_OPTIONS);
+					fade_from_black();
+				}
+			}
+
+#if VS_SYS_ENABLED
+			// "attract mode" to avoid burn in. Just go back to the start.
+			// Timed to be when the title track finishes for a 2nd time.
+			if ((credits_remaining < game_cost) && ticks_in_state_large > (15*60*1))
+			{
+					fade_to_black();
+					attract_gameplay_enabled = 1;
+					go_to_state(STATE_OPTIONS);
+					fade_from_black();
+			}
+#endif //#if VS_SYS_ENABLED
+			break;
+		}
+
+		case STATE_OPTIONS:
+		{
+#if VS_SYS_ENABLED
+
+			// do this first, so the sprites get cleared in the case of auto-advancing.
+			if (ticks_in_state_large <= AUTO_FORWARD_DELAY)
+			{
+				oam_clear();
+				temp_secs = ((AUTO_FORWARD_DELAY - ticks_in_state_large)/60);
+				digit = (temp_secs) % 10;
+				oam_spr(27<<3, 2<<3, '0' + digit, 0);
+				temp_secs = temp_secs / 10;
+				digit = (temp_secs) % 10;
+				oam_spr(26<<3, 2<<3, '0' + digit, 0);
+			}
+
+			switch ((option_state))
+			{
+				case 0:
+				{
+					if (pad_all_new & PAD_RIGHT)
+					{
+							if (attack_style < ATTACK_NUM - 1)
+							{
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+								}
+
+								++attack_style;
+								SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+								}
+							}
+					}
+					else if (pad_all_new & PAD_LEFT)
+					{
+							if (attack_style > 0)
+							{
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+								}
+
+								--attack_style;
+								SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+								}
+							}
+					}
+					if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || ticks_in_state_large > AUTO_FORWARD_DELAY)
+					{
+						fade_to_black();
+						oam_clear();
+						ppu_off();
+						vram_adr(NTADR_A(0,0));
+						vram_unrle(vs_settings_difficulty);
+						ppu_on_all();
+						option_state = 1;
+						for (i = 0; i < 4; ++i)
+						{
+							pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+						}
+						for (i = 0; i < 4; ++i)
+						{
+							pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+						}
+						fade_from_black();
+					}
+					break;
+				}
+
+				case 1:
+				{
+					if (vs_code_index < VS_CODE_LEN)
+					{
+						if (pad_all_new != 0)
+						{
+							if (pad_all_new & vs_code[vs_code_index])
+							{
+								++vs_code_index;
+								if (vs_code_index == VS_CODE_LEN)
+								{
+									music_stop();
+									SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI)
+									cur_level_vs_setting = 3;
+									pal_bg(palette_vs_options_skulls);
+									ticks_in_state_large = MAX(ticks_in_state_large, AUTO_FORWARD_DELAY - (5*60));
+								}
+							}
+							else
+							{
+								vs_code_index = 0;
+							}
+						}
+					}
+					else
+					{
+						for (i = 0; i < 8; ++i)
+						{
+							one_vram_buffer(0x01, get_ppu_addr(0, rand() % 256, rand() % 240));
+						}
 					}
 
-					// If this was triggered with maintenance button, the dequeue might be 0, and this would
-					// send it to 255, which can never be dequeued again.
-					if (CREDITS_QUEUED > 0)
+					if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_RIGHT)
 					{
-						--CREDITS_QUEUED;
+							if (cur_level_vs_setting < 2)
+							{
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
+								}
 
-						// We need 6 frames to set the counter. 3 on and 3 off.
-						maintenance_counter = 6;
+								++cur_level_vs_setting;
+								SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 
-						// Set the phyical counter bit.
-						// NOTE: Overrides other values. Should this PEEK and OR?
-						// NOTE: This seems to have no impact in emulator. The value at $4020 does not change.
-						POKE(0x4020, 1);
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+								}
+							}
+					}
+					else if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_LEFT)
+					{
+							if (cur_level_vs_setting > 0)
+							{
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
+								}
+
+								--cur_level_vs_setting;
+								SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+
+								for (i = 0; i < 4; ++i)
+								{
+									pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
+								}
+							}
+					}
+					if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
+					{
+						music_stop();
+						SFX_PLAY_WRAPPER(SOUND_START);
+
+						// 0, 9, 19, 29.
+						// MAX to ensure setting 0 doesn't wrap around.
+						cur_level = MAX(1, (cur_level_vs_setting * 10)) - 1;
+
+						fade_to_black();
+						ppu_off();
+						// prevent vram changes showing up in gameplay.
+						clear_vram_buffer();
+						vram_adr(NTADR_A(0,0));
+						vram_unrle(title_screen);
+						ppu_on_all();
+						go_to_state(STATE_GAME);
+						fade_from_black();
 					}
 
-					// Don't play fx if in the gameplay state, as it could be distracting.
-					if (state != STATE_GAME)
+					break;
+				}
+
+				default:
+					break;
+			}
+#else
+			if (tick_count % 128 == 0)
+			{
+				multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+			}
+			else if (tick_count % 128 == 96)
+			{
+				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+			}
+
+			if (pad_all_new & PAD_START)
+			{
+				music_stop();
+				SFX_PLAY_WRAPPER(SOUND_START);
+
+				fade_to_black();
+				ppu_off();
+#if PLAT_GB
+				//vram_unrle(title_and_game_area);
+				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+#else
+				vram_adr(NTADR_A(0,0));
+				vram_unrle(title_screen);
+#endif // PLAT_GB
+				ppu_on_all();
+				fade_from_black();
+
+				// little cheat to start at very high levels.
+				if (cur_level == 9 && pad_all & PAD_SELECT)
+				{
+					cur_level = 29;
+				}
+				else if (pad_all & PAD_A)
+				{
+					cur_level += 10;
+				}
+				go_to_state(STATE_GAME);
+			}
+
+			if (pad_all_new & PAD_B)
+			{
+				fade_to_black();
+				go_to_state(STATE_MENU);
+				fade_from_black();
+			}
+			else if (pad_all_new & PAD_RIGHT)
+			{
+				switch (cur_option)
+				{
+
+				case 0: // starting level
+
+					if (cur_level < 9 )
 					{
-						screen_shake_remaining = 5;
-						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+						++cur_level;
 					}
-					
-					if (attract_gameplay_enabled && (state == STATE_OPTIONS || state == STATE_GAME))
+					else
+					{
+						cur_level = 0;
+					}
+					break;
+
+				case 1: // Attack style
+
+					//attack_style = (attack_style + 1) % ATTACK_NUM;
+
+					if (attack_style < ATTACK_NUM - 1)
+					{
+						++attack_style;
+						display_highscore();
+					}
+					break;
+
+				case 2: // Music off/on
+
+					//music_on = (music_on + 1) % 2;
+
+					if (music_on == 0)
+					{
+						music_on = 1;
+						MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
+						music_pause(0);
+					}
+
+					// if (music_on == 0)
+					// {
+					// 	music_stop();
+					// }
+					// else
+					// {
+					// 	music_play(MUSIC_TITLE);
+					// }
+					break;
+
+				case 3: // sound fx on/off
+				{
+					if (sfx_on == 0)
+					{
+						sfx_on = 1;
+					}
+					break;
+				}
+
+				case 4: // hard drops
+				{
+					if (hard_drops_on < NUM_HARD_DROP_SETTINGS - 1)
+					{
+						++hard_drops_on;
+					}
+				}
+
+				default:
+					break;
+				}
+
+				SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+				display_options();
+			}
+			else if (pad_all_new & PAD_LEFT)
+			{
+				switch (cur_option)
+				{
+
+				case 0: // starting level
+
+					if (cur_level != 0)
+					{
+						--cur_level;
+					}
+					else
+					{
+						cur_level = 9;
+					}
+					break;
+
+				case 1: // Attack style
+					// if (attack_style == 0)
+					// {
+					// 	attack_style = ATTACK_NUM;
+					// }
+					// attack_style = (attack_style - 1) % ATTACK_NUM;
+
+					if (attack_style != 0)
+					{
+						--attack_style;
+						display_highscore();
+					}
+
+					break;
+
+				case 2: // Music off/on
+					// if (music_on == 0)
+					// {
+					// 	music_on = 2;
+					// }
+					// music_on = (music_on - 1) % 2;
+
+					if (music_on != 0)
+					{
+						music_on = 0;
+						music_pause(1);
+						music_stop();
+					}
+
+					// if (music_on == 0)
+					// {
+					// 	music_stop();
+					// }
+					// else
+					// {
+					// 	music_play(MUSIC_TITLE);
+					// }
+
+					break;
+
+				case 3: // sound fx off/on
+				{
+					if (sfx_on != 0)
+					{
+						sfx_on = 0;
+					}
+					break;
+				}
+				case 4: // hard drops
+				{
+					if (hard_drops_on != 0)
+					{
+						--hard_drops_on;
+					}
+					break;
+				}
+
+				default:
+					break;
+				}
+
+				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+				display_options();
+			}
+			else if (pad_all_new & PAD_DOWN)
+			{
+				cur_option = (cur_option + 1) % NUM_OPTIONS;
+				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+				display_options();
+			}
+			else if (pad_all_new & PAD_UP)
+			{
+				if (cur_option == 0)
+				{
+					cur_option = NUM_OPTIONS;
+				}
+				cur_option = (cur_option - 1) % NUM_OPTIONS;
+				SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+				display_options();
+			}
+#endif
+			break;
+		}
+
+		case STATE_GAME:
+		{
+			if (hit_reaction_remaining > 0)
+			{
+				--hit_reaction_remaining;
+			}
+
+			if (row_to_clear >= 0)
+			{
+
+				--attack_row_status[row_to_clear];
+				if (attack_row_status[row_to_clear] == 0)
+				{
+					row_to_clear = -1;
+				}
+			}
+
+			// delay a frame for perf.
+			if (attack_style != ATTACK_NEVER && attack_queued)
+			{
+//PROFILE_POKE(PROF_R);
+				// TODO: Perf - Very expensive.
+				add_block_at_bottom();
+//PROFILE_POKE(PROF_W);
+				clear_rows_in_data(BOARD_END_Y_PX_BOARD);
+				attack_queued = 0;
+				attack_queue_ticks_remaining = attack_delay;
+			}
+
+			if (kill_row_queued)
+			{
+				add_row_at_bottom();
+				kill_row_queued = 0;
+			}
+
+//PROFILE_POKE(PROF_G);
+
+			if (delay_spawn_remaining != -1)
+			{
+				// This would normally be done in movement(), but since that isn't being
+				// called we want to make sure charge DAS works.
+				if (horz_button_delay > 0)
+				{
+					--horz_button_delay;
+				}
+				--delay_spawn_remaining;
+				if (delay_spawn_remaining == 0)
+				{
+					spawn_new_cluster();
+					delay_lock_remaining = -1;
+				}
+			}
+			else
+			{
+				movement();
+			}
+
+//PROFILE_POKE(PROF_B);
+
+			draw_gameplay_sprites();
+
+//PROFILE_POKE(PROF_W);
+
+			if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
+			{
+				--attack_queue_ticks_remaining;
+
+				if (attack_queue_ticks_remaining == 0)
+				{
+					attack_queued = 1;
+					attack_queue_ticks_remaining = attack_delay;
+				}
+			}
+
+			// STRESS MUSIC!
+
+#if VS_SYS_ENABLED
+			if (!attract_gameplay_enabled)
+#endif // #if VS_SYS_ENABLED				
+			{
+				local_t = 0;
+				for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
+				{
+					if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
+					{
+						// music is stressed even if it doesn't start playing this frame.
+						local_t = 1;
+
+						if (cur_gameplay_music == MUSIC_GAMEPLAY)
+						{
+							cur_gameplay_music = MUSIC_STRESS;
+							MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
+							break;
+						}
+					}
+				}
+
+				if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
+				{
+					cur_gameplay_music = MUSIC_GAMEPLAY;
+					MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
+				}
+			}
+
+// No pause in the arcade, fool!
+#if !VS_SYS_ENABLED
+			if (pad_all_new & PAD_START)
+			{
+				go_to_state(STATE_PAUSE);
+			}
+#endif // !VS_SYS_ENABLED
+
+#if DEBUG_ENABLED
+			// if (pad_all_new & PAD_START)
+			// {
+
+			// 	memcpy(temp_pal, palette_bg, sizeof(palette_bg));
+			// 	pal_id += 2;
+			// 	pal_id = pal_id % 20;
+			// 	temp_pal[1] = pal_changes[pal_id];
+			// 	temp_pal[2] = pal_changes[pal_id + 1];
+			// 	pal_bg(temp_pal);
+			// 	debug_display_number(pal_id >> 1, 0);
+
+			// 	//debug_copy_board_data_to_nt();
+			// 	//go_to_state(STATE_OVER);
+			// }
+#endif
+//PROFILE_POKE(PROF_CLEAR);
+			break;
+		}
+
+#if !VS_SYS_ENABLED		
+		case STATE_PAUSE:
+		{		
+			oam_clear();
+
+			// if ((tick_count % 60) < 30)
+			// {
+			// 	draw_sprites();
+			// }
+			// else
+			// {
+			// 	oam_clear();
+			// }
+
+
+			if (pad_all_new & PAD_START)
+			{
+				go_to_state(STATE_GAME);
+			}
+			break;
+		}
+#endif //#if !VS_SYS_ENABLED		
+		case STATE_OVER:
+		{
+#if VS_SYS_ENABLED
+			if (ticks_in_state_large > (60*10) || (pad_all_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
+			{
+				// always go through the high score table, but sometimes it will be waiting to have you enter
+				// your initials.
+				fade_to_black();
+				go_to_state(STATE_HIGH_SCORE_TABLE);
+				fade_from_black();
+			}
+#else
+			if (pad_all_new & PAD_B)
+			{
+				//go_to_state(STATE_GAME);
+				go_to_state(STATE_MENU);
+			}
+			if (pad_all_new & PAD_A)
+			{
+				//go_to_state(STATE_GAME);
+				go_to_state(STATE_GAME);
+			}
+#endif
+
+			break;
+		}
+
+#if !VS_SYS_ENABLED		
+		case STATE_SOUND_TEST:
+		{
+			// MUSIC
+			//
+
+			if (pad_all_new & PAD_DOWN && test_song < 15)
+			{
+				++test_song;
+				display_song();
+			}
+			else if (pad_all_new & PAD_UP && test_song > 0)
+			{
+				--test_song;
+				display_song();
+			}
+
+			if (pad_all_new & PAD_B)
+			{
+				if (test_song == test_song_active)
+				{
+					test_song_active = 0xff;
+					music_stop();
+				}
+				else
+				{
+					test_song_active = test_song;
+					// ignore settings.
+					music_play(test_song);
+				}
+			}
+
+
+			// SOUND
+			//
+
+			if (pad_all_new & PAD_RIGHT && test_sound < 31)
+			{
+				++test_sound;
+				display_sound();
+			}
+			else if (pad_all_new & PAD_LEFT && test_sound > 0)
+			{
+				--test_sound;
+				display_sound();
+			}
+
+			if (pad_all_new & PAD_A)
+			{
+				// Intentionally not using wrapper so this plays regardless of settings.
+				sfx_play(test_sound, 0);
+			}
+
+			// EXIT
+			//
+
+			if (pad_all_new & PAD_SELECT || pad_all_new & PAD_START)
+			{
+				go_to_state(STATE_MENU);
+			}
+			break;
+		}
+#endif // #if !VS_SYS_ENABLED		
+
+#if VS_SYS_ENABLED
+		case STATE_HIGH_SCORE_TABLE:
+		{
+			oam_clear();
+			if (IS_PRIMARY_CPU && high_score_entry_placement < 3)
+			{
+#if VS_SRAM_ENABLED					
+				// take control of SRAM.
+				POKE(0x4016, 2);
+#endif // #if VS_SRAM_ENABLED
+				// Save a bunch of code space, and make this easier to work with.
+				temp_table = high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement];
+
+				if (temp_table[cur_initial_index] == '-')
+				{
+					temp_table[cur_initial_index] = last_initials[cur_initial_index];
+				}
+
+				// output to in_x, in_y
+				difficulty_to_leaderboard_pos (cur_level_vs_setting);
+
+				in_id = (ticks_in_state_large % 128 < 64) ? 0 : 2;
+
+				oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, temp_table[0],  (cur_initial_index == 0) ? in_id : 2);
+				if (cur_initial_index > 0)
+				{
+					oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, temp_table[1], (cur_initial_index == 1) ? in_id : 2);
+				}
+				if (cur_initial_index > 1)
+				{
+					oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], in_id);
+				}
+
+				if (pad_all_new & PAD_RIGHT)
+				{
+					// Reset the timer on movement, like on a modern OS.
+					ticks_in_state_large = 0;
+
+					// Increment the character. Works because A-Z is in order.
+					++temp_table[cur_initial_index];
+
+					i = temp_table[cur_initial_index];
+
+					// NOTE: multiple ifs takes less space that if else if
+					if (i > 0x5a) // passed Z
+					{
+						temp_table[cur_initial_index] = 0x2e; // .
+					}
+					if (i == 0x2f) // passed .
+					{
+						temp_table[cur_initial_index] = '0';
+					}
+					if (i == 0x3a) // passed 9
+					{
+						temp_table[cur_initial_index] = 'A';
+					}
+				}
+				else if (pad_all_new & PAD_LEFT)
+				{
+					ticks_in_state_large = 0;
+					--temp_table[cur_initial_index];
+
+					i = temp_table[cur_initial_index];
+
+					if (i < 0x2e) // passed .
+					{
+						temp_table[cur_initial_index] = 'Z';
+					}
+					if (i == 0x2f) // passed 0
+					{
+						temp_table[cur_initial_index] = 0x2e;
+					}
+					if (i == 0x40) // passed A
+					{
+						temp_table[cur_initial_index] = '9';
+					}
+				}
+				else if ((pad_all_new & PAD_A) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
+				{
+					ticks_in_state_large = 0;
+
+					// If the users changes away from the default, assume they don't want to continue
+					// using the previous initials.
+					if (temp_table[cur_initial_index] != last_initials[cur_initial_index])
+					{
+						// NOTE: last_initials doesn't get populated for this entry until the end of
+						//		 the name entry sequence.
+						memfill(last_initials, 'A', 3);
+					}
+
+					// Overflow caught below.
+					++cur_initial_index;
+				}
+				else if (pad_all_new & PAD_B)
+				{
+					if (cur_initial_index > 0)
+					{
+						//ticks_in_state_large = 0;
+						temp_table[cur_initial_index] = '-';
+						--cur_initial_index;
+					}
+				}
+
+				// If the user takes to long to enter their initials auto complete it.
+				// NOTE: The tick counter is reset every time they press a button, so it's really just
+				//		 here to handle cases where they walk away in the middle of entering initials.
+				if (cur_initial_index >= 3)
+				{
+					memcpy(last_initials, temp_table, 3);
+					SFX_PLAY_WRAPPER(SOUND_LEVELUP);
+					fade_to_black();
+					auto_forward_leaderboards = 1;
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
+				}
+#if VS_SRAM_ENABLED
+				// Reliquish control.
+				POKE(0x4016, 0);	
+#endif // #if VS_SRAM_ENABLED
+			}
+			else 
+			{
+				// arrow sprites.
+				oam_spr(80 + tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0);
+				oam_spr(160 - tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0|OAM_FLIP_H);
+
+				if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
+				{
+					if (attack_style > 0)
+					{
+						--attack_style;
+					}
+					else
+					{
+						attack_style = ATTACK_NUM - 1;
+					}
+
+					--auto_forward_leaderboards;
+
+					if (auto_forward_leaderboards == 0)
 					{
 						fade_to_black();
 						go_to_state(STATE_MENU);
 						fade_from_black();
 					}
-				}
-			}
-		}
-		else
-		{
-			--maintenance_counter;
-			// Half way throught the physicial counter sequence.
-			// Turn off the bit, but it needs to stay off for 3 more
-			// frames.
-			if (maintenance_counter == 3)
-			{
-				POKE(0x4020, 0);
-			}
-		}
-
-		// Store this for next frame so that we can detect maintenance key released.
-		prev_4016 = PEEK(0x4016);
-#endif //VS_SYS_ENABLED
-
-		clear_vram_buffer(); // do at the beginning of each frame
-
-		// Quick reset when not on the VS system. I don't think it makes sense to have a quick reset there.
-#if !VS_SYS_ENABLED
-		if (state != STATE_MENU)
-		{
-			if (pad_all & PAD_A && pad_all & PAD_B && pad_all & PAD_SELECT && pad_all & PAD_START)
-			{
-				go_to_state(STATE_MENU);
-			}
-		}
-#endif // !VS_SYS_ENABLED
-
-		switch(state)
-		{
-			case STATE_BOOT:
-			{
-				if (tick_count == 120 || pad_all_new & PAD_ALL_BUTTONS)
-				{
-					fade_to_black();
-					go_to_state(STATE_TY);
-					fade_from_black();
-				}
-				break;
-			}
-			case STATE_TY:
-			{
-				// 120, means wait 240 frames from 120 (previous state).
-				if (tick_count == 104 || pad_all_new & PAD_ALL_BUTTONS)
-				{
-					fade_to_black();
-					go_to_state(STATE_MENU);
-					fade_from_black();
-				}
-				break;
-			}
-			case STATE_MENU:
-			{
-				draw_menu_sprites();
-
-				if (tick_count % 128 == 0)
-				{
-#if VS_SYS_ENABLED
-					if (free_play_enabled) // free play
-					{
-						multi_vram_buffer_horz(text_free_play, sizeof(text_free_play)-1, get_ppu_addr(0, 8<<3, 12<<3));
-					}
-					else if (credits_remaining >= game_cost)
-					{
-						multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
-					}
 					else
 					{
-						if (game_cost -  credits_remaining == 1)
-						{
-							multi_vram_buffer_horz(text_insert_1_coin, sizeof(text_insert_1_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
-						}
-						else
-						{
-							multi_vram_buffer_horz(text_insert_2_coin, sizeof(text_insert_2_coin)-1, get_ppu_addr(0, 8<<3, 12<<3));
-						}
-					}
-#else
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif
-				}
-				else if (tick_count % 128 == 96)
-				{
-#if VS_SYS_ENABLED
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
-#else
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif
-				}
-
-#if !VS_SYS_ENABLED
-				if (pad_all_new != 0)
-				{
-					if (pad_all_new & konami_code[cur_konami_index])
-					{
-						++cur_konami_index;
-					}
-					else
-					{
-						cur_konami_index = 0;
-					}
-				}
-#endif //#if !VS_SYS_ENABLED
-#if VS_SYS_ENABLED
-				// 2
-				if (pad2_new & (PAD_SELECT))
-				{
+						ticks_in_state_large = 0;
 						fade_to_black();
-						auto_forward_leaderboards = 1;
 						go_to_state(STATE_HIGH_SCORE_TABLE);
 						fade_from_black();
+					}
 				}
-				// Any A or B, or 1, 3, 4.
-				else if (((pad1_new & PAD_SELECT) || (pad_all_new & (PAD_START | PAD_A | PAD_B))) && (credits_remaining >= game_cost || free_play_enabled)) // free play
-#else
-				if (pad_all_new & PAD_START)
-#endif //VS_SYS_ENABLED
+				else if ( pad_all_new & PAD_LEFT)
 				{
-					srand(tick_count_large);
-
-#if !VS_SYS_ENABLED
-					if (cur_konami_index >= KONAMI_CODE_LEN)
+					if (attack_style > 0)
 					{
-						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
-						music_stop();
-						go_to_state(STATE_SOUND_TEST);
+						--attack_style;
 					}
 					else
-#endif //#if !VS_SYS_ENABLED
 					{
-						fade_to_black();
-						go_to_state(STATE_OPTIONS);
-						fade_from_black();
-					}
-				}
-
-#if VS_SYS_ENABLED
-				// "attract mode" to avoid burn in. Just go back to the start.
-				// Timed to be when the title track finishes for a 2nd time.
-				if ((credits_remaining < game_cost) && ticks_in_state_large > (15*60*1))
-				{
-						fade_to_black();
-						attract_gameplay_enabled = 1;
-						go_to_state(STATE_OPTIONS);
-						fade_from_black();
-				}
-#endif //#if VS_SYS_ENABLED
-				break;
-			}
-
-			case STATE_OPTIONS:
-			{
-#if VS_SYS_ENABLED
-
-				// do this first, so the sprites get cleared in the case of auto-advancing.
-				if (ticks_in_state_large <= AUTO_FORWARD_DELAY)
-				{
-					oam_clear();
-					temp_secs = ((AUTO_FORWARD_DELAY - ticks_in_state_large)/60);
-					digit = (temp_secs) % 10;
-					oam_spr(27<<3, 2<<3, '0' + digit, 0);
-					temp_secs = temp_secs / 10;
-					digit = (temp_secs) % 10;
-					oam_spr(26<<3, 2<<3, '0' + digit, 0);
-				}
-
-				switch ((option_state))
-				{
-					case 0:
-					{
-						if (pad_all_new & PAD_RIGHT)
-						{
-								if (attack_style < ATTACK_NUM - 1)
-								{
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
-									}
-
-									++attack_style;
-									SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
-									}
-								}
-						}
-						else if (pad_all_new & PAD_LEFT)
-						{
-								if (attack_style > 0)
-								{
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
-									}
-
-									--attack_style;
-									SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
-
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
-									}
-								}
-						}
-						if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || ticks_in_state_large > AUTO_FORWARD_DELAY)
-						{
-							fade_to_black();
-							oam_clear();
-							ppu_off();
-							vram_adr(NTADR_A(0,0));
-							vram_unrle(vs_settings_difficulty);
-							ppu_on_all();
-							option_state = 1;
-							for (i = 0; i < 4; ++i)
-							{
-								pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
-							}
-							for (i = 0; i < 4; ++i)
-							{
-								pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
-							}
-							fade_from_black();
-						}
-						break;
+						attack_style = ATTACK_NUM - 1;
 					}
 
-					case 1:
-					{
-						if (vs_code_index < VS_CODE_LEN)
-						{
-							if (pad_all_new != 0)
-							{
-								if (pad_all_new & vs_code[vs_code_index])
-								{
-									++vs_code_index;
-									if (vs_code_index == VS_CODE_LEN)
-									{
-										music_stop();
-										SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI)
-										cur_level_vs_setting = 3;
-										pal_bg(palette_vs_options_skulls);
-										ticks_in_state_large = MAX(ticks_in_state_large, AUTO_FORWARD_DELAY - (5*60));
-									}
-								}
-								else
-								{
-									vs_code_index = 0;
-								}
-							}
-						}
-						else
-						{
-							for (i = 0; i < 8; ++i)
-							{
-								one_vram_buffer(0x01, get_ppu_addr(0, rand() % 256, rand() % 240));
-							}
-						}
-
-						if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_RIGHT)
-						{
-								if (cur_level_vs_setting < 2)
-								{
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
-									}
-
-									++cur_level_vs_setting;
-									SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
-									}
-								}
-						}
-						else if (vs_code_index < VS_CODE_LEN && pad_all_new & PAD_LEFT)
-						{
-								if (cur_level_vs_setting > 0)
-								{
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_inactive[i]);
-									}
-
-									--cur_level_vs_setting;
-									SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
-
-									for (i = 0; i < 4; ++i)
-									{
-										pal_col(i + (4 * cur_level_vs_setting), palette_vs_options_active[i]);
-									}
-								}
-						}
-						if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
-						{
-							music_stop();
-							SFX_PLAY_WRAPPER(SOUND_START);
-
-							// 0, 9, 19, 29.
-							// MAX to ensure setting 0 doesn't wrap around.
-							cur_level = MAX(1, (cur_level_vs_setting * 10)) - 1;
-
-							fade_to_black();
-							ppu_off();
-							// prevent vram changes showing up in gameplay.
-							clear_vram_buffer();
-							vram_adr(NTADR_A(0,0));
-							vram_unrle(title_screen);
-							ppu_on_all();
-							go_to_state(STATE_GAME);
-							fade_from_black();
-						}
-
-						break;
-					}
-
-					default:
-						break;
-				}
-#else
-				if (tick_count % 128 == 0)
-				{
-					multi_vram_buffer_horz(text_push_start, sizeof(text_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-				}
-				else if (tick_count % 128 == 96)
-				{
-					multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-				}
-
-				if (pad_all_new & PAD_START)
-				{
-					music_stop();
-					SFX_PLAY_WRAPPER(SOUND_START);
-
-					fade_to_black();
-					ppu_off();
-					vram_adr(NTADR_A(0,0));
-					vram_unrle(title_screen);
-					ppu_on_all();
-					fade_from_black();
-
-					// little cheat to start at very high levels.
-					if (cur_level == 9 && pad_all & PAD_SELECT)
-					{
-						cur_level = 29;
-					}
-					else if (pad_all & PAD_A)
-					{
-						cur_level += 10;
-					}
-					go_to_state(STATE_GAME);
-				}
-
-				if (pad_all_new & PAD_B)
-				{
-					fade_to_black();
-					go_to_state(STATE_MENU);
-					fade_from_black();
-				}
-				else if (pad_all_new & PAD_RIGHT)
-				{
-					switch (cur_option)
-					{
-
-					case 0: // starting level
-
-						if (cur_level < 9 )
-						{
-							++cur_level;
-						}
-						else
-						{
-							cur_level = 0;
-						}
-						break;
-
-					case 1: // Attack style
-
-						//attack_style = (attack_style + 1) % ATTACK_NUM;
-
-						if (attack_style < ATTACK_NUM - 1)
-						{
-							++attack_style;
-							display_highscore();
-						}
-						break;
-
-					case 2: // Music off/on
-
-						//music_on = (music_on + 1) % 2;
-
-						if (music_on == 0)
-						{
-							music_on = 1;
-							MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
-							music_pause(0);
-						}
-
-						// if (music_on == 0)
-						// {
-						// 	music_stop();
-						// }
-						// else
-						// {
-						// 	music_play(MUSIC_TITLE);
-						// }
-						break;
-
-					case 3: // sound fx on/off
-					{
-						if (sfx_on == 0)
-						{
-							sfx_on = 1;
-						}
-						break;
-					}
-
-					case 4: // hard drops
-					{
-						if (hard_drops_on < NUM_HARD_DROP_SETTINGS - 1)
-						{
-							++hard_drops_on;
-						}
-					}
-
-					default:
-						break;
-					}
-
-					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-					display_options();
-				}
-				else if (pad_all_new & PAD_LEFT)
-				{
-					switch (cur_option)
-					{
-
-					case 0: // starting level
-
-						if (cur_level != 0)
-						{
-							--cur_level;
-						}
-						else
-						{
-							cur_level = 9;
-						}
-						break;
-
-					case 1: // Attack style
-						// if (attack_style == 0)
-						// {
-						// 	attack_style = ATTACK_NUM;
-						// }
-						// attack_style = (attack_style - 1) % ATTACK_NUM;
-
-						if (attack_style != 0)
-						{
-							--attack_style;
-							display_highscore();
-						}
-
-						break;
-
-					case 2: // Music off/on
-						// if (music_on == 0)
-						// {
-						// 	music_on = 2;
-						// }
-						// music_on = (music_on - 1) % 2;
-
-						if (music_on != 0)
-						{
-							music_on = 0;
-							music_pause(1);
-							music_stop();
-						}
-
-						// if (music_on == 0)
-						// {
-						// 	music_stop();
-						// }
-						// else
-						// {
-						// 	music_play(MUSIC_TITLE);
-						// }
-
-						break;
-
-					case 3: // sound fx off/on
-					{
-						if (sfx_on != 0)
-						{
-							sfx_on = 0;
-						}
-						break;
-					}
-					case 4: // hard drops
-					{
-						if (hard_drops_on != 0)
-						{
-							--hard_drops_on;
-						}
-						break;
-					}
-
-					default:
-						break;
-					}
-
-					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
-					display_options();
-				}
-				else if (pad_all_new & PAD_DOWN)
-				{
-					cur_option = (cur_option + 1) % NUM_OPTIONS;
-					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
-					display_options();
-				}
-				else if (pad_all_new & PAD_UP)
-				{
-					if (cur_option == 0)
-					{
-						cur_option = NUM_OPTIONS;
-					}
-					cur_option = (cur_option - 1) % NUM_OPTIONS;
-					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-					display_options();
-				}
-#endif
-				break;
-			}
-
-			case STATE_GAME:
-			{
-				if (hit_reaction_remaining > 0)
-				{
-					--hit_reaction_remaining;
-				}
-
-				if (row_to_clear >= 0)
-				{
-
-					--attack_row_status[row_to_clear];
-					if (attack_row_status[row_to_clear] == 0)
-					{
-						row_to_clear = -1;
-					}
-				}
-
-				// delay a frame for perf.
-				if (attack_style != ATTACK_NEVER && attack_queued)
-				{
-//PROFILE_POKE(PROF_R);
-					// TODO: Perf - Very expensive.
-					add_block_at_bottom();
-//PROFILE_POKE(PROF_W);
-					clear_rows_in_data(BOARD_END_Y_PX_BOARD);
-					attack_queued = 0;
-					attack_queue_ticks_remaining = attack_delay;
-				}
-
-				if (kill_row_queued)
-				{
-					add_row_at_bottom();
-					kill_row_queued = 0;
-				}
-
-//PROFILE_POKE(PROF_G);
-
-				if (delay_spawn_remaining != -1)
-				{
-					// This would normally be done in movement(), but since that isn't being
-					// called we want to make sure charge DAS works.
-					if (horz_button_delay > 0)
-					{
-						--horz_button_delay;
-					}
-					--delay_spawn_remaining;
-					if (delay_spawn_remaining == 0)
-					{
-						spawn_new_cluster();
-						delay_lock_remaining = -1;
-					}
-				}
-				else
-				{
-					movement();
-				}
-
-//PROFILE_POKE(PROF_B);
-
-				draw_gameplay_sprites();
-
-//PROFILE_POKE(PROF_W);
-
-				if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
-				{
-					--attack_queue_ticks_remaining;
-
-					if (attack_queue_ticks_remaining == 0)
-					{
-						attack_queued = 1;
-						attack_queue_ticks_remaining = attack_delay;
-					}
-				}
-
-				// STRESS MUSIC!
-
-#if VS_SYS_ENABLED
-				if (!attract_gameplay_enabled)
-#endif // #if VS_SYS_ENABLED				
-				{
-					local_t = 0;
-					for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
-					{
-						if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
-						{
-							// music is stressed even if it doesn't start playing this frame.
-							local_t = 1;
-
-							if (cur_gameplay_music == MUSIC_GAMEPLAY)
-							{
-								cur_gameplay_music = MUSIC_STRESS;
-								MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
-								break;
-							}
-						}
-					}
-
-					if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
-					{
-						cur_gameplay_music = MUSIC_GAMEPLAY;
-						MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
-					}
-				}
-
-// No pause in the arcade, fool!
-#if !VS_SYS_ENABLED
-				if (pad_all_new & PAD_START)
-				{
-					go_to_state(STATE_PAUSE);
-				}
-#endif // !VS_SYS_ENABLED
-
-#if DEBUG_ENABLED
-				// if (pad_all_new & PAD_START)
-				// {
-
-				// 	memcpy(temp_pal, palette_bg, sizeof(palette_bg));
-				// 	pal_id += 2;
-				// 	pal_id = pal_id % 20;
-				// 	temp_pal[1] = pal_changes[pal_id];
-				// 	temp_pal[2] = pal_changes[pal_id + 1];
-				// 	pal_bg(temp_pal);
-				// 	debug_display_number(pal_id >> 1, 0);
-
-				// 	//debug_copy_board_data_to_nt();
-				// 	//go_to_state(STATE_OVER);
-				// }
-#endif
-//PROFILE_POKE(PROF_CLEAR);
-				break;
-			}
-
-#if !VS_SYS_ENABLED		
-			case STATE_PAUSE:
-			{		
-				oam_clear();
-
-				// if ((tick_count % 60) < 30)
-				// {
-				// 	draw_sprites();
-				// }
-				// else
-				// {
-				// 	oam_clear();
-				// }
-
-
-				if (pad_all_new & PAD_START)
-				{
-					go_to_state(STATE_GAME);
-				}
-				break;
-			}
-#endif //#if !VS_SYS_ENABLED		
-			case STATE_OVER:
-			{
-#if VS_SYS_ENABLED
-				if (ticks_in_state_large > (60*10) || (pad_all_new & (PAD_B | PAD_A | PAD_SELECT | PAD_START)))
-				{
-					// always go through the high score table, but sometimes it will be waiting to have you enter
-					// your initials.
+					auto_forward_leaderboards = 1;
 					fade_to_black();
 					go_to_state(STATE_HIGH_SCORE_TABLE);
 					fade_from_black();
 				}
-#else
-				if (pad_all_new & PAD_B)
+				else if ( pad_all_new & PAD_RIGHT)
 				{
-					//go_to_state(STATE_GAME);
-					go_to_state(STATE_MENU);
-				}
-				if (pad_all_new & PAD_A)
-				{
-					//go_to_state(STATE_GAME);
-					go_to_state(STATE_GAME);
-				}
-#endif
-
-				break;
-			}
-
-#if !VS_SYS_ENABLED		
-			case STATE_SOUND_TEST:
-			{
-				// MUSIC
-				//
-
-				if (pad_all_new & PAD_DOWN && test_song < 15)
-				{
-					++test_song;
-					display_song();
-				}
-				else if (pad_all_new & PAD_UP && test_song > 0)
-				{
-					--test_song;
-					display_song();
-				}
-
-				if (pad_all_new & PAD_B)
-				{
-					if (test_song == test_song_active)
+					if (attack_style < ATTACK_NUM - 1)
 					{
-						test_song_active = 0xff;
-						music_stop();
+						++attack_style;
 					}
 					else
 					{
-						test_song_active = test_song;
-						// ignore settings.
-						music_play(test_song);
+						attack_style = 0;
 					}
+
+					auto_forward_leaderboards = 1;
+					fade_to_black();
+					go_to_state(STATE_HIGH_SCORE_TABLE);
+					fade_from_black();
 				}
-
-
-				// SOUND
-				//
-
-				if (pad_all_new & PAD_RIGHT && test_sound < 31)
+				// else if (pad_all_new & PAD_A)
+				// {
+				// 	// stop auto-forwarding.
+				// 	auto_forward_leaderboards = 0;
+				// }
+				else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
 				{
-					++test_sound;
-					display_sound();
-				}
-				else if (pad_all_new & PAD_LEFT && test_sound > 0)
-				{
-					--test_sound;
-					display_sound();
-				}
-
-				if (pad_all_new & PAD_A)
-				{
-					// Intentionally not using wrapper so this plays regardless of settings.
-					sfx_play(test_sound, 0);
-				}
-
-				// EXIT
-				//
-
-				if (pad_all_new & PAD_SELECT || pad_all_new & PAD_START)
-				{
+					fade_to_black();
 					go_to_state(STATE_MENU);
+					fade_from_black();
 				}
-				break;
 			}
-#endif // #if !VS_SYS_ENABLED		
-
-#if VS_SYS_ENABLED
-			case STATE_HIGH_SCORE_TABLE:
-			{
-				oam_clear();
-				if (IS_PRIMARY_CPU && high_score_entry_placement < 3)
-				{
-#if VS_SRAM_ENABLED					
-					// take control of SRAM.
-					POKE(0x4016, 2);
-#endif // #if VS_SRAM_ENABLED
-					// Save a bunch of code space, and make this easier to work with.
-					temp_table = high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement];
-
-					if (temp_table[cur_initial_index] == '-')
-					{
-						temp_table[cur_initial_index] = last_initials[cur_initial_index];
-					}
-
-					// output to in_x, in_y
-					difficulty_to_leaderboard_pos (cur_level_vs_setting);
-
-					in_id = (ticks_in_state_large % 128 < 64) ? 0 : 2;
-
-					oam_spr((in_x + 0) << 3, (in_y + high_score_entry_placement) << 3, temp_table[0],  (cur_initial_index == 0) ? in_id : 2);
-					if (cur_initial_index > 0)
-					{
-						oam_spr((in_x + 1) << 3, (in_y + high_score_entry_placement) << 3, temp_table[1], (cur_initial_index == 1) ? in_id : 2);
-					}
-					if (cur_initial_index > 1)
-					{
-						oam_spr((in_x + 2) << 3, (in_y + high_score_entry_placement) << 3, temp_table[2], in_id);
-					}
-
-					if (pad_all_new & PAD_RIGHT)
-					{
-						// Reset the timer on movement, like on a modern OS.
-						ticks_in_state_large = 0;
-
-						// Increment the character. Works because A-Z is in order.
-						++temp_table[cur_initial_index];
-
-						i = temp_table[cur_initial_index];
-
-						// NOTE: multiple ifs takes less space that if else if
-						if (i > 0x5a) // passed Z
-						{
-							temp_table[cur_initial_index] = 0x2e; // .
-						}
-						if (i == 0x2f) // passed .
-						{
-							temp_table[cur_initial_index] = '0';
-						}
-						if (i == 0x3a) // passed 9
-						{
-							temp_table[cur_initial_index] = 'A';
-						}
-					}
-					else if (pad_all_new & PAD_LEFT)
-					{
-						ticks_in_state_large = 0;
-						--temp_table[cur_initial_index];
-
-						i = temp_table[cur_initial_index];
-
-						if (i < 0x2e) // passed .
-						{
-							temp_table[cur_initial_index] = 'Z';
-						}
-						if (i == 0x2f) // passed 0
-						{
-							temp_table[cur_initial_index] = 0x2e;
-						}
-						if (i == 0x40) // passed A
-						{
-							temp_table[cur_initial_index] = '9';
-						}
-					}
-					else if ((pad_all_new & PAD_A) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
-					{
-						ticks_in_state_large = 0;
-
-						// If the users changes away from the default, assume they don't want to continue
-						// using the previous initials.
-						if (temp_table[cur_initial_index] != last_initials[cur_initial_index])
-						{
-							// NOTE: last_initials doesn't get populated for this entry until the end of
-							//		 the name entry sequence.
-							memfill(last_initials, 'A', 3);
-						}
-
-						// Overflow caught below.
-						++cur_initial_index;
-					}
-					else if (pad_all_new & PAD_B)
-					{
-						if (cur_initial_index > 0)
-						{
-							//ticks_in_state_large = 0;
-							temp_table[cur_initial_index] = '-';
-							--cur_initial_index;
-						}
-					}
-
-					// If the user takes to long to enter their initials auto complete it.
-					// NOTE: The tick counter is reset every time they press a button, so it's really just
-					//		 here to handle cases where they walk away in the middle of entering initials.
-					if (cur_initial_index >= 3)
-					{
-						memcpy(last_initials, temp_table, 3);
-						SFX_PLAY_WRAPPER(SOUND_LEVELUP);
-						fade_to_black();
-						auto_forward_leaderboards = 1;
-						go_to_state(STATE_HIGH_SCORE_TABLE);
-						fade_from_black();
-					}
-#if VS_SRAM_ENABLED
-					// Reliquish control.
-					POKE(0x4016, 0);	
-#endif // #if VS_SRAM_ENABLED
-				}
-				else 
-				{
-					// arrow sprites.
-					oam_spr(80 + tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0);
-					oam_spr(160 - tenatcle_offsets[(tick_count/16) % 4], 24, 14, 0|OAM_FLIP_H);
-
-					if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
-					{
-						if (attack_style > 0)
-						{
-							--attack_style;
-						}
-						else
-						{
-							attack_style = ATTACK_NUM - 1;
-						}
-
-						--auto_forward_leaderboards;
-
-						if (auto_forward_leaderboards == 0)
-						{
-							fade_to_black();
-							go_to_state(STATE_MENU);
-							fade_from_black();
-						}
-						else
-						{
-							ticks_in_state_large = 0;
-							fade_to_black();
-							go_to_state(STATE_HIGH_SCORE_TABLE);
-							fade_from_black();
-						}
-					}
-					else if ( pad_all_new & PAD_LEFT)
-					{
-						if (attack_style > 0)
-						{
-							--attack_style;
-						}
-						else
-						{
-							attack_style = ATTACK_NUM - 1;
-						}
-
-						auto_forward_leaderboards = 1;
-						fade_to_black();
-						go_to_state(STATE_HIGH_SCORE_TABLE);
-						fade_from_black();
-					}
-					else if ( pad_all_new & PAD_RIGHT)
-					{
-						if (attack_style < ATTACK_NUM - 1)
-						{
-							++attack_style;
-						}
-						else
-						{
-							attack_style = 0;
-						}
-
-						auto_forward_leaderboards = 1;
-						fade_to_black();
-						go_to_state(STATE_HIGH_SCORE_TABLE);
-						fade_from_black();
-					}
-					// else if (pad_all_new & PAD_A)
-					// {
-					// 	// stop auto-forwarding.
-					// 	auto_forward_leaderboards = 0;
-					// }
-					else if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START))
-					{
-						fade_to_black();
-						go_to_state(STATE_MENU);
-						fade_from_black();
-					}
-				}
-				break;
-			}
-#endif // #if VS_SYS_ENABLED
+			break;
 		}
+#endif // #if VS_SYS_ENABLED
+	}
 
 //#if VS_SYS_ENABLED
-				// Yeah, this game has screen shake for inserting credits?? So what!?
-				if (screen_shake_remaining > 0)
-				{
-					--screen_shake_remaining;
-					scroll((rand() % 2), scroll_y_game - (rand() % 2));
-				}
-				else
-				{
-					scroll(0, scroll_y_game); // shift the bg down 1 pixel
-				}
+			// Yeah, this game has screen shake for inserting credits?? So what!?
+			if (screen_shake_remaining > 0)
+			{
+				--screen_shake_remaining;
+				scroll((rand() % 2), scroll_y_game - (rand() % 2));
+			}
+			else
+			{
+				//++scroll_y_game;
+				scroll(0, scroll_y_game); // shift the bg down 1 pixel
+			}
 
-				// set_scroll_x(scroll_y_game);
-				// ++scroll_y_game;
+			// set_scroll_x(scroll_y_game);
+			// ++scroll_y_game;
 //#endif	// VS_SYS_ENABLED
-	}
 }
+
+#if PLAT_NES
 
 void draw_menu_sprites(void)
 {
@@ -2398,6 +2447,7 @@ void rotate_cur_cluster(char dir)
 	SFX_PLAY_WRAPPER(SOUND_ROTATE);
 }
 
+#endif // PLAT_NES
 void go_to_state(unsigned char new_state)
 {
 	static unsigned char i;
@@ -2520,8 +2570,13 @@ void go_to_state(unsigned char new_state)
 		{
 			pal_bg(palette_bg_options);
 			ppu_off();
+#if PLAT_GB
+			InitScroll(BANK(boot_screen), &boot_screen, 0, 0);
+			scroll(0,0);
+#else
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(boot_screen);
+#endif // PLAT_GB
 			ppu_on_all();
 
 			break;
@@ -2530,8 +2585,12 @@ void go_to_state(unsigned char new_state)
 		{
 			pal_bg(palette_bg_options);
 			ppu_off();
+#if PLAT_GB
+			InitScroll(BANK(ty_screen), &ty_screen, 0, 0);
+#else
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(ty_screen);
+#endif // PLAT_GB			
 			ppu_on_all();
 
 			break;
@@ -2540,7 +2599,13 @@ void go_to_state(unsigned char new_state)
 		{
 			pal_bg(palette_bg);
 			pal_spr(palette_sp);
+
+#if PLAT_GB
+			scroll_y_game = 0;
+#else
 			scroll_y_game = 0x1df;
+#endif // PLAT_GB
+
 			time_of_day = 0;
 			cur_konami_index = 0;
 #if VS_SYS_ENABLED
@@ -2553,8 +2618,13 @@ void go_to_state(unsigned char new_state)
 				draw_menu_sprites();
 
 				ppu_off();
+#if PLAT_GB
+				//vram_unrle(title_and_game_area);
+				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+#else
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
+#endif // PLAT_GB				
 				ppu_on_all();
 #if VS_SYS_ENABLED
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
@@ -2573,8 +2643,12 @@ void go_to_state(unsigned char new_state)
 
 				draw_menu_sprites();
 
+#if PLAT_GB
+				scroll_y_game = 0;
+#else
 				scroll_y_game = 0x1df;
-				scroll(0, 0x1df); // shift the bg down 1 pixel
+#endif // PLAT_GB
+				scroll(0, scroll_y_game); // shift the bg down 1 pixel
 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED
@@ -2632,7 +2706,11 @@ void go_to_state(unsigned char new_state)
 			ppu_on_all();
 			option_state = 0;
 #else
-			vram_unrle(options_screen);
+#if PLAT_GB
+			InitScroll(BANK(options_screen), &options_screen, 0, 0);
+#else
+			vram_unrle(options_screen);			
+#endif // PLAT_GB			
 			// vram_adr(NTADR_A(16,19));
 			// vram_write(attack_style_strings[attack_style], ATTACK_STRING_LEN);
 
@@ -2843,7 +2921,11 @@ void go_to_state(unsigned char new_state)
 
 			cur_initial_index = 0;
 
+#if PLAT_GB
+			scroll_y_game = 0;
+#else
 			scroll_y_game = 0x1df;
+#endif // PLAT_GB
 			// force it so we see it when the fade in completes.
 			scroll(0, scroll_y_game);
 
@@ -2935,6 +3017,7 @@ void go_to_state(unsigned char new_state)
 	}
 }
 
+#if PLAT_NES
 void inc_lines_cleared()
 {
 	static unsigned char lines_total;
@@ -3597,30 +3680,35 @@ void display_options()
 }
 #endif //#if !VS_SYS_ENABLED		
 
+#endif // PLAT_NES
 void fade_to_black()
 {
-	pal_bright(3);
-	delay(2);
-	pal_bright(2);
-	delay(2);
-	pal_bright(1);
-	delay(2);
-	pal_bright(0);
-	//delay(2);
+	// pal_bright(3);
+	// delay(2);
+	// pal_bright(2);
+	// delay(2);
+	// pal_bright(1);
+	// delay(2);
+	// pal_bright(0);
+	// //delay(2);
+
+	FadeIn();
 }
 
 void fade_from_black()
 {
-	pal_bright(1);
-	delay(2);
-	pal_bright(2);
-	delay(2);
-	pal_bright(3);
-	delay(2);
-	pal_bright(4);
-	//delay(2);
+	// pal_bright(1);
+	// delay(2);
+	// pal_bright(2);
+	// delay(2);
+	// pal_bright(3);
+	// delay(2);
+	// pal_bright(4);
+	// //delay(2);
+	FadeOut();
 }
 
+#if PLAT_NES
 void difficulty_to_leaderboard_pos(unsigned char dif)
 {
 	switch (dif)
