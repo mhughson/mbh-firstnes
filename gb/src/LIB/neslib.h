@@ -4,6 +4,7 @@
 
 #include "Scroll.h"
 #include "Keys.h"
+#include "String.h"
 
 // //NES hardware-dependent functions by Shiru (shiru@mail.ru)
 // //Feel free to do anything you want with this code, consider it Public Domain
@@ -289,7 +290,7 @@ void vram_unrle(const unsigned char *data) { (void)data; }
 
 // //like memset, but does not return anything
 
-void memfill(void *dst,unsigned char value,unsigned int len) { (void)dst; (void)value; (void)len; } // todo: call string.h memset
+void memfill(void *dst,unsigned char value,unsigned int len) { memset(dst, value, len); } // todo: call string.h memset
 
 // //delay for N frames
 

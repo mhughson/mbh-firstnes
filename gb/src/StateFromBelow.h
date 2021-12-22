@@ -941,9 +941,9 @@ const unsigned char metasprite_tentacle_title[]={
 
 // PROTOTYPES
 
-void draw_menu_sprites(void);
-void draw_gameplay_sprites(void) { } // PLAT_GB
-void movement(void) { } // PLAT_GB
+void draw_menu_sprites(void) { } // PLAT_GB
+void draw_gameplay_sprites(void);
+void movement(void);
 
 // Set a block in x, y (board space)
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/);
@@ -952,7 +952,7 @@ void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned c
 void clear_block(unsigned char x, unsigned char y);
 
 // Drops the current cluster at its current location.
-void put_cur_cluster();
+void put_cur_cluster() { } // PLAT_GB
 
 // x, y in map space.
 unsigned char get_block(unsigned char x, unsigned char y);
@@ -964,7 +964,7 @@ unsigned char is_block_free(unsigned char x, unsigned char y);
 unsigned char is_cluster_colliding();
 
 // creates a new cluster at the top of the play area.
-void spawn_new_cluster() { } // PLAT_GB
+void spawn_new_cluster();
 
 // Rotate the current cluster by 90degs.
 void rotate_cur_cluster(char dir);

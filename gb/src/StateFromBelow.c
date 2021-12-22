@@ -31,6 +31,7 @@
 #include "Scroll.h"
 #include "SpriteManager.h"
 #include "Fade.h"
+#include "String.h"
 
 #include "StateFromBelow.h"
 // TEMP
@@ -361,6 +362,8 @@ Sprite* FlagMidRight;
 Sprite* FlagBottomLeft;
 Sprite* FlagBottomRight;
 
+Sprite* BlockSprites[4];
+
 void START() 
 {
 	static unsigned char i;
@@ -515,6 +518,13 @@ void START()
 	FlagBottomRight->lim_x = 0xfff; // don't despawn
 	FlagBottomRight->lim_y = 0xfff; // don't despawn
 	SetSpriteAnim(FlagBottomRight, flag_anim, 15);
+
+	for (i=0; i < 4; ++i)
+	{
+		BlockSprites[i] = SpriteManagerAdd(SpriteBlock, 0, 0);
+		BlockSprites[i]->lim_x = 0xfff; // don't despawn
+		BlockSprites[i]->lim_y = 0xfff; // don't despawn
+	}
 }
 
 void UPDATE()
@@ -1653,6 +1663,8 @@ skip_attract_input:
 //#endif	// VS_SYS_ENABLED
 }
 
+
+#if PLAT_NES
 void draw_menu_sprites(void)
 {
 	static unsigned char t;
@@ -1710,7 +1722,7 @@ void draw_menu_sprites(void)
 #endif //VS_SYS_ENABLED
 }
 
-#if PLAT_NES
+#endif // PLAT_NES
 
 void draw_gameplay_sprites(void)
 {
@@ -1748,6 +1760,8 @@ void draw_gameplay_sprites(void)
 			if (local_start_y + (local_iy << 3) > OOB_TOP)
 			{
 				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
+				BlockSprites[i]->x = local_start_x + (local_ix << 3);
+				BlockSprites[i]->y = local_start_y + (local_iy << 3) + 240;
 			}
 		}
 	}
@@ -2192,6 +2206,8 @@ void movement(void)
 //PROFILE_POKE(0x1e); //none
 }
 
+#if PLAT_NES
+
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 {
 	// w = 10 tiles,  80 px
@@ -2327,6 +2343,8 @@ unsigned char is_block_free(unsigned char x, unsigned char y)
 	//return get_block(x, y) == 0;
 	return game_board[TILE_TO_BOARD_INDEX(x,y)] == 0;
 }
+
+#endif // PLAT_NES
 
 unsigned char is_cluster_colliding()
 {
@@ -2488,7 +2506,6 @@ void rotate_cur_cluster(char dir)
 	SFX_PLAY_WRAPPER(SOUND_ROTATE);
 }
 
-#endif // PLAT_NES
 void go_to_state(unsigned char new_state)
 {
 	static unsigned char i;
@@ -3734,7 +3751,8 @@ void fade_to_black()
 	// pal_bright(0);
 	// //delay(2);
 
-	FadeIn();
+	if(_cpu == CGB_TYPE)
+		FadeIn();
 }
 
 void fade_from_black()
@@ -3747,8 +3765,10 @@ void fade_from_black()
 	// delay(2);
 	// pal_bright(4);
 	// //delay(2);
-	
-	FadeOut();
+
+	// hack to get around bug in DMG
+	if(_cpu == CGB_TYPE)
+		FadeOut();
 }
 
 #if PLAT_NES

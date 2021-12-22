@@ -19,7 +19,7 @@ void set_vram_buffer(void) { }
 // // this can be undone by set_vram_update(NULL)
 
 
-// void __fastcall__ one_vram_buffer(unsigned char data, int ppu_address);
+void one_vram_buffer(unsigned char data, int ppu_address) { (void)data; (void)ppu_address; }
 // // to push a single byte write to the vram_buffer
 
 
@@ -38,8 +38,17 @@ void clear_vram_buffer(void) { }
 
 unsigned char get_pad_new(unsigned char pad) 
 { 
+    static unsigned char i;
+    static unsigned char r;
     (void)pad; 
-    return keys;
+
+    r = 0;
+    for (i = 0; i < 8; ++i)
+    {
+        r |= (((keys & (1 << i)) != 0) && ((previous_keys & (1 << i)) == 0)) << i;
+    }
+    //return (keys & (!(previous_keys)));
+    return r;
 }
 // // pad 0 or 1, use AFTER pad_poll() to get the trigger / new button presses
 // // more efficient than pad_trigger, which runs the entire pad_poll code again
