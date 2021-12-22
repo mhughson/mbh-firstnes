@@ -9,6 +9,6 @@ N_BANKS = A
 MUSIC_PLAYER = HUGETRACKER
 
 # Default hardware sprites size: SPRITES_8x16(default) or SPRITES_8x8
-DEFAULT_SPRITES_SIZE = SPRITES_8x16
+DEFAULT_SPRITES_SIZE = SPRITES_8x8
 
 include $(ZGB_PATH)/src/MakefileCommon

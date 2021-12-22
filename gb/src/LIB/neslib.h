@@ -106,7 +106,7 @@ void oam_clear(void) { }
 // //set sprite in OAM buffer, chrnum is tile, attr is attribute
 // // Note: sprid removed for speed
 
-// void __fastcall__ oam_spr(unsigned char x,unsigned char y,unsigned char chrnum,unsigned char attr);
+void oam_spr(unsigned char x,unsigned char y,unsigned char chrnum,unsigned char attr) { (void)x; (void)y; (void)chrnum; (void)attr; }
 
 
 
@@ -116,7 +116,7 @@ void oam_clear(void) { }
 // //x=128 is end of a meta sprite
 // // Note: sprid removed for speed
 
-// void __fastcall__ oam_meta_spr(unsigned char x,unsigned char y,const unsigned char *data);
+void oam_meta_spr(unsigned char x,unsigned char y,const unsigned char *data) { (void)x; (void)y; (void)data; }
 
 
 // //hide all remaining sprites from given offset

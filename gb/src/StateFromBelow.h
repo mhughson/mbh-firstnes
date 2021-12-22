@@ -191,6 +191,9 @@ unsigned char pad2_new;
 // The current amount of vertical scrolling.
 unsigned int scroll_y_game;
 
+unsigned int scroll_x_camera;
+unsigned int scroll_y_camera;
+
 // The number of options on the settings screen.
 #define NUM_OPTIONS 5
 // The currently selected option on the settings screen.
@@ -938,7 +941,7 @@ const unsigned char metasprite_tentacle_title[]={
 
 // PROTOTYPES
 
-void draw_menu_sprites(void) { } // PLAT_GB
+void draw_menu_sprites(void);
 void draw_gameplay_sprites(void) { } // PLAT_GB
 void movement(void) { } // PLAT_GB
 

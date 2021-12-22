@@ -350,6 +350,16 @@ CPU2:
 // 	128
 // };
 
+const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
+
+Sprite* FlagTopLeft;
+Sprite* FlagTopRight;
+
+Sprite* FlagMidLeft;
+Sprite* FlagMidRight;
+
+Sprite* FlagBottomLeft;
+Sprite* FlagBottomRight;
 
 void START() 
 {
@@ -363,25 +373,7 @@ void START()
 	static unsigned char k;
 #endif
 
-	// pal_bg(test_palette_bg);
-	// ppu_on_all(); // turn on screen
-	// while (1)
-	// {
-	// 	ppu_wait_nmi(); // wait till beginning of the frame
-	// }
-
 	ppu_off(); // screen off
-
-	// memcpy(palette_bg, { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], }, 16)
-
-	// palette_bg = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x00],ppu_RP2C04_0001[0x17],ppu_RP2C04_0001[0x28],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x2a],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
-	// palette_sp = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x16],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x37],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
-	// palette_bg_options = { ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x31],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x30],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x0f],ppu_RP2C04_0001[0x22],ppu_RP2C04_0001[0x26],ppu_RP2C04_0001[0x37], };
-
-
-	// load the palettes
-	//pal_bg(palette_bg);
-	//pal_spr(palette_sp);
 
 	// use the second set of tiles for sprites
 	// both bg and sprites are set to 0 by default
@@ -491,6 +483,38 @@ void START()
 		POKE(0x4016, 0);		
 	}	
 #endif // #if VS_SRAM_ENABLED
+	FlagTopLeft = SpriteManagerAdd(SpriteFlag, 10 << 3, 23 << 3);
+	FlagTopLeft->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagTopLeft, flag_anim, 15);
+
+	FlagTopRight = SpriteManagerAdd(SpriteFlag, 22 << 3, 23 << 3);
+	FlagTopRight->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagTopRight, flag_anim, 15);
+
+/*
+	oam_spr(8 << 3, 1 << 3, local_ix, 2);
+	oam_spr(24 << 3, 1 << 3, local_ix, 2);
+	oam_spr(3 << 3, 10 << 3, local_ix, 0);
+	oam_spr(27 << 3, 10 << 3, local_ix, 0);
+*/	
+
+	FlagMidLeft = SpriteManagerAdd(SpriteFlag, 8 << 3, (1 << 3) + 240);
+	FlagMidLeft->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagMidLeft, flag_anim, 15);
+
+	FlagMidRight = SpriteManagerAdd(SpriteFlag, 24 << 3, (1 << 3) + 240);
+	FlagMidRight->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagMidRight, flag_anim, 15);
+
+	FlagBottomLeft = SpriteManagerAdd(SpriteFlag, 3 << 3, (10 << 3) + 240);
+	FlagBottomLeft->lim_x = 0xfff; // don't despawn
+	FlagBottomLeft->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagBottomLeft, flag_anim, 15);
+
+	FlagBottomRight = SpriteManagerAdd(SpriteFlag, 27 << 3, (10 << 3) + 240);
+	FlagBottomRight->lim_x = 0xfff; // don't despawn
+	FlagBottomRight->lim_y = 0xfff; // don't despawn
+	SetSpriteAnim(FlagBottomRight, flag_anim, 15);
 }
 
 void UPDATE()
@@ -660,6 +684,23 @@ skip_attract_input:
 		case STATE_MENU:
 		{
 			draw_menu_sprites();
+
+			if (pad1 & PAD_RIGHT)
+			{
+				++scroll_x_camera;
+			}
+			if (pad1 & PAD_LEFT)
+			{
+				--scroll_x_camera;
+			}			
+			if (pad1 & PAD_DOWN)
+			{
+				++scroll_y_camera;
+			}
+			if (pad1 & PAD_UP)
+			{
+				--scroll_y_camera;
+			}
 
 			if (tick_count % 128 == 0)
 			{
@@ -1604,15 +1645,13 @@ skip_attract_input:
 			else
 			{
 				//++scroll_y_game;
-				scroll(0, scroll_y_game); // shift the bg down 1 pixel
+				scroll(0 + scroll_x_camera, scroll_y_game + scroll_y_camera); // shift the bg down 1 pixel
 			}
 
 			// set_scroll_x(scroll_y_game);
 			// ++scroll_y_game;
 //#endif	// VS_SYS_ENABLED
 }
-
-#if PLAT_NES
 
 void draw_menu_sprites(void)
 {
@@ -1670,6 +1709,8 @@ void draw_menu_sprites(void)
 
 #endif //VS_SYS_ENABLED
 }
+
+#if PLAT_NES
 
 void draw_gameplay_sprites(void)
 {
@@ -2788,7 +2829,8 @@ void go_to_state(unsigned char new_state)
 				while (scroll_y_game < 240)
 				{
 					scroll(0, scroll_y_game);
-					delay(1);
+					wait_vbl_done();
+					SpriteManagerUpdate(); 
 					scroll_y_game += 4;
 				}
 #endif //!VS_SYS_ENABLED
@@ -3705,6 +3747,7 @@ void fade_from_black()
 	// delay(2);
 	// pal_bright(4);
 	// //delay(2);
+	
 	FadeOut();
 }
 
