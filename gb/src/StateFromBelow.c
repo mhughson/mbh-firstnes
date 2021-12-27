@@ -3539,15 +3539,21 @@ void copy_board_to_nt()
 			// {
 			// 	fast_music = 1;
 			// }
+
+			UPDATE_TILE_BY_VALUE(
+				(BOARD_START_X_PX >> 3) + (local_ix), 
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy,
+				copy_board_data[local_iy],
+				0);
 		}
 
-		multi_vram_buffer_vert(
-			copy_board_data,
-			BOARD_HEIGHT,
-			get_ppu_addr(
-				cur_nt,
-				BOARD_START_X_PX + (local_ix << 3),
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+		// multi_vram_buffer_vert(
+		// 	copy_board_data,
+		// 	BOARD_HEIGHT,
+		// 	get_ppu_addr(
+		// 		cur_nt,
+		// 		BOARD_START_X_PX + (local_ix << 3),
+		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// delay often enough to avoid buffer overrun.
 		if (local_ix % 3 == 0)
