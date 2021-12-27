@@ -32,12 +32,13 @@
 #include "SpriteManager.h"
 #include "Fade.h"
 #include "String.h"
+#include "Print.h"
+#include "rand.h"
 
 #include "StateFromBelow.h"
 // TEMP
 // stdlib.h
-void srand(unsigned int seed) { (void)seed; }
-unsigned int rand() { return 0; }
+void srand(unsigned int seed) { initrand(seed); }
 
 //unsigned char title_screen[] = { 0 };
 //unsigned char game_area[] = { 0 };
@@ -51,6 +52,9 @@ IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
 IMPORT_MAP(ty_screen);
 
+IMPORT_TILES(font);
+
+const unsigned char test_bg_tile = 128;
 
 #endif // PLAT_GB
 
@@ -390,6 +394,7 @@ void START()
 	cur_nt = 2;
 
 #if PLAT_GB
+	INIT_FONT(font, PRINT_BKG);
 	//vram_unrle(title_and_game_area);
 	InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 #else
@@ -401,6 +406,7 @@ void START()
 
 #if PLAT_GB
 	scroll_y_game = 0;
+	scroll_x_camera = 40;
 #else
 	scroll_y_game = 0x1df;
 #endif // PLAT_GB
@@ -567,7 +573,7 @@ void UPDATE()
 			// move faster based on the current difficulty level.
 			if (ticks_in_state_large % (30 - cur_level) == 0)
 			{
-				if (rand() % 2 == 0)
+				if ((unsigned char)rand() % 2 == 0)
 				{
 					pad_all_new |= PAD_LEFT;
 				}
@@ -575,7 +581,7 @@ void UPDATE()
 				{
 					pad_all_new |= PAD_RIGHT; 
 				}
-				pad_all_new |= (rand() % 4 == 0) ? PAD_A : 0;
+				pad_all_new |= ((unsigned char)rand() % 4 == 0) ? PAD_A : 0;
 			}
 		}
 	}
@@ -913,7 +919,7 @@ skip_attract_input:
 					{
 						for (i = 0; i < 8; ++i)
 						{
-							one_vram_buffer(0x01, get_ppu_addr(0, rand() % 256, rand() % 240));
+							one_vram_buffer(0x01, get_ppu_addr(0, (unsigned int)rand() % 256, (unsigned char)rand() % 240));
 						}
 					}
 
@@ -999,6 +1005,10 @@ skip_attract_input:
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+				for (local_ix = 8; local_ix <= 40; local_ix+=8)
+				{
+					scroll(local_ix, 0);
+				}
 #else
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
@@ -1650,7 +1660,7 @@ skip_attract_input:
 			if (screen_shake_remaining > 0)
 			{
 				--screen_shake_remaining;
-				scroll((rand() % 2), scroll_y_game - (rand() % 2));
+				scroll(((unsigned char)rand() % 2), scroll_y_game - ((unsigned char)rand() % 2));
 			}
 			else
 			{
@@ -1761,7 +1771,7 @@ void draw_gameplay_sprites(void)
 			{
 				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				BlockSprites[i]->x = local_start_x + (local_ix << 3);
-				BlockSprites[i]->y = local_start_y + (local_iy << 3) + 240;
+				BlockSprites[i]->y = local_start_y + (local_iy << 3) + 240 + 16;
 			}
 		}
 	}
@@ -2206,8 +2216,6 @@ void movement(void)
 //PROFILE_POKE(0x1e); //none
 }
 
-#if PLAT_NES
-
 void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 {
 	// w = 10 tiles,  80 px
@@ -2224,9 +2232,13 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 	address = get_ppu_addr(cur_nt, (in_x << 3) + BOARD_START_X_PX, (in_y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(in_id, address);
 
+	UPDATE_TILE(in_x + (BOARD_START_X_PX >> 3), in_y, &in_id, 0);
+
 	// TODO: Is this too slow?
 	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;
 }
+
+#if PLAT_NES
 
 void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned char nt)
 {
@@ -2249,6 +2261,8 @@ void clear_block(unsigned char x, unsigned char y)
 	in_id = 0;
 	set_block();
 }
+
+#endif // PLAT_NES
 
 void put_cur_cluster()
 {
@@ -2344,8 +2358,6 @@ unsigned char is_block_free(unsigned char x, unsigned char y)
 	return game_board[TILE_TO_BOARD_INDEX(x,y)] == 0;
 }
 
-#endif // PLAT_NES
-
 unsigned char is_cluster_colliding()
 {
 	static unsigned char x;
@@ -2407,10 +2419,15 @@ void spawn_new_cluster()
 
 	// By checking twice we go from 1 in 7 chance of a dupe to
 	// 1 in 49 chance.
-	id = rand() % NUM_CLUSTERS;
+	id = (unsigned char)rand() % NUM_CLUSTERS;
 	if (id == cur_cluster.id)
 	{
-		id = rand() % NUM_CLUSTERS;
+		id = (unsigned char)rand() % NUM_CLUSTERS;
+	}
+
+	if (id >= NUM_CLUSTERS)
+	{
+		Printf("ERROR");
 	}
 	next_cluster.id = id;
 	memcpy(next_cluster.def, cluster_defs_classic[id], (4 * 4));
@@ -2630,7 +2647,7 @@ void go_to_state(unsigned char new_state)
 			ppu_off();
 #if PLAT_GB
 			InitScroll(BANK(boot_screen), &boot_screen, 0, 0);
-			scroll(0,0);
+			scroll(scroll_x_camera,0);
 #else
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(boot_screen);
@@ -2679,6 +2696,13 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+				scroll_x_camera = 56;
+				for (local_ix = 8; local_ix <= scroll_x_camera; local_ix+=8)
+				{
+					scroll(local_ix, 0);
+				}				
+				UPDATE_TILE(8,8,&test_bg_tile,0);
+				PRINT(0,16,"Hello World");
 #else
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
@@ -2706,7 +2730,7 @@ void go_to_state(unsigned char new_state)
 #else
 				scroll_y_game = 0x1df;
 #endif // PLAT_GB
-				scroll(0, scroll_y_game); // shift the bg down 1 pixel
+				scroll(scroll_x_camera, scroll_y_game); // shift the bg down 1 pixel
 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED
@@ -2843,16 +2867,18 @@ void go_to_state(unsigned char new_state)
 					// start at the top.
 					scroll_y_game = 0;
 				}
-				while (scroll_y_game < 240)
+				while (scroll_y_game < 306)
 				{
-					scroll(0, scroll_y_game);
+					scroll(scroll_x_camera, scroll_y_game);
 					wait_vbl_done();
 					SpriteManagerUpdate(); 
 					scroll_y_game += 4;
 				}
 #endif //!VS_SYS_ENABLED
-				scroll_y_game = 239;
-				scroll(0, scroll_y_game);
+				scroll_y_game = 306;
+				scroll(scroll_x_camera, scroll_y_game);
+
+				UPDATE_TILE(0,0,&test_bg_tile,0);
 
 				// Spawn "next"
 				spawn_new_cluster();
@@ -2865,7 +2891,7 @@ void go_to_state(unsigned char new_state)
 				srand(tick_count_large);
 
 				// where to start the attack!
-				i = rand() % BOARD_WIDTH;
+				i = (unsigned char)rand() % BOARD_WIDTH;
 				attack_row_status[i] = 1;
 
 				require_new_down_button = 1;
@@ -3075,8 +3101,6 @@ void go_to_state(unsigned char new_state)
 		}
 	}
 }
-
-#if PLAT_NES
 void inc_lines_cleared()
 {
 	static unsigned char lines_total;
@@ -3170,6 +3194,8 @@ void display_score()
     }
 }
 
+#if PLAT_NES
+
 
 #if !VS_SYS_ENABLED		
 void display_highscore()
@@ -3218,6 +3244,8 @@ void display_level()
 		++i;
     }
 }
+
+#endif // PLAT_NES
 
 // START OF ROW CLEAR SEQUENCE!
 
@@ -3383,15 +3411,22 @@ void reveal_empty_rows_to_nt()
 		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(ix, iy + BOARD_OOB_END + 1)];
+			// Update_Tile fails if I try to just use a temp variable to store board data, or send
+			// game_board directly. Using the copy array seems to work fine.
+			UPDATE_TILE_BY_VALUE(
+				(BOARD_START_X_PX >> 3) + (ix), 
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy,
+				copy_board_data[iy],
+				0);
 		}
 
-		multi_vram_buffer_vert(
-			copy_board_data,
-			BOARD_HEIGHT,
-			get_ppu_addr(
-				cur_nt,
-				BOARD_START_X_PX + (ix << 3),
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+		// multi_vram_buffer_vert(
+		// 	copy_board_data,
+		// 	BOARD_HEIGHT,
+		// 	get_ppu_addr(
+		// 		cur_nt,
+		// 		BOARD_START_X_PX + (ix << 3),
+		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 
 		// RIGHT SIDE
@@ -3400,15 +3435,20 @@ void reveal_empty_rows_to_nt()
 		for (iy = 0; iy < BOARD_HEIGHT; ++iy)
 		{
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
+			UPDATE_TILE_BY_VALUE(
+				(BOARD_START_X_PX >> 3) + (BOARD_END_X_PX_BOARD - ix), 
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy,
+				copy_board_data[iy],
+				0);
 		}
 
-		multi_vram_buffer_vert(
-			copy_board_data,
-			BOARD_HEIGHT,
-			get_ppu_addr(
-				cur_nt,
-				BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3),
-				BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
+		// multi_vram_buffer_vert(
+		// 	copy_board_data,
+		// 	BOARD_HEIGHT,
+		// 	get_ppu_addr(
+		// 		cur_nt,
+		// 		BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3),
+		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// Reveal these 2 new columns, and then move to the next one.
 		delay(5);
@@ -3534,6 +3574,8 @@ void copy_board_to_nt()
 	// }
 }
 
+#if PLAT_NES
+
 void add_block_at_bottom()
 {
 	static signed char ix;
@@ -3609,7 +3651,7 @@ void add_block_at_bottom()
 	if (attacks == 0)
 	{
 		// where to start the attack!
-		attack_row_status[rand() % BOARD_WIDTH] = 1;
+		attack_row_status[(unsigned char)rand() % BOARD_WIDTH] = 1;
 	}
 
 	// TODO: Only if changed above.

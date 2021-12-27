@@ -39,12 +39,12 @@
 //       used. Players can put blocks in that area above the visible board and 
 //       not lose. The game isn't over unless a NEW block is blocked from spawning.
 #define BOARD_START_X_PX 96
-#define BOARD_START_Y_PX 16
+#define BOARD_START_Y_PX 0 //16
 // The position, in pixels, where the play area ends (bottom right).
 // NOTE: This is the position of the bottom right tile INCLUDED in the player area.
 //       So the actual end position in pixels would be +8 in both directions.
 #define BOARD_END_X_PX 168
-#define BOARD_END_Y_PX (184 + 16) // not sure why +16. Likely just making an adjustment at some point and forgot to remove.
+#define BOARD_END_Y_PX (184) //(184 + 16) // not sure why +16. Likely just making an adjustment at some point and forgot to remove.
 
 // The last tile in the Out of Bounds area at the top of the board.
 // Again, this is the last tile in that area, so the actual number of rows in that
@@ -456,7 +456,7 @@ const unsigned char def_T[4][4] =
 
 
 // The number of types of tetrominos.
-#define NUM_CLUSTERS 7
+#define NUM_CLUSTERS (unsigned char)7
 
 // Lookup array for each of the types of tetromino. When we used to have a modern
 // set as well, this look up table made more sense, because I could just point to
@@ -952,7 +952,7 @@ void set_block_nt(unsigned char x, unsigned char y, unsigned char id, unsigned c
 void clear_block(unsigned char x, unsigned char y);
 
 // Drops the current cluster at its current location.
-void put_cur_cluster() { } // PLAT_GB
+void put_cur_cluster();
 
 // x, y in map space.
 unsigned char get_block(unsigned char x, unsigned char y);
@@ -974,14 +974,14 @@ void go_to_state(unsigned char new_state);
 
 void inc_lines_cleared();
 void display_lines_cleared();
-void display_score() { } // PLAT_GB
+void display_score();
 void display_highscore() { } // PLAT_GB
 void display_level() { } // PLAT_GB
 
 // CLEAR PHASES
 
 // First clear all the rows in CPU memory.
-void clear_rows_in_data(unsigned char start_y) { (void)start_y; } // PLAT_GB
+void clear_rows_in_data(unsigned char start_y);
 
 // Then show the empty rows, 2 columns at a time...
 void reveal_empty_rows_to_nt();

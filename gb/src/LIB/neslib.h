@@ -130,7 +130,7 @@ void oam_meta_spr(unsigned char x,unsigned char y,const unsigned char *data) { (
 // // perhaps as part of a sprite shuffling algorithm
 // // Note: this should be a multiple of 4 (0,4,8,12,etc.)
 
-// void __fastcall__ oam_set(unsigned char index);
+void oam_set(unsigned char index) { (void)index; }
 
 // // returns the sprid (index to the sprite buffer)
 
