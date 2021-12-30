@@ -2446,6 +2446,12 @@ void spawn_new_cluster()
 
 	for (i = 0; i < 4; ++i)
 	{
+		UPDATE_TILE_BY_VALUE(8 + i, 7, 0, 0);
+		UPDATE_TILE_BY_VALUE(8 + i, 8, 0, 0);
+	}
+
+	for (i = 0; i < 4; ++i)
+	{
 		// store the index into the x,y offset for each solid piece in the first rotation.
 		j = next_cluster.layout[i];
 
@@ -2454,6 +2460,8 @@ void spawn_new_cluster()
 		local_iy = index_to_y_lookup[j];
 
 		one_vram_buffer(local_t, get_ppu_addr(cur_nt, 120 + (local_ix << 3), 8 + (local_iy << 3)));
+
+		UPDATE_TILE_BY_VALUE(8 + local_ix, 6 + local_iy, local_t, 0);
 	}
 //PROFILE_POKE(0x1e); //none
 
