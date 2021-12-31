@@ -355,6 +355,15 @@ CPU2:
 // 	128
 // };
 
+void vbl_delay(UINT8 frames)
+{
+	static UINT8 i;
+	for (i = 0; i < frames; ++i)
+	{
+		wait_vbl_done();
+	}
+}
+
 const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
 
 Sprite* FlagTopLeft;
@@ -1775,6 +1784,13 @@ void draw_gameplay_sprites(void)
 			}
 		}
 	}
+	else
+	{
+		for (i = 0; i < 4; ++i)
+		{
+			BlockSprites[i]->y = 0xffff;
+		}
+	}
 
 //PROFILE_POKE(0x1f); // white
 
@@ -2709,8 +2725,8 @@ void go_to_state(unsigned char new_state)
 				{
 					scroll(local_ix, 0);
 				}				
-				UPDATE_TILE(8,8,&test_bg_tile,0);
-				PRINT(0,16,"Hello World");
+				//UPDATE_TILE(8,8,&test_bg_tile,0);
+				//PRINT(0,16,"Hello World");
 #else
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
@@ -2816,7 +2832,7 @@ void go_to_state(unsigned char new_state)
 
 			display_options();
 			// too much for 1 frame.
-			delay(1);
+			wait_vbl_done();
 			clear_vram_buffer();
 			display_highscore();
 #endif
@@ -2933,7 +2949,7 @@ void go_to_state(unsigned char new_state)
 		case STATE_OVER:
 		{
 			// fix bug where mashing up/down to quickly hit gamover would case nametable coruption.
-			delay(1);
+			wait_vbl_done();
 			clear_vram_buffer();
 
 			// Without this, the "next" block won't appear for the first half of the sequence.
@@ -2946,7 +2962,7 @@ void go_to_state(unsigned char new_state)
 #if !VS_SYS_ENABLED
 			if (music_on)
 			{
-				delay(120);
+				vbl_delay(120);
 			}
 #endif // !VS_SYS_ENABLED
 
@@ -2960,11 +2976,11 @@ void go_to_state(unsigned char new_state)
 			// pal_bright(5);
 			// delay(fade_delay);
 			pal_bright(6);
-			delay(fade_delay);
+			vbl_delay(fade_delay);
 			// pal_bright(7);
 			// delay(fade_delay);
 			pal_bright(8);
-			delay(fade_delay);
+			vbl_delay(fade_delay);
 
 #if !VS_SYS_ENABLED
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
@@ -2991,7 +3007,7 @@ void go_to_state(unsigned char new_state)
 			// pal_bright(7);
 			// delay(fade_delay);
 			pal_bright(6);
-			delay(fade_delay);
+			vbl_delay(fade_delay);
 			// pal_bright(5);
 			// delay(fade_delay);
 			pal_bright(4);
@@ -3407,8 +3423,12 @@ void reveal_empty_rows_to_nt()
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
-	delay(1);
+	wait_vbl_done();
 	clear_vram_buffer();
+		
+	// Force the sprites to hide themselves.
+	draw_gameplay_sprites();		
+	SpriteManagerUpdate(); 
 
 	// Reveal from the center out.
 	for (ix = 4; ix >= 0; --ix)
@@ -3459,7 +3479,7 @@ void reveal_empty_rows_to_nt()
 		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
 		// Reveal these 2 new columns, and then move to the next one.
-		delay(5);
+		vbl_delay(5);
 		clear_vram_buffer();
 	}
 
@@ -3489,7 +3509,7 @@ void try_collapse_empty_row_data(void)
 			{
 				//hit_reaction_remaining = 60;
 				--attack_row_status[ix];
-				delay(1);
+				wait_vbl_done();
 				draw_gameplay_sprites();
 				clear_vram_buffer();
 			}
@@ -3570,7 +3590,7 @@ void copy_board_to_nt()
 			// drawing the sprites again will do nothing.
 			//draw_gameplay_sprites();
 //PROFILE_POKE(PROF_CLEAR);
-			delay(1);
+			wait_vbl_done();
 			clear_vram_buffer();
 		}
 //PROFILE_POKE(PROF_R);
@@ -3771,7 +3791,7 @@ void display_options()
 	// TODO: Could be smarter and only update the line that changed, and delay
 	// 		 could probably be removed.
 	// Avoid overrun when mashing mode change.
-	delay(1);
+	wait_vbl_done();
 	clear_vram_buffer();
 
 	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,start_y<<3));
@@ -3790,7 +3810,7 @@ void display_options()
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
 
 	// Avoid overrun when mashing mode change.
-	delay(1);
+	wait_vbl_done();
 	clear_vram_buffer();
 }
 #endif //#if !VS_SYS_ENABLED		
@@ -3880,7 +3900,7 @@ void debug_copy_board_data_to_nt(void)
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
 
-	delay(1);
+	wait_vbl_done();
 	clear_vram_buffer();
 
 	for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
@@ -3902,7 +3922,7 @@ void debug_copy_board_data_to_nt(void)
 		// delay often enough to avoid buffer overrun.
 		if (local_ix % 4 == 0)
 		{
-			delay(1);
+			wait_vbl_done();
 			clear_vram_buffer();
 		}
 	}
@@ -3933,7 +3953,7 @@ void debug_display_number(unsigned char num, unsigned char index)
     }
 
 	//multi_vram_buffer_horz(arr, 3, get_ppu_addr(cur_nt, 0, 232 - (index << 3)));
-	delay(1);
+	wait_vbl_done();
 	clear_vram_buffer();
 }
 #endif //DEBUG_ENABLED
