@@ -204,7 +204,7 @@ unsigned char attack_style;
 
 // Length of the string used to describe the game type ("Classic", etc) on the settings
 // screen.
-#define ATTACK_STRING_LEN 7
+#define ATTACK_STRING_LEN 8
 
 #if VS_SYS_ENABLED
 // unsigned char high_scores_vs_initials[ATTACK_NUM][4][3][3] = 
@@ -328,7 +328,7 @@ unsigned char sfx_on;
 // be stripped out.
 enum {BLOCK_STYLE_MODERN, BLOCK_STYLE_CLASSIC};
 unsigned char block_style;
-#define BLOCK_STYLE_STRING_LEN 7
+#define BLOCK_STYLE_STRING_LEN 8
 
 // Display for the starting levels on the settings screen.
 const unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -865,7 +865,7 @@ const unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 // How many options for hard drop are there.
 #define NUM_HARD_DROP_SETTINGS 3
 // How long is the string used to display the harddrop setting name.
-#define HARD_DROP_STRING_LEN 4
+#define HARD_DROP_STRING_LEN 5
 // The different types of hard drop.
 const unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
 
@@ -996,7 +996,7 @@ void copy_board_to_nt();
 void add_block_at_bottom() { } // PLAT_GB
 void add_row_at_bottom() { } // PLAT_GB
 
-void reset_gameplay_area() { } // PLAT_GB
+void reset_gameplay_area();
 
 void display_song() { } // PLAT_GB
 void display_sound() { } // PLAT_GB

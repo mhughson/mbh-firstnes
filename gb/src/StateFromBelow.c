@@ -3701,6 +3701,8 @@ void add_row_at_bottom()
 	copy_board_to_nt();
 }
 
+#endif
+
 void reset_gameplay_area()
 {
 	memfill(game_board, 0, BOARD_SIZE);
@@ -3735,6 +3737,8 @@ void reset_gameplay_area()
 	// Reset the ppu for gameover case.
 	copy_board_to_nt();
 }
+
+#if PLAT_NES
 
 #if !VS_SYS_ENABLED	
 void display_song()
