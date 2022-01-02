@@ -107,7 +107,8 @@ void oam_clear(void) { }
 // //set sprite in OAM buffer, chrnum is tile, attr is attribute
 // // Note: sprid removed for speed
 
-void oam_spr(unsigned char x,unsigned char y,unsigned char chrnum,unsigned char attr) { (void)x; (void)y; (void)chrnum; (void)attr; }
+// using 8bit number gives "warning 158: overflow in implicit constant conversion"
+void oam_spr(UINT16 x,UINT16 y,UINT16 chrnum,UINT16 attr) { (void)x; (void)y; (void)chrnum; (void)attr; }
 
 
 

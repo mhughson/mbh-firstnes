@@ -2902,7 +2902,7 @@ void go_to_state(unsigned char new_state)
 				scroll_y_game = 306;
 				scroll(scroll_x_camera, scroll_y_game);
 
-				UPDATE_TILE(0,0,&test_bg_tile,0);
+				//UPDATE_TILE(0,0,&test_bg_tile,0);
 
 				// Spawn "next"
 				spawn_new_cluster();
@@ -3192,9 +3192,25 @@ void inc_lines_cleared()
 
 void display_lines_cleared()
 {
-	one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,4<<3,3<<3));
-	one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,5<<3,3<<3));
-	one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,6<<3,3<<3));
+	//static unsigned char* text;
+
+	//UPDATE_TILE_BY_VALUE(4,3,0,0);
+	//UIntToString(lines_cleared_hundred, text);
+	//PRINT(4,1,text);
+	PRINT(23,7, "LINES");
+	PRINT_POS(23,8);
+	Printf("%d", lines_cleared_hundred);
+	PRINT_POS(24,8);
+	Printf("%d", lines_cleared_ten);
+	PRINT_POS(25,8);
+	Printf("%d", lines_cleared_one);
+
+	//UPDATE_TILE_BY_VALUE(4,3,'0' + lines_cleared_hundred,0);
+	//UPDATE_TILE_BY_VALUE(5,3,'0' + lines_cleared_ten,0);
+	//UPDATE_TILE_BY_VALUE(6,3,'0' + lines_cleared_one,0);
+	// one_vram_buffer('0' + lines_cleared_hundred, get_ppu_addr(cur_nt,4<<3,3<<3));
+	// one_vram_buffer('0' + lines_cleared_ten, get_ppu_addr(cur_nt,5<<3,3<<3));
+	// one_vram_buffer('0' + lines_cleared_one, get_ppu_addr(cur_nt,6<<3,3<<3));
 }
 
 void display_score()
