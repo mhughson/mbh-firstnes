@@ -38,12 +38,12 @@
 // Note: There are 4 tiles of space above the visible play area which are still 
 //       used. Players can put blocks in that area above the visible board and 
 //       not lose. The game isn't over unless a NEW block is blocked from spawning.
-#define BOARD_START_X_PX 96
+#define BOARD_START_X_PX (9<<3)
 #define BOARD_START_Y_PX 0 //16
 // The position, in pixels, where the play area ends (bottom right).
 // NOTE: This is the position of the bottom right tile INCLUDED in the player area.
 //       So the actual end position in pixels would be +8 in both directions.
-#define BOARD_END_X_PX 168
+#define BOARD_END_X_PX ((BOARD_START_X_PX) + (10<<3))
 #define BOARD_END_Y_PX (184) //(184 + 16) // not sure why +16. Likely just making an adjustment at some point and forgot to remove.
 
 // The last tile in the Out of Bounds area at the top of the board.
@@ -79,6 +79,9 @@
 
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
+
+#define EMPTY_TILE 4
+#define BLOCK_TILE 0x55
 
 #if VS_SYS_ENABLED
 // Note: 1 based to match documentation and user face numbering.
@@ -500,7 +503,7 @@ unsigned char attack_row_status[BOARD_WIDTH];
 const unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
     //0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6,
-    0xe, 0xe, 0xe, 0xe, 0xe, 0xe, 0xe, 
+    BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, 
 };
 
 // The starting y offet (in tiles) each cluster type uses when spawning into

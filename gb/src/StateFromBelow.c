@@ -47,6 +47,7 @@ unsigned char sound_screen[] = { 0 };
 //unsigned char options_screen[] = { 0 };
 //unsigned char ty_screen[] = { 0 };
 
+IMPORT_MAP(game_area);
 IMPORT_MAP(title_and_game_area);
 IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
@@ -405,7 +406,7 @@ void START()
 #if PLAT_GB
 	INIT_FONT(font, PRINT_BKG);
 	//vram_unrle(title_and_game_area);
-	InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+	//InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 #else
 	vram_adr(NTADR_A(0,0));
 	vram_unrle(title_screen);
@@ -1780,7 +1781,7 @@ void draw_gameplay_sprites(void)
 			{
 				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				BlockSprites[i]->x = local_start_x + (local_ix << 3);
-				BlockSprites[i]->y = local_start_y + (local_iy << 3) + 240 + 16;
+				BlockSprites[i]->y = local_start_y + (local_iy << 3);
 			}
 		}
 	}
@@ -2462,8 +2463,8 @@ void spawn_new_cluster()
 
 	for (i = 0; i < 4; ++i)
 	{
-		UPDATE_TILE_BY_VALUE(8 + i, 7, 0, 0);
-		UPDATE_TILE_BY_VALUE(8 + i, 8, 0, 0);
+		UPDATE_TILE_BY_VALUE(3 + i, 2, EMPTY_TILE, 0);
+		UPDATE_TILE_BY_VALUE(3 + i, 3, EMPTY_TILE, 0);
 	}
 
 	for (i = 0; i < 4; ++i)
@@ -2477,7 +2478,7 @@ void spawn_new_cluster()
 
 		one_vram_buffer(local_t, get_ppu_addr(cur_nt, 120 + (local_ix << 3), 8 + (local_iy << 3)));
 
-		UPDATE_TILE_BY_VALUE(8 + local_ix, 6 + local_iy, local_t, 0);
+		UPDATE_TILE_BY_VALUE(3 + local_ix, 1 + local_iy, local_t, 0);
 	}
 //PROFILE_POKE(0x1e); //none
 
@@ -2891,16 +2892,18 @@ void go_to_state(unsigned char new_state)
 					// start at the top.
 					scroll_y_game = 0;
 				}
-				while (scroll_y_game < 306)
-				{
-					scroll(scroll_x_camera, scroll_y_game);
-					wait_vbl_done();
-					SpriteManagerUpdate(); 
-					scroll_y_game += 4;
-				}
+				// while (scroll_y_game < 306)
+				// {
+				// 	scroll(scroll_x_camera, scroll_y_game);
+				// 	wait_vbl_done();
+				// 	SpriteManagerUpdate(); 
+				// 	scroll_y_game += 4;
+				// }
 #endif //!VS_SYS_ENABLED
-				scroll_y_game = 306;
-				scroll(scroll_x_camera, scroll_y_game);
+				// scroll_y_game = 0;
+				// scroll(0, scroll_y_game);
+				
+				InitScroll(BANK(game_area), &game_area, 0, 0);
 
 				//UPDATE_TILE(0,0,&test_bg_tile,0);
 
