@@ -1781,7 +1781,7 @@ void draw_gameplay_sprites(void)
 			{
 				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				BlockSprites[i]->x = local_start_x + (local_ix << 3);
-				BlockSprites[i]->y = local_start_y + (local_iy << 3);
+				BlockSprites[i]->y = local_start_y + (local_iy << 3) - 32;
 			}
 		}
 	}
@@ -2249,7 +2249,7 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 	address = get_ppu_addr(cur_nt, (in_x << 3) + BOARD_START_X_PX, (in_y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(in_id, address);
 
-	UPDATE_TILE(in_x + (BOARD_START_X_PX >> 3), in_y, &in_id, 0);
+	UPDATE_TILE(in_x + (BOARD_START_X_PX >> 3), in_y- 4, &in_id, 0);
 
 	// TODO: Is this too slow?
 	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;
@@ -3462,7 +3462,7 @@ void reveal_empty_rows_to_nt()
 			// game_board directly. Using the copy array seems to work fine.
 			UPDATE_TILE_BY_VALUE(
 				(BOARD_START_X_PX >> 3) + (ix), 
-				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy,
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
 				copy_board_data[iy],
 				0);
 		}
@@ -3484,7 +3484,7 @@ void reveal_empty_rows_to_nt()
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
 			UPDATE_TILE_BY_VALUE(
 				(BOARD_START_X_PX >> 3) + (BOARD_END_X_PX_BOARD - ix), 
-				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy,
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
 				copy_board_data[iy],
 				0);
 		}
@@ -3589,7 +3589,7 @@ void copy_board_to_nt()
 
 			UPDATE_TILE_BY_VALUE(
 				(BOARD_START_X_PX >> 3) + (local_ix), 
-				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy,
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
 				copy_board_data[local_iy],
 				0);
 		}
