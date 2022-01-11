@@ -43,6 +43,9 @@
 // stdlib.h
 void srand(unsigned int seed) { initrand(seed); }
 
+// defined in ZGB main.c. Need to be able to remove it.
+extern void LCD_isr() NONBANKED;
+
 //unsigned char title_screen[] = { 0 };
 //unsigned char game_area[] = { 0 };
 //unsigned char boot_screen[] = { 0 };
@@ -419,8 +422,8 @@ void START()
 	static unsigned char k;
 #endif
 
-
 	CRITICAL {
+		remove_LCD(LCD_isr);
 		LYC_REG = 0;
 		add_LCD(my_interrupt);
 	}
@@ -746,22 +749,22 @@ skip_attract_input:
 		{
 			draw_menu_sprites();
 
-			if (pad1 & PAD_RIGHT)
-			{
-				++scroll_x_camera;
-			}
-			if (pad1 & PAD_LEFT)
-			{
-				--scroll_x_camera;
-			}			
-			if (pad1 & PAD_DOWN)
-			{
-				++scroll_y_camera;
-			}
-			if (pad1 & PAD_UP)
-			{
-				--scroll_y_camera;
-			}
+			// if (pad1 & PAD_RIGHT)
+			// {
+			// 	++scroll_x_camera;
+			// }
+			// if (pad1 & PAD_LEFT)
+			// {
+			// 	--scroll_x_camera;
+			// }			
+			// if (pad1 & PAD_DOWN)
+			// {
+			// 	++scroll_y_camera;
+			// }
+			// if (pad1 & PAD_UP)
+			// {
+			// 	--scroll_y_camera;
+			// }
 
 			if (tick_count % 128 == 0)
 			{
