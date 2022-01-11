@@ -35,6 +35,9 @@
 #include "Print.h"
 #include "rand.h"
 
+#include <gbdk/platform.h>
+#include <stdint.h>
+
 #include "StateFromBelow.h"
 // TEMP
 // stdlib.h
@@ -378,6 +381,32 @@ Sprite* FlagBottomRight;
 
 Sprite* BlockSprites[4];
 
+// https://discord.com/channels/790342889318252555/790346049377927168/928576481624473600
+// 
+
+uint8_t counter = 0; 
+void my_interrupt() NONBANKED {
+
+    while (STAT_REG & STATF_BUSY);
+    SCY_REG++;
+    LYC_REG+=7;
+    if (counter == 20) {
+        counter = 0;
+        SCY_REG = 1; 
+        LYC_REG = 6;
+    } else counter++;
+
+	// ++counter;
+	// move_bkg(0, counter);
+
+	// if (counter >= 20)
+	// {
+	// 	counter = 0;
+	// }
+
+	// LYC_REG = counter * 7;
+}
+
 void START() 
 {
 	static unsigned char i;
@@ -389,6 +418,12 @@ void START()
 	static unsigned char j;
 	static unsigned char k;
 #endif
+
+
+	CRITICAL {
+		LYC_REG = 0;
+		add_LCD(my_interrupt);
+	}
 
 	ppu_off(); // screen off
 
@@ -1760,7 +1795,7 @@ void draw_gameplay_sprites(void)
 	// use tile #0, palette #0
 
 	local_start_x = (cur_block.x << 3) + BOARD_START_X_PX;
-	local_start_y = (cur_block.y << 3) + BOARD_START_Y_PX;
+	local_start_y = (cur_block.y * 7) + BOARD_START_Y_PX;
 
 	// 255 means hide.
 	if (cur_block.y != 255)
@@ -1782,6 +1817,10 @@ void draw_gameplay_sprites(void)
 				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				BlockSprites[i]->x = local_start_x + (local_ix << 3);
 				BlockSprites[i]->y = local_start_y + (local_iy << 3) - 32;
+			}
+			else
+			{
+				BlockSprites[i]->y = 0xffff;
 			}
 		}
 	}
@@ -3313,7 +3352,7 @@ void clear_rows_in_data(unsigned char start_y)
 		for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
 		{
 //PROFILE_POKE(0x5f); //green
-			if (game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == 0 || game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == 1)
+			if (game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == EMPTY_TILE || game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == GARBAGE_TILE)
 			//if (is_block_free(ix, iy))
 			{
 				// This block is empty, so we can stop checking this row.

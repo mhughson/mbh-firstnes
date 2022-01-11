@@ -80,8 +80,9 @@
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
 
-#define EMPTY_TILE 4
-#define BLOCK_TILE 0x55
+#define EMPTY_TILE 0x00
+#define GARBAGE_TILE 0x01
+#define BLOCK_TILE 0x02
 
 #if VS_SYS_ENABLED
 // Note: 1 based to match documentation and user face numbering.
@@ -563,7 +564,7 @@ unsigned char local_iy;
 unsigned int local_t;
 unsigned char local_bit;
 unsigned char local_row_status;
-const unsigned char OOB_TOP = (BOARD_START_Y_PX + (BOARD_OOB_END << 3));
+const unsigned char OOB_TOP = (BOARD_START_Y_PX + (BOARD_OOB_END * 7));
 
 // Used by the sound test screen.
 unsigned char test_song;
@@ -598,7 +599,8 @@ const char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 // When the Kraken tentacle retreats the blocks it leaves in its place are special
 // partially destroyed-looking sprites. These are this sprites.
 #define NUM_GARBAGE_TYPES 3
-const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+//const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { GARBAGE_TILE, GARBAGE_TILE, GARBAGE_TILE }; // TEMP GB
 // Rather than randomly selecting a garbage type, this counter just picks the 
 // next one and loops back when it hits the max.
 unsigned char cur_garbage_type;
