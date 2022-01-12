@@ -1,0 +1,4 @@
+[submodule "gb/ZGB"]
+	path = gb/ZGB
+	url = https://github.com/mhughson/ZGB.git
+	branch = master
