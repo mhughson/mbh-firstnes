@@ -2291,7 +2291,7 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 	address = get_ppu_addr(cur_nt, (in_x << 3) + BOARD_START_X_PX, (in_y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(in_id, address);
 
-	UPDATE_TILE(in_x + (BOARD_START_X_PX >> 3), in_y- 4, &in_id, 0);
+	UPDATE_TILE_BY_VALUE(in_x + (BOARD_START_X_PX >> 3), in_y- 4, in_id, 0);
 
 	// TODO: Is this too slow?
 	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;
