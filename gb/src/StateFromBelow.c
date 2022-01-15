@@ -34,6 +34,7 @@
 #include "String.h"
 #include "Print.h"
 #include "rand.h"
+#include "SGB.h"
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -53,6 +54,7 @@ unsigned char sound_screen[] = { 0 };
 //unsigned char options_screen[] = { 0 };
 //unsigned char ty_screen[] = { 0 };
 
+IMPORT_MAP(gb_border);
 IMPORT_MAP(game_area);
 IMPORT_MAP(title_and_game_area);
 IMPORT_MAP(boot_screen);
@@ -421,6 +423,8 @@ void START()
 	static unsigned char j;
 	static unsigned char k;
 #endif
+
+	LOAD_SGB_BORDER(gb_border);
 
 	CRITICAL {
 		remove_LCD(LCD_isr);
