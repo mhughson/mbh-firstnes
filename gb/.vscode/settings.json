@@ -12,5 +12,9 @@
         "*.db": true,
         ".gitignore": true,
         ".vs": true
+    },
+    "files.associations": {
+        "fade.h": "c",
+        "bankmanager.h": "c"
     }
 }

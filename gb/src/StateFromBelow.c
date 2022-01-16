@@ -3897,7 +3897,10 @@ void fade_to_black()
 	// //delay(2);
 
 	if(_cpu == CGB_TYPE)
+	{
 		FadeIn();
+		DISPLAY_OFF;
+	}
 }
 
 void fade_from_black()
@@ -3913,7 +3916,10 @@ void fade_from_black()
 
 	// hack to get around bug in DMG
 	if(_cpu == CGB_TYPE)
+	{
+		DISPLAY_ON;
 		FadeOut();
+	}
 }
 
 #if PLAT_NES
