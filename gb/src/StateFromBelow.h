@@ -188,10 +188,10 @@ unsigned char pad_all;
 // Buttons that were pressed this frame (but not last frame) (both player 1 and 2).
 unsigned char pad_all_new;
 // Same as above but for player 1 and 2 specifically.
-unsigned char pad1;
-unsigned char pad1_new;
-unsigned char pad2;
-unsigned char pad2_new;
+// unsigned char pad1;
+// unsigned char pad1_new;
+// unsigned char pad2;
+// unsigned char pad2_new;
 // The current amount of vertical scrolling.
 unsigned int scroll_y_game;
 

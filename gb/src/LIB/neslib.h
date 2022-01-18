@@ -164,9 +164,8 @@ void sfx_play(unsigned char sound,unsigned char channel) { (void)sound; (void)ch
 
 // //poll controller and return flags like PAD_LEFT etc, input is pad number (0 or 1)
 
-unsigned char pad_poll(unsigned char pad) 
+unsigned char pad_poll(/*unsigned char pad*/) 
 { 
-    (void)pad; 
     return keys;
 }
 

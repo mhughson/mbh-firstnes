@@ -375,14 +375,14 @@ void vbl_delay(UINT8 frames)
 
 const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
 
-Sprite* FlagTopLeft;
-Sprite* FlagTopRight;
+// Sprite* FlagTopLeft;
+// Sprite* FlagTopRight;
 
-Sprite* FlagMidLeft;
-Sprite* FlagMidRight;
+// Sprite* FlagMidLeft;
+// Sprite* FlagMidRight;
 
-Sprite* FlagBottomLeft;
-Sprite* FlagBottomRight;
+// Sprite* FlagBottomLeft;
+// Sprite* FlagBottomRight;
 
 Sprite* BlockSprites[4];
 
@@ -458,12 +458,12 @@ void START()
 
 #if PLAT_GB
 	scroll_y_game = 0;
-	scroll_x_camera = 40;
+	scroll_x_camera = 0;
 #else
 	scroll_y_game = 0x1df;
 #endif // PLAT_GB
 	
-	scroll(0, scroll_y_game); // shift the bg down 1 pixel
+	//scroll(0, scroll_y_game); // shift the bg down 1 pixel
 
 	//set_scroll_y_game(0xff);
 
@@ -544,13 +544,13 @@ void START()
 		POKE(0x4016, 0);		
 	}	
 #endif // #if VS_SRAM_ENABLED
-	FlagTopLeft = SpriteManagerAdd(SpriteFlag, 10 << 3, 23 << 3);
-	FlagTopLeft->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagTopLeft, flag_anim, 15);
+	// FlagTopLeft = SpriteManagerAdd(SpriteFlag, 10 << 3, 23 << 3);
+	// FlagTopLeft->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagTopLeft, flag_anim, 15);
 
-	FlagTopRight = SpriteManagerAdd(SpriteFlag, 22 << 3, 23 << 3);
-	FlagTopRight->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagTopRight, flag_anim, 15);
+	// FlagTopRight = SpriteManagerAdd(SpriteFlag, 22 << 3, 23 << 3);
+	// FlagTopRight->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagTopRight, flag_anim, 15);
 
 /*
 	oam_spr(8 << 3, 1 << 3, local_ix, 2);
@@ -559,27 +559,27 @@ void START()
 	oam_spr(27 << 3, 10 << 3, local_ix, 0);
 */	
 
-	FlagMidLeft = SpriteManagerAdd(SpriteFlag, 8 << 3, (1 << 3) + 240);
-	FlagMidLeft->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagMidLeft, flag_anim, 15);
+	// FlagMidLeft = SpriteManagerAdd(SpriteFlag, 8 << 3, (1 << 3) + 240);
+	// FlagMidLeft->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagMidLeft, flag_anim, 15);
 
-	FlagMidRight = SpriteManagerAdd(SpriteFlag, 24 << 3, (1 << 3) + 240);
-	FlagMidRight->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagMidRight, flag_anim, 15);
+	// FlagMidRight = SpriteManagerAdd(SpriteFlag, 24 << 3, (1 << 3) + 240);
+	// FlagMidRight->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagMidRight, flag_anim, 15);
 
-	FlagBottomLeft = SpriteManagerAdd(SpriteFlag, 3 << 3, (10 << 3) + 240);
-	FlagBottomLeft->lim_x = 0xfff; // don't despawn
-	FlagBottomLeft->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagBottomLeft, flag_anim, 15);
+	// FlagBottomLeft = SpriteManagerAdd(SpriteFlag, 3 << 3, (10 << 3) + 240);
+	// FlagBottomLeft->lim_x = 0xfff; // don't despawn
+	// FlagBottomLeft->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagBottomLeft, flag_anim, 15);
 
-	FlagBottomRight = SpriteManagerAdd(SpriteFlag, 27 << 3, (10 << 3) + 240);
-	FlagBottomRight->lim_x = 0xfff; // don't despawn
-	FlagBottomRight->lim_y = 0xfff; // don't despawn
-	SetSpriteAnim(FlagBottomRight, flag_anim, 15);
+	// FlagBottomRight = SpriteManagerAdd(SpriteFlag, 27 << 3, (10 << 3) + 240);
+	// FlagBottomRight->lim_x = 0xfff; // don't despawn
+	// FlagBottomRight->lim_y = 0xfff; // don't despawn
+	// SetSpriteAnim(FlagBottomRight, flag_anim, 15);
 
 	for (i=0; i < 4; ++i)
 	{
-		BlockSprites[i] = SpriteManagerAdd(SpriteBlock, 0, 0);
+		BlockSprites[i] = SpriteManagerAdd(SpriteBlock, 0xFFF, 0xFFFF);
 		BlockSprites[i]->lim_x = 0xfff; // don't despawn
 		BlockSprites[i]->lim_y = 0xfff; // don't despawn
 	}
@@ -587,7 +587,12 @@ void START()
 
 void UPDATE()
 {
+	//static char num[16];
+
 	ppu_wait_nmi(); // wait till beginning of the frame
+
+	//UIntToString(ticks_in_state_large, num);
+	//PRINT(0,0,num);
 
 	//set_music_speed(1);
 
@@ -595,51 +600,16 @@ void UPDATE()
 	++tick_count_large;
 	++ticks_in_state_large;
 
-	pad1 = pad_poll(0); // read the first controller
-	pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
+	// pad1 = pad_poll(0); // read the first controller
+	// pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 
-	pad2 = pad_poll(1);
-	pad2_new = get_pad_new(1);
+	// pad2 = pad_poll(1);
+	// pad2_new = get_pad_new(1);
 
 	// Combine both controllers into one. This is mostly for Vs system, but seems like
 	// a nice enough feature for NES as well. Co-op mode!
-	pad_all = pad1 | pad2;
-	pad_all_new = pad1_new | pad2_new;
-
-#if VS_SYS_ENABLED
-	if (attract_gameplay_enabled)
-	{
-		if ((state == STATE_OPTIONS || state == STATE_GAME))
-		{
-			if (pad_all_new != 0)
-			{
-				fade_to_black();
-				go_to_state(STATE_MENU);
-				fade_from_black();
-				// clear input so that we don't process it again in the new state.
-				pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
-				goto skip_attract_input;
-			}
-			pad_all = pad_all_new = pad1 = pad1_new = pad2 = pad2_new = 0;
-
-			// move faster based on the current difficulty level.
-			if (ticks_in_state_large % (30 - cur_level) == 0)
-			{
-				if ((unsigned char)rand() % 2 == 0)
-				{
-					pad_all_new |= PAD_LEFT;
-				}
-				else
-				{
-					pad_all_new |= PAD_RIGHT; 
-				}
-				pad_all_new |= ((unsigned char)rand() % 4 == 0) ? PAD_A : 0;
-			}
-		}
-	}
-
-skip_attract_input:
-#endif // #if VS_SYS_ENABLED
+	pad_all = pad_poll();
+	pad_all_new = get_pad_new();
 
 #if VS_SYS_ENABLED
 
@@ -1057,10 +1027,10 @@ skip_attract_input:
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
-				for (local_ix = 8; local_ix <= 40; local_ix+=8)
-				{
-					scroll(local_ix, 0);
-				}
+				// for (local_ix = 8; local_ix <= 40; local_ix+=8)
+				// {
+				// 	scroll(local_ix, 0);
+				// }
 #else
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
@@ -1709,16 +1679,16 @@ skip_attract_input:
 
 //#if VS_SYS_ENABLED
 			// Yeah, this game has screen shake for inserting credits?? So what!?
-			if (screen_shake_remaining > 0)
-			{
-				--screen_shake_remaining;
-				scroll(((unsigned char)rand() % 2), scroll_y_game - ((unsigned char)rand() % 2));
-			}
-			else
-			{
-				//++scroll_y_game;
-				scroll(0 + scroll_x_camera, scroll_y_game + scroll_y_camera); // shift the bg down 1 pixel
-			}
+			// if (screen_shake_remaining > 0)
+			// {
+			// 	--screen_shake_remaining;
+			// 	scroll(((unsigned char)rand() % 2), scroll_y_game - ((unsigned char)rand() % 2));
+			// }
+			// else
+			// {
+			// 	//++scroll_y_game;
+			// 	scroll(0 + scroll_x_camera, scroll_y_game + scroll_y_camera); // shift the bg down 1 pixel
+			// }
 
 			// set_scroll_x(scroll_y_game);
 			// ++scroll_y_game;
@@ -1792,10 +1762,11 @@ void draw_gameplay_sprites(void)
 	static unsigned char speed;
 	static unsigned char i;
 	static unsigned char j;
+	static Sprite* Block;
 
 //PROFILE_POKE(0x5f); // green
 	// clear all sprites from sprite buffer
-	oam_clear();
+	//oam_clear();
 //PROFILE_POKE(0x9f); // blue
 	// push a single sprite
 	// oam_spr(unsigned char x,unsigned char y,unsigned char chrnum,unsigned char attr);
@@ -1816,18 +1787,20 @@ void draw_gameplay_sprites(void)
 			local_ix = index_to_x_lookup[j];
 			local_iy = index_to_y_lookup[j];
 
+			Block = BlockSprites[i];
+
 			// Don't draw the current cluster if it is above the top of the board.
 			// We want it to be able to function and move up there, but should not
 			// be visible.
 			if (local_start_y + (local_iy << 3) > OOB_TOP)
 			{
-				oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
-				BlockSprites[i]->x = local_start_x + (local_ix << 3);
-				BlockSprites[i]->y = local_start_y + (local_iy << 3) - 32;
+				//oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
+				Block->x = local_start_x + (local_ix << 3);
+				Block->y = local_start_y + (local_iy << 3) - 32;
 			}
 			else
 			{
-				BlockSprites[i]->y = 0xffff;
+				Block->y = 0xffff;
 			}
 		}
 	}
@@ -1971,29 +1944,29 @@ void draw_gameplay_sprites(void)
 		}
 	}
 
-	// FLAGS
-	local_t = tick_count & 63;
-	if (local_t > 48)
-	{
-		local_ix = 0x69;
-	}
-	else if (local_t > 32)
-	{
-		local_ix = 0x68;
-	}
-	else if (local_t > 16)
-	{
-		local_ix = 0x67;
-	}
-	else
-	{
-		local_ix = 0x66;
-	}
+	// // FLAGS
+	// local_t = tick_count & 63;
+	// if (local_t > 48)
+	// {
+	// 	local_ix = 0x69;
+	// }
+	// else if (local_t > 32)
+	// {
+	// 	local_ix = 0x68;
+	// }
+	// else if (local_t > 16)
+	// {
+	// 	local_ix = 0x67;
+	// }
+	// else
+	// {
+	// 	local_ix = 0x66;
+	// }
 
-	oam_spr(8 << 3, 1 << 3, local_ix, 2);
-	oam_spr(24 << 3, 1 << 3, local_ix, 2);
-	oam_spr(3 << 3, 10 << 3, local_ix, 0);
-	oam_spr(27 << 3, 10 << 3, local_ix, 0);
+	// oam_spr(8 << 3, 1 << 3, local_ix, 2);
+	// oam_spr(24 << 3, 1 << 3, local_ix, 2);
+	// oam_spr(3 << 3, 10 << 3, local_ix, 0);
+	// oam_spr(27 << 3, 10 << 3, local_ix, 0);
 
 	//debug_draw_board_area();
 }
@@ -2718,7 +2691,7 @@ void go_to_state(unsigned char new_state)
 			ppu_off();
 #if PLAT_GB
 			InitScroll(BANK(boot_screen), &boot_screen, 0, 0);
-			scroll(scroll_x_camera,0);
+			//scroll(scroll_x_camera,0);
 #else
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(boot_screen);
@@ -2767,11 +2740,11 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
-				scroll_x_camera = 56;
-				for (local_ix = 8; local_ix <= scroll_x_camera; local_ix+=8)
-				{
-					scroll(local_ix, 0);
-				}				
+				// scroll_x_camera = 56;
+				// for (local_ix = 8; local_ix <= scroll_x_camera; local_ix+=8)
+				// {
+				// 	scroll(local_ix, 0);
+				// }				
 				//UPDATE_TILE(8,8,&test_bg_tile,0);
 				//PRINT(0,16,"Hello World");
 #else
@@ -2801,7 +2774,7 @@ void go_to_state(unsigned char new_state)
 #else
 				scroll_y_game = 0x1df;
 #endif // PLAT_GB
-				scroll(scroll_x_camera, scroll_y_game); // shift the bg down 1 pixel
+				//scroll(scroll_x_camera, scroll_y_game); // shift the bg down 1 pixel
 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
 #if VS_SYS_ENABLED

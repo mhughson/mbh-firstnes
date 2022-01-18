@@ -36,11 +36,11 @@ void clear_vram_buffer(void) { }
 // // this should be done at the beginning of each frame, if using the vram_buffer
 
 
-unsigned char get_pad_new(unsigned char pad) 
+unsigned char get_pad_new(/*unsigned char pad*/) 
 { 
     static unsigned char i;
     static unsigned char r;
-    (void)pad; 
+    //(void)pad; 
 
     r = 0;
     for (i = 0; i < 8; ++i)
