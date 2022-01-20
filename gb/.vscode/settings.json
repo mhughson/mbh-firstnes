@@ -17,6 +17,8 @@
         "fade.h": "c",
         "bankmanager.h": "c",
         "zgbmain.h": "c",
-        "zgbmain_init.h": "c"
+        "zgbmain_init.h": "c",
+        "stdlib.h": "c",
+        "limits": "c"
     }
 }

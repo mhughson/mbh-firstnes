@@ -849,14 +849,14 @@ const unsigned char fall_rates_per_level[] =
 // Different game modes for the settings screen.
 const unsigned char attack_style_strings[3][ATTACK_STRING_LEN] = 
 {
-    "FIXED",
-    "TIMED",
+    "FIXED  ",
+    "TIMED  ",
     "CLASSIC"
 };
 const unsigned char off_on_string[2][OFF_ON_STRING_LEN] = 
 {
     "OFF",
-    "ON"
+    "ON "
 };
 // Originally the game was going to feature different clusters, other than 
 // tetrominos, but that ended up getting cut. This is legacy from that and could
@@ -872,7 +872,7 @@ const unsigned char block_style_strings[2][BLOCK_STYLE_STRING_LEN] =
 // How long is the string used to display the harddrop setting name.
 #define HARD_DROP_STRING_LEN 5
 // The different types of hard drop.
-const unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF", "TAP", "HOLD" };
+const unsigned char hard_drop_types[NUM_HARD_DROP_SETTINGS][HARD_DROP_STRING_LEN] = { "OFF ", "TAP ", "HOLD" };
 
 #if VS_SYS_ENABLED
 unsigned char auto_forward_leaderboards;
@@ -981,8 +981,8 @@ void go_to_state(unsigned char new_state);
 void inc_lines_cleared();
 void display_lines_cleared();
 void display_score();
-void display_highscore() { } // PLAT_GB
-void display_level() { } // PLAT_GB
+void display_highscore();
+void display_level();
 
 // CLEAR PHASES
 
@@ -1005,7 +1005,7 @@ void reset_gameplay_area();
 
 void display_song() { } // PLAT_GB
 void display_sound() { } // PLAT_GB
-void display_options() { } // PLAT_GB
+void display_options();
 
 void fade_to_black();
 void fade_from_black();

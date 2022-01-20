@@ -38,6 +38,7 @@
 
 #include <gbdk/platform.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "StateFromBelow.h"
 // TEMP
@@ -64,6 +65,7 @@ IMPORT_MAP(ty_screen);
 IMPORT_TILES(font);
 
 const unsigned char test_bg_tile = 128;
+const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 #endif // PLAT_GB
 
@@ -2765,7 +2767,7 @@ void go_to_state(unsigned char new_state)
 					fade_to_black();
 				}
 
-				reset_gameplay_area();
+				//reset_gameplay_area();
 
 				draw_menu_sprites();
 
@@ -2834,6 +2836,7 @@ void go_to_state(unsigned char new_state)
 #else
 #if PLAT_GB
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
+			INIT_FONT(font, PRINT_BKG);
 #else
 			vram_unrle(options_screen);			
 #endif // PLAT_GB			
@@ -2885,10 +2888,12 @@ void go_to_state(unsigned char new_state)
 		case STATE_GAME:
 		{
 			// This gets done in the main menu too.
-			if (prev_state == STATE_OVER)
-			{
-				reset_gameplay_area();
-			}
+			// GB: Turned off for GB port, as we always want to 
+			// reset the game score, lines, etc when entering gameplay.
+			// if (prev_state == STATE_OVER)
+			// {
+			// 	reset_gameplay_area();
+			// }
 
 			if (prev_state != STATE_PAUSE)
 			{
@@ -2922,7 +2927,9 @@ void go_to_state(unsigned char new_state)
 				// scroll_y_game = 0;
 				// scroll(0, scroll_y_game);
 				
+				INIT_FONT(font, PRINT_BKG);
 				InitScroll(BANK(game_area), &game_area, 0, 0);
+				reset_gameplay_area();
 
 				//UPDATE_TILE(0,0,&test_bg_tile,0);
 
@@ -3219,12 +3226,12 @@ void display_lines_cleared()
 	//UPDATE_TILE_BY_VALUE(4,3,0,0);
 	//UIntToString(lines_cleared_hundred, text);
 	//PRINT(4,1,text);
-	PRINT(23,7, "LINES");
-	PRINT_POS(23,8);
+	PRINT(3,6, "LINES");
+	PRINT_POS(5,7);
 	Printf("%d", lines_cleared_hundred);
-	PRINT_POS(24,8);
+	PRINT_POS(6,7);
 	Printf("%d", lines_cleared_ten);
-	PRINT_POS(25,8);
+	PRINT_POS(7,7);
 	Printf("%d", lines_cleared_one);
 
 	//UPDATE_TILE_BY_VALUE(4,3,'0' + lines_cleared_hundred,0);
@@ -3242,8 +3249,11 @@ void display_score()
 
 	temp_score = cur_score;
 
+	PRINT(3, 9, "SCORE");
+
 	// clear out any old score.
 	multi_vram_buffer_horz("      ", 6, get_ppu_addr(cur_nt, 0, 6<<3));
+	PRINT(1, 10, "0000000");
 
 	i = 0;
 	while(temp_score != 0)
@@ -3251,13 +3261,12 @@ void display_score()
         unsigned char digit = temp_score % 10;
         one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 6<<3 ));
 
+		PRINT(7 - i, 10, digits[digit]);
+
         temp_score = temp_score / 10;
 		++i;
     }
 }
-
-#if PLAT_NES
-
 
 #if !VS_SYS_ENABLED		
 void display_highscore()
@@ -3269,12 +3278,14 @@ void display_highscore()
 
 	// clear out any old score.
 	multi_vram_buffer_horz("0000000", 7, get_ppu_addr(0, 17<<3, 27<<3));
+	PRINT(11, 17, "0000000");
 
 	i = 0;
 	while(temp_score != 0)
     {
         unsigned char digit = temp_score % 10;
         one_vram_buffer('0' + digit, get_ppu_addr(0, (23<<3) - (i << 3), 27<<3 ));
+		PRINT(17 - i, 17, digits[digit]);
 
         temp_score = temp_score / 10;
 		++i;
@@ -3288,6 +3299,9 @@ void display_level()
 	// comparing it to lines (eg. lines is 80, level is 8).
 	static unsigned char temp_level;
 	static unsigned char i;
+	static unsigned char res[2];
+
+	PRINT(3, 12, "LEVEL");
 
 	temp_level = cur_level;
 	i = 0;
@@ -3295,19 +3309,27 @@ void display_level()
 	if (cur_level < 10)
 	{
 		multi_vram_buffer_horz("00", 2, get_ppu_addr(cur_nt,5<<3,9<<3));
+		PRINT(6, 13, "0");
+		uitoa(cur_level, res, 10);
+		PRINT(7, 13, res);
+	}
+	else
+	{
+		uitoa(cur_level, res, 10);
+		PRINT(6, 13, res);
 	}
 
-	while(temp_level != 0)
-    {
-        unsigned char digit = temp_level % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 9<<3 ));
+	// while(temp_level != 0)
+    // {
+    //     unsigned char digit = temp_level % 10;
+    //     one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 9<<3 ));
 
-        temp_level = temp_level / 10;
-		++i;
-    }
+	// 	PRINT(7 - i, 13, '0' + digit);
+
+    //     temp_level = temp_level / 10;
+	// 	++i;
+    // }
 }
-
-#endif // PLAT_NES
 
 // START OF ROW CLEAR SEQUENCE!
 
@@ -3826,9 +3848,13 @@ void display_sound()
 	}
 }
 
+#endif //#if !VS_SYS_ENABLED	
+#endif // PLAT_NES
+
 void display_options()
 {
  	static unsigned char start_y = 16;
+	static unsigned char i;
 
 	// TODO: Could be smarter and only update the line that changed, and delay
 	// 		 could probably be removed.
@@ -3837,10 +3863,15 @@ void display_options()
 	clear_vram_buffer();
 
 	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,start_y<<3));
+	PRINT(11,6, digits[cur_level]);
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
+	PRINT(11,8, attack_style_strings[attack_style]);
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
+	PRINT(11,10, off_on_string[music_on]);
 	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
+	PRINT(11,12, off_on_string[sfx_on]);
 	multi_vram_buffer_horz(hard_drop_types[hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
+	PRINT(11,14, hard_drop_types[hard_drops_on]);
 
 	// NOTE: One redundant call.
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
@@ -3849,15 +3880,21 @@ void display_options()
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+6)<<3));
 	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+8)<<3));
 
+	for (i = 0 ; i < 5; ++i)
+	{
+		UPDATE_TILE_BY_VALUE(1, 6 + (i*2), 0, NULL);
+		UPDATE_TILE_BY_VALUE(2, 6 + (i*2), 0, NULL);
+	}
+
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
+	UPDATE_TILE_BY_VALUE(1, 6 + (cur_option * 2), 1, NULL);
+	UPDATE_TILE_BY_VALUE(2, 6 + (cur_option * 2), 2, NULL);
 
 	// Avoid overrun when mashing mode change.
 	wait_vbl_done();
 	clear_vram_buffer();
 }
-#endif //#if !VS_SYS_ENABLED		
 
-#endif // PLAT_NES
 void fade_to_black()
 {
 	// pal_bright(3);
