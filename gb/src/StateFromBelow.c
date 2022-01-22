@@ -1758,6 +1758,9 @@ void draw_menu_sprites(void)
 
 #endif // PLAT_NES
 
+// Used to hide sprites off screen.
+#define OFFSCREEN_Y (144 + 32)
+
 void draw_gameplay_sprites(void)
 {
 	static char shake_offset;
@@ -1802,7 +1805,7 @@ void draw_gameplay_sprites(void)
 			}
 			else
 			{
-				Block->y = 0xffff;
+				Block->y = OFFSCREEN_Y;
 			}
 		}
 	}
@@ -1810,7 +1813,7 @@ void draw_gameplay_sprites(void)
 	{
 		for (i = 0; i < 4; ++i)
 		{
-			BlockSprites[i]->y = 0xffff;
+			BlockSprites[i]->y = OFFSCREEN_Y;
 		}
 	}
 
@@ -3906,11 +3909,13 @@ void fade_to_black()
 	// pal_bright(0);
 	// //delay(2);
 
-	if(_cpu == CGB_TYPE)
+	#ifdef CGB
+	if (_cpu == CGB_TYPE)
 	{
 		FadeIn();
 		DISPLAY_OFF;
 	}
+	#endif // #ifdef CGB
 }
 
 void fade_from_black()
@@ -3925,11 +3930,13 @@ void fade_from_black()
 	// //delay(2);
 
 	// hack to get around bug in DMG
-	if(_cpu == CGB_TYPE)
+	#ifdef CGB
+	if (_cpu == CGB_TYPE)
 	{
 		DISPLAY_ON;
 		FadeOut();
 	}
+	#endif // #ifdef CGB
 }
 
 #if PLAT_NES
