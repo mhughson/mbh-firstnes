@@ -63,6 +63,7 @@ IMPORT_MAP(options_screen);
 IMPORT_MAP(ty_screen);
 
 IMPORT_TILES(font);
+IMPORT_TILES(font_on_black);
 
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -400,7 +401,7 @@ void my_interrupt() NONBANKED {
     if (counter == 20) {
         counter = 0;
         SCY_REG = 1; 
-        LYC_REG = 6;
+        LYC_REG = 5; // 6 to trim top instead of bottom
     } else counter++;
 
 	// ++counter;
@@ -448,7 +449,7 @@ void START()
 	cur_nt = 2;
 
 #if PLAT_GB
-	INIT_FONT(font, PRINT_BKG);
+	INIT_FONT(font_on_black, PRINT_BKG);
 	//vram_unrle(title_and_game_area);
 	//InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 #else
@@ -1024,11 +1025,11 @@ void UPDATE()
 				music_stop();
 				SFX_PLAY_WRAPPER(SOUND_START);
 
-				fade_to_black();
-				ppu_off();
+				//fade_to_black();
+				//ppu_off();
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
-				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+				//InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 				// for (local_ix = 8; local_ix <= 40; local_ix+=8)
 				// {
 				// 	scroll(local_ix, 0);
@@ -1037,8 +1038,8 @@ void UPDATE()
 				vram_adr(NTADR_A(0,0));
 				vram_unrle(title_screen);
 #endif // PLAT_GB
-				ppu_on_all();
-				fade_from_black();
+				//ppu_on_all();
+				//fade_from_black();
 
 				// little cheat to start at very high levels.
 				if (cur_level == 9 && pad_all & PAD_SELECT)
@@ -2606,8 +2607,8 @@ void go_to_state(unsigned char new_state)
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			row_to_clear = -1;
 			start_delay_remaining = START_DELAY;
-			display_level();
-			display_score();
+			//display_level();
+			//display_score();
 			break;
 		}
 
@@ -2839,7 +2840,7 @@ void go_to_state(unsigned char new_state)
 #else
 #if PLAT_GB
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
-			INIT_FONT(font, PRINT_BKG);
+			INIT_FONT(font_on_black, PRINT_BKG);
 #else
 			vram_unrle(options_screen);			
 #endif // PLAT_GB			
@@ -2902,6 +2903,8 @@ void go_to_state(unsigned char new_state)
 			{
 				oam_clear();
 
+				fade_to_black();
+
 #if VS_SYS_ENABLED
 				if (!attract_gameplay_enabled && credits_remaining >= game_cost)
 				{
@@ -2930,8 +2933,12 @@ void go_to_state(unsigned char new_state)
 				// scroll_y_game = 0;
 				// scroll(0, scroll_y_game);
 				
-				INIT_FONT(font, PRINT_BKG);
+				INIT_FONT(font_on_black, PRINT_BKG);
 				InitScroll(BANK(game_area), &game_area, 0, 0);
+				// Clear out the temp tiles used to force tile index.
+				UPDATE_TILE_BY_VALUE(0,0,3,NULL);
+				UPDATE_TILE_BY_VALUE(1,0,3,NULL);
+				UPDATE_TILE_BY_VALUE(2,0,3,NULL);
 				reset_gameplay_area();
 
 				//UPDATE_TILE(0,0,&test_bg_tile,0);
@@ -2955,6 +2962,8 @@ void go_to_state(unsigned char new_state)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
+
+				fade_from_black();
 			}
 
 #if VS_SYS_ENABLED
