@@ -57,7 +57,7 @@ unsigned char sound_screen[] = { 0 };
 
 IMPORT_MAP(gb_border);
 IMPORT_MAP(game_area);
-IMPORT_MAP(title_and_game_area);
+IMPORT_MAP(title_screen);
 IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
 IMPORT_MAP(ty_screen);
@@ -2745,7 +2745,13 @@ void go_to_state(unsigned char new_state)
 				ppu_off();
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
-				InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
+				InitScroll(BANK(title_screen), &title_screen, 0, 0);
+				// Titlescreen is centered slightly offset.
+				scroll(4,0);
+				// force the scroll to update before fading in.
+				wait_vbl_done();
+				SpriteManagerUpdate();
+
 				// scroll_x_camera = 56;
 				// for (local_ix = 8; local_ix <= scroll_x_camera; local_ix+=8)
 				// {
@@ -2841,6 +2847,12 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
 			INIT_FONT(font_on_black, PRINT_BKG);
+
+			// Titlescreen is centered slightly offset.
+			scroll(0,0);
+			// force the scroll to update before fading in.
+			wait_vbl_done();
+			SpriteManagerUpdate();
 #else
 			vram_unrle(options_screen);			
 #endif // PLAT_GB			
