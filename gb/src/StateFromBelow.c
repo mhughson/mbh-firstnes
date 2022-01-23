@@ -2848,6 +2848,12 @@ void go_to_state(unsigned char new_state)
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
 			INIT_FONT(font_on_black, PRINT_BKG);
 
+			// Clear out the temp tiles used to force tile index.
+			UPDATE_TILE_BY_VALUE(0,0,4,NULL);
+			UPDATE_TILE_BY_VALUE(1,0,4,NULL);
+			UPDATE_TILE_BY_VALUE(2,0,4,NULL);
+			UPDATE_TILE_BY_VALUE(3,0,4,NULL);
+
 			// Titlescreen is centered slightly offset.
 			scroll(0,0);
 			// force the scroll to update before fading in.
