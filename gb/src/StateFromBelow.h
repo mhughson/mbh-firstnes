@@ -503,8 +503,8 @@ unsigned char attack_row_status[BOARD_WIDTH];
 // in order.
 const unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
-    //0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6,
-    BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, 
+    112, 113, 114, 115, 116, 117, 118,
+    //BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, 
 };
 
 // The starting y offet (in tiles) each cluster type uses when spawning into
@@ -691,7 +691,7 @@ const unsigned char option_empty[] = {0x0, 0x0};
 const unsigned char option_icon[] = {0x25, 0x26};
 
 // copy_board_to_nt()
-char copy_board_data[BOARD_HEIGHT];
+unsigned char copy_board_data[BOARD_HEIGHT];
 
 // 2C03
 // 333,014,006,326,403,    503,510,420,320,120,    031,040,022,000,000,    000

@@ -35,6 +35,8 @@
 #include "Print.h"
 #include "rand.h"
 #include "SGB.h"
+#include "Music.h"
+#include "BankManager.h"
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -47,6 +49,7 @@ void srand(unsigned int seed) { initrand(seed); }
 
 // defined in ZGB main.c. Need to be able to remove it.
 extern void LCD_isr() NONBANKED;
+extern void UPDATE_TILE(INT16 x, INT16 y, UINT8* t, UINT8* c);
 
 //unsigned char title_screen[] = { 0 };
 //unsigned char game_area[] = { 0 };
@@ -61,9 +64,12 @@ IMPORT_MAP(title_screen);
 IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
 IMPORT_MAP(ty_screen);
+IMPORT_MAP(gameplay_map);
 
 IMPORT_TILES(font);
 IMPORT_TILES(font_on_black);
+
+DECLARE_MUSIC(StressLoopKick);
 
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -2274,7 +2280,7 @@ void set_block(/*unsigned char x, unsigned char y, unsigned char id*/)
 	address = get_ppu_addr(cur_nt, (in_x << 3) + BOARD_START_X_PX, (in_y << 3) + BOARD_START_Y_PX);
 	one_vram_buffer(in_id, address);
 
-	UPDATE_TILE_BY_VALUE(in_x + (BOARD_START_X_PX >> 3), in_y- 4, in_id, 0);
+	UPDATE_TILE_BY_VALUE(in_x + (BOARD_START_X_PX >> 3), in_y- 4, in_id, 0x10);
 
 	// TODO: Is this too slow?
 	game_board[TILE_TO_BOARD_INDEX(in_x, in_y)] = in_id;
@@ -2488,8 +2494,8 @@ void spawn_new_cluster()
 
 	for (i = 0; i < 4; ++i)
 	{
-		UPDATE_TILE_BY_VALUE(3 + i, 2, EMPTY_TILE, 0);
-		UPDATE_TILE_BY_VALUE(3 + i, 3, EMPTY_TILE, 0);
+		UPDATE_TILE_BY_VALUE(2 + i, 2, EMPTY_TILE, 0x10);
+		UPDATE_TILE_BY_VALUE(2 + i, 3, EMPTY_TILE, 0x10);
 	}
 
 	for (i = 0; i < 4; ++i)
@@ -2503,7 +2509,7 @@ void spawn_new_cluster()
 
 		one_vram_buffer(local_t, get_ppu_addr(cur_nt, 120 + (local_ix << 3), 8 + (local_iy << 3)));
 
-		UPDATE_TILE_BY_VALUE(3 + local_ix, 1 + local_iy, local_t, 0);
+		UPDATE_TILE_BY_VALUE(2 + local_ix, 1 + local_iy, local_t, 0x10);
 	}
 //PROFILE_POKE(0x1e); //none
 
@@ -2704,6 +2710,8 @@ void go_to_state(unsigned char new_state)
 #endif // PLAT_GB
 			ppu_on_all();
 
+//			PlayMusic(StressLoopKick, 1);
+
 			break;
 		}
 		case STATE_TY:
@@ -2746,11 +2754,14 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_screen), &title_screen, 0, 0);
-				// Titlescreen is centered slightly offset.
-				scroll(4,0);
-				// force the scroll to update before fading in.
-				wait_vbl_done();
-				SpriteManagerUpdate();
+
+				// Disabled for now. If this is needed in the end remember
+				// to push the current_bank first.
+				// // Titlescreen is centered slightly offset.
+				// scroll(4,0);
+				// // force the scroll to update before fading in.
+				// wait_vbl_done();
+				// SpriteManagerUpdate();
 
 				// scroll_x_camera = 56;
 				// for (local_ix = 8; local_ix <= scroll_x_camera; local_ix+=8)
@@ -2854,11 +2865,13 @@ void go_to_state(unsigned char new_state)
 			UPDATE_TILE_BY_VALUE(2,0,4,NULL);
 			UPDATE_TILE_BY_VALUE(3,0,4,NULL);
 
-			// Titlescreen is centered slightly offset.
-			scroll(0,0);
-			// force the scroll to update before fading in.
-			wait_vbl_done();
-			SpriteManagerUpdate();
+			// Disabled for now. Remember to add PUSH/POP bank
+			//
+			// // Titlescreen is centered slightly offset.
+			// scroll(0,0);
+			// // force the scroll to update before fading in.
+			// wait_vbl_done();
+			// SpriteManagerUpdate();
 #else
 			vram_unrle(options_screen);			
 #endif // PLAT_GB			
@@ -2951,12 +2964,12 @@ void go_to_state(unsigned char new_state)
 				// scroll_y_game = 0;
 				// scroll(0, scroll_y_game);
 				
-				INIT_FONT(font_on_black, PRINT_BKG);
-				InitScroll(BANK(game_area), &game_area, 0, 0);
+				INIT_FONT(font, PRINT_BKG);
+				InitScroll(BANK(gameplay_map), &gameplay_map, 0, 0);
 				// Clear out the temp tiles used to force tile index.
-				UPDATE_TILE_BY_VALUE(0,0,3,NULL);
-				UPDATE_TILE_BY_VALUE(1,0,3,NULL);
-				UPDATE_TILE_BY_VALUE(2,0,3,NULL);
+				// UPDATE_TILE_BY_VALUE(0,0,3,NULL);
+				// UPDATE_TILE_BY_VALUE(1,0,3,NULL);
+				// UPDATE_TILE_BY_VALUE(2,0,3,NULL);
 				reset_gameplay_area();
 
 				//UPDATE_TILE(0,0,&test_bg_tile,0);
@@ -3256,12 +3269,12 @@ void display_lines_cleared()
 	//UPDATE_TILE_BY_VALUE(4,3,0,0);
 	//UIntToString(lines_cleared_hundred, text);
 	//PRINT(4,1,text);
-	PRINT(3,6, "LINES");
-	PRINT_POS(5,7);
+	PRINT(2,5, "LINES");
+	PRINT_POS(4,6);
 	Printf("%d", lines_cleared_hundred);
-	PRINT_POS(6,7);
+	PRINT_POS(5,6);
 	Printf("%d", lines_cleared_ten);
-	PRINT_POS(7,7);
+	PRINT_POS(6,6);
 	Printf("%d", lines_cleared_one);
 
 	//UPDATE_TILE_BY_VALUE(4,3,'0' + lines_cleared_hundred,0);
@@ -3279,11 +3292,11 @@ void display_score()
 
 	temp_score = cur_score;
 
-	PRINT(3, 9, "SCORE");
+	PRINT(2, 7, "SCORE");
 
 	// clear out any old score.
 	multi_vram_buffer_horz("      ", 6, get_ppu_addr(cur_nt, 0, 6<<3));
-	PRINT(1, 10, "0000000");
+	PRINT(0, 8, "0000000");
 
 	i = 0;
 	while(temp_score != 0)
@@ -3291,7 +3304,7 @@ void display_score()
         unsigned char digit = temp_score % 10;
         one_vram_buffer('0' + digit, get_ppu_addr(cur_nt, (6<<3) - (i << 3), 6<<3 ));
 
-		PRINT(7 - i, 10, digits[digit]);
+		PRINT(6 - i, 8, digits[digit]);
 
         temp_score = temp_score / 10;
 		++i;
@@ -3331,7 +3344,7 @@ void display_level()
 	static unsigned char i;
 	static unsigned char res[2];
 
-	PRINT(3, 12, "LEVEL");
+	PRINT(2, 9, "LEVEL");
 
 	temp_level = cur_level;
 	i = 0;
@@ -3339,14 +3352,14 @@ void display_level()
 	if (cur_level < 10)
 	{
 		multi_vram_buffer_horz("00", 2, get_ppu_addr(cur_nt,5<<3,9<<3));
-		PRINT(6, 13, "0");
+		PRINT(5, 10, "0");
 		uitoa(cur_level, res, 10);
-		PRINT(7, 13, res);
+		PRINT(6, 10, res);
 	}
 	else
 	{
 		uitoa(cur_level, res, 10);
-		PRINT(6, 13, res);
+		PRINT(5, 10, res);
 	}
 
 	// while(temp_level != 0)
@@ -3503,13 +3516,15 @@ void clear_rows_in_data(unsigned char start_y)
 }
 
 void reveal_empty_rows_to_nt()
-{
+{	
+	static INT16 ix;
+	static INT16 iy;
+
 	//multi_vram_buffer_vert(const char * data, unsigned char len, int ppu_address);
 
 	// Start in the middle of th board, and reveal outwards:
 	// 4,5 -> 3,6 -> 2,7 -> 1,8 -> 0,9
-	static signed char ix;
-	static unsigned char iy;
+
 
 	// Clear out any existing vram commands to ensure we can safely do a bunch
 	// of work in this function.
@@ -3518,7 +3533,14 @@ void reveal_empty_rows_to_nt()
 		
 	// Force the sprites to hide themselves.
 	draw_gameplay_sprites();		
-	SpriteManagerUpdate(); 
+
+	// Calling SpriteManagerUpdate() SETS the current bank, and could leave us
+	// in the wrong bank. See: https://discord.com/channels/790342889318252555/790346049377927168/935599452322922560
+	// To account for this, we make a redundant PUSH call here, so that regardless of what 
+	// bank is SET in SpriteManagerUpdate, we can POP back to our State's bank.
+	PUSH_BANK(_current_bank);
+	SpriteManagerUpdate();
+	POP_BANK;
 
 	// Reveal from the center out.
 	for (ix = 4; ix >= 0; --ix)
@@ -3533,9 +3555,9 @@ void reveal_empty_rows_to_nt()
 			// game_board directly. Using the copy array seems to work fine.
 			UPDATE_TILE_BY_VALUE(
 				(BOARD_START_X_PX >> 3) + (ix), 
-				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
+				iy, //(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
 				copy_board_data[iy],
-				0);
+				0x10);
 		}
 
 		// multi_vram_buffer_vert(
@@ -3546,7 +3568,6 @@ void reveal_empty_rows_to_nt()
 		// 		BOARD_START_X_PX + (ix << 3),
 		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
-
 		// RIGHT SIDE
 
 
@@ -3555,9 +3576,9 @@ void reveal_empty_rows_to_nt()
 			copy_board_data[iy] = game_board[TILE_TO_BOARD_INDEX(BOARD_END_X_PX_BOARD - ix, iy + BOARD_OOB_END + 1)];
 			UPDATE_TILE_BY_VALUE(
 				(BOARD_START_X_PX >> 3) + (BOARD_END_X_PX_BOARD - ix), 
-				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
+				iy, //(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + iy - 4,
 				copy_board_data[iy],
-				0);
+				0x10);
 		}
 
 		// multi_vram_buffer_vert(
@@ -3662,7 +3683,7 @@ void copy_board_to_nt()
 				(BOARD_START_X_PX >> 3) + (local_ix), 
 				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
 				copy_board_data[local_iy],
-				0);
+				0x10);
 		}
 
 		// multi_vram_buffer_vert(
@@ -3912,13 +3933,13 @@ void display_options()
 
 	for (i = 0 ; i < 5; ++i)
 	{
-		UPDATE_TILE_BY_VALUE(1, 6 + (i*2), 0, NULL);
-		UPDATE_TILE_BY_VALUE(2, 6 + (i*2), 0, NULL);
+		UPDATE_TILE_BY_VALUE(1, 6 + (i*2), 0, 0x10);
+		UPDATE_TILE_BY_VALUE(2, 6 + (i*2), 0, 0x10);
 	}
 
 	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
-	UPDATE_TILE_BY_VALUE(1, 6 + (cur_option * 2), 1, NULL);
-	UPDATE_TILE_BY_VALUE(2, 6 + (cur_option * 2), 2, NULL);
+	UPDATE_TILE_BY_VALUE(1, 6 + (cur_option * 2), 1, 0x10);
+	UPDATE_TILE_BY_VALUE(2, 6 + (cur_option * 2), 2, 0x10);
 
 	// Avoid overrun when mashing mode change.
 	wait_vbl_done();
