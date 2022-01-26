@@ -70,6 +70,7 @@ IMPORT_TILES(font);
 IMPORT_TILES(font_on_black);
 
 DECLARE_MUSIC(StressLoopKick);
+DECLARE_MUSIC(gameplay_WIP1);
 
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -818,7 +819,7 @@ void UPDATE()
 				if (cur_konami_index >= KONAMI_CODE_LEN)
 				{
 					SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
-					music_stop();
+					StopMusic;
 					go_to_state(STATE_SOUND_TEST);
 				}
 				else
@@ -933,7 +934,7 @@ void UPDATE()
 								++vs_code_index;
 								if (vs_code_index == VS_CODE_LEN)
 								{
-									music_stop();
+									StopMusic;
 									SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI)
 									cur_level_vs_setting = 3;
 									pal_bg(palette_vs_options_skulls);
@@ -992,7 +993,7 @@ void UPDATE()
 					}
 					if (pad_all_new & (PAD_A | PAD_B | PAD_SELECT | PAD_START) || (ticks_in_state_large > AUTO_FORWARD_DELAY))
 					{
-						music_stop();
+						StopMusic;
 						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// 0, 9, 19, 29.
@@ -1028,7 +1029,7 @@ void UPDATE()
 
 			if (pad_all_new & PAD_START)
 			{
-				music_stop();
+				StopMusic;
 				SFX_PLAY_WRAPPER(SOUND_START);
 
 				//fade_to_black();
@@ -1106,7 +1107,7 @@ void UPDATE()
 
 					// if (music_on == 0)
 					// {
-					// 	music_stop();
+					// 	StopMusic;
 					// }
 					// else
 					// {
@@ -1181,12 +1182,12 @@ void UPDATE()
 					{
 						music_on = 0;
 						music_pause(1);
-						music_stop();
+						StopMusic;
 					}
 
 					// if (music_on == 0)
 					// {
-					// 	music_stop();
+					// 	StopMusic;
 					// }
 					// else
 					// {
@@ -1327,18 +1328,18 @@ void UPDATE()
 						// music is stressed even if it doesn't start playing this frame.
 						local_t = 1;
 
-						if (cur_gameplay_music == MUSIC_GAMEPLAY)
+						if (cur_gameplay_music == GAMEPLAY_MUSIC_NORMAL)
 						{
-							cur_gameplay_music = MUSIC_STRESS;
+							cur_gameplay_music = GAMEPLAY_MUSIC_STRESS;
 							MUSIC_PLAY_WRAPPER(MUSIC_STRESS);
 							break;
 						}
 					}
 				}
 
-				if (local_t == 0 && cur_gameplay_music == MUSIC_STRESS)
+				if (local_t == 0 && cur_gameplay_music == GAMEPLAY_MUSIC_STRESS)
 				{
-					cur_gameplay_music = MUSIC_GAMEPLAY;
+					cur_gameplay_music = GAMEPLAY_MUSIC_NORMAL;
 					MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
 				}
 			}
@@ -1442,7 +1443,7 @@ void UPDATE()
 				if (test_song == test_song_active)
 				{
 					test_song_active = 0xff;
-					music_stop();
+					StopMusic;
 				}
 				else
 				{
@@ -2710,8 +2711,6 @@ void go_to_state(unsigned char new_state)
 #endif // PLAT_GB
 			ppu_on_all();
 
-//			PlayMusic(StressLoopKick, 1);
-
 			break;
 		}
 		case STATE_TY:
@@ -3004,7 +3003,7 @@ void go_to_state(unsigned char new_state)
 				// Do this at the end of the state change so that
 				// the up beat music doesn't kick in until after
 				// everything transitions in.
-				cur_gameplay_music = MUSIC_GAMEPLAY;
+				cur_gameplay_music = GAMEPLAY_MUSIC_NORMAL;
 				MUSIC_PLAY_WRAPPER(MUSIC_GAMEPLAY);
 			}
 
@@ -3027,7 +3026,7 @@ void go_to_state(unsigned char new_state)
 			// Without this, the "next" block won't appear for the first half of the sequence.
 			draw_gameplay_sprites();
 
-			music_stop();
+			StopMusic;
 			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
 
 			// Without music this delay feels really odd.

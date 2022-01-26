@@ -68,7 +68,7 @@
 #define SFX_PLAY_WRAPPER(id) if (sfx_on) { sfx_play((id), 0); }
 // play a sound effect that is treated like music to the user (jingles, etc).
 #define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
-#define MUSIC_PLAY_WRAPPER(id) if (music_on) { music_play((id)); }
+#define MUSIC_PLAY_WRAPPER(id) if (music_on) { PlayMusic(id, 1); }
 #if VS_SYS_ENABLED
 #define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && (DIP8 == 0 || credits_remaining >= game_cost)) { music_play((id)); }
 #else
@@ -572,7 +572,10 @@ unsigned char test_song_active;
 unsigned char test_sound;
 
 // Index for each music track. This must start at 0 and line up with famitracker file.
-enum { MUSIC_TITLE, MUSIC_GAMEPLAY, MUSIC_STRESS, MUSIC_PAUSE };
+#define MUSIC_TITLE gameplay_WIP1
+#define MUSIC_GAMEPLAY gameplay_WIP1
+#define MUSIC_STRESS StressLoopKick
+#define MUSIC_PAUSE gameplay_WIP1
 
 // Index for each sound effect, as it appears in the famitracker source file.
 enum 
@@ -585,6 +588,8 @@ enum
 // During gameplay if the blocks reach high enough (See: STRESS_MUSIC_LEVEL) a more
 // stressful version of the music will play. This tracks which music is playing.
 unsigned char cur_gameplay_music;
+#define GAMEPLAY_MUSIC_NORMAL 0
+#define GAMEPLAY_MUSIC_STRESS 1
 // How high a block must be placed for the stressful music to start.
 #define STRESS_MUSIC_LEVEL 7 // 5 blocks down from the out of bounds area
 // Has a Kraken attack been queued up. This can happen in a number of ways
