@@ -1805,11 +1805,16 @@ void draw_gameplay_sprites(void)
 			// Don't draw the current cluster if it is above the top of the board.
 			// We want it to be able to function and move up there, but should not
 			// be visible.
-			if (local_start_y + (local_iy << 3) > OOB_TOP)
+			// TODO: * 7 via lookup table.
+			if (local_start_y + (local_iy * 7) > OOB_TOP)
 			{
 				//oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
 				Block->x = local_start_x + (local_ix << 3);
-				Block->y = local_start_y + (local_iy << 3) - 32;
+				// Note sure why -30. -32 was to account for the non-visible
+				// OOB area, but that resulted in sprites that looked like they
+				// we offset by a few more pixels than they should be.
+				// Using 30 instead looks right for some reason.
+				Block->y = local_start_y + (local_iy * 7) - 30;
 			}
 			else
 			{
@@ -3537,7 +3542,9 @@ void reveal_empty_rows_to_nt()
 	// in the wrong bank. See: https://discord.com/channels/790342889318252555/790346049377927168/935599452322922560
 	// To account for this, we make a redundant PUSH call here, so that regardless of what 
 	// bank is SET in SpriteManagerUpdate, we can POP back to our State's bank.
-	PUSH_BANK(_current_bank);
+	// NOTE: Using _current_bank crashes the game on CGB. Value appeared to be 255 in debugger.
+	//       0 seems to work fine, but may have issues down the road if this state is not in Bank 0 (I think).
+	PUSH_BANK(0);
 	SpriteManagerUpdate();
 	POP_BANK;
 
