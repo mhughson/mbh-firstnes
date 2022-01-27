@@ -713,7 +713,8 @@ void UPDATE()
 			if (tick_count == 120 || pad_all_new & PAD_ALL_BUTTONS)
 			{
 				fade_to_black();
-				go_to_state(STATE_TY);
+				//go_to_state(STATE_TY);
+				go_to_state(STATE_MENU);
 				fade_from_black();
 			}
 			break;
@@ -2601,7 +2602,8 @@ void go_to_state(unsigned char new_state)
 
 	switch (state)
 	{
-		case STATE_TY:
+		case STATE_BOOT:
+		//case STATE_TY:
 		case STATE_SOUND_TEST:
 		{
 			MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
