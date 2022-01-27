@@ -75,6 +75,13 @@ DECLARE_MUSIC(gameplay_WIP1);
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+// current sprite index in ZGB
+extern UINT8 next_oam_idx;
+// pointer to OAM data in ZGB
+extern UINT8* oam;
+// data used for feeding a single sprite into OAM.
+UINT8 sprite_data[4];
+
 #endif // PLAT_GB
 
 /*
@@ -482,7 +489,7 @@ void START()
 	//music_play(0);
 
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
-	music_on = 1;
+	music_on = 0; //1;
 	sfx_on = 1;
 	hard_drops_on = 1;
 	block_style = BLOCK_STYLE_CLASSIC;
@@ -1810,12 +1817,18 @@ void draw_gameplay_sprites(void)
 			if (local_start_y + (local_iy * 7) > OOB_TOP)
 			{
 				//oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
-				Block->x = local_start_x + (local_ix << 3);
+				//Block->x = local_start_x + (local_ix << 3);
 				// Note sure why -30. -32 was to account for the non-visible
 				// OOB area, but that resulted in sprites that looked like they
 				// we offset by a few more pixels than they should be.
 				// Using 30 instead looks right for some reason.
-				Block->y = local_start_y + (local_iy * 7) - 30;
+				//Block->y = local_start_y + (local_iy * 7) - 30;
+
+				sprite_data[1] = local_start_x + (local_ix << 3) + 8;
+				sprite_data[0] = local_start_y + (local_iy * 7) - 30 + 16;
+				sprite_data[2] = cur_cluster.sprite - 128; // put it into the sprite memory.
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
 			else
 			{

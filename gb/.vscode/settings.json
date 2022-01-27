@@ -19,6 +19,8 @@
         "zgbmain.h": "c",
         "zgbmain_init.h": "c",
         "stdlib.h": "c",
-        "limits": "c"
+        "limits": "c",
+        "spritemanager.h": "c",
+        "sprite.h": "c"
     }
 }

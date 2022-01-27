@@ -503,7 +503,7 @@ unsigned char attack_row_status[BOARD_WIDTH];
 // in order.
 const unsigned char cluster_sprites[NUM_CLUSTERS] =
 {
-    112, 113, 114, 115, 116, 117, 118,
+    128, 129, 130, 131, 132, 133, 134,
     //BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, BLOCK_TILE, 
 };
 
