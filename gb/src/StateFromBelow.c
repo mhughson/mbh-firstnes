@@ -390,7 +390,7 @@ void vbl_delay(UINT8 frames)
 	}
 }
 
-const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
+//const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
 
 // Sprite* FlagTopLeft;
 // Sprite* FlagTopRight;
@@ -400,8 +400,6 @@ const unsigned char flag_anim[] = {4, 0, 1, 2, 3 };
 
 // Sprite* FlagBottomLeft;
 // Sprite* FlagBottomRight;
-
-Sprite* BlockSprites[4];
 
 // https://discord.com/channels/790342889318252555/790346049377927168/928576481624473600
 // 
@@ -594,12 +592,8 @@ void START()
 	// FlagBottomRight->lim_y = 0xfff; // don't despawn
 	// SetSpriteAnim(FlagBottomRight, flag_anim, 15);
 
-	for (i=0; i < 4; ++i)
-	{
-		BlockSprites[i] = SpriteManagerAdd(SpriteBlock, 0xFFF, 0xFFFF);
-		BlockSprites[i]->lim_x = 0xfff; // don't despawn
-		BlockSprites[i]->lim_y = 0xfff; // don't despawn
-	}
+	// Get sprite graphics into memory.
+	SpriteManagerLoad(SpriteBlock);
 }
 
 void UPDATE()
@@ -1783,7 +1777,6 @@ void draw_gameplay_sprites(void)
 	static unsigned char speed;
 	static unsigned char i;
 	static unsigned char j;
-	static Sprite* Block;
 
 //PROFILE_POKE(0x5f); // green
 	// clear all sprites from sprite buffer
@@ -1808,8 +1801,6 @@ void draw_gameplay_sprites(void)
 			local_ix = index_to_x_lookup[j];
 			local_iy = index_to_y_lookup[j];
 
-			Block = BlockSprites[i];
-
 			// Don't draw the current cluster if it is above the top of the board.
 			// We want it to be able to function and move up there, but should not
 			// be visible.
@@ -1817,30 +1808,16 @@ void draw_gameplay_sprites(void)
 			if (local_start_y + (local_iy * 7) > OOB_TOP)
 			{
 				//oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
-				//Block->x = local_start_x + (local_ix << 3);
+				sprite_data[1] = local_start_x + (local_ix << 3) + 8;
 				// Note sure why -30. -32 was to account for the non-visible
 				// OOB area, but that resulted in sprites that looked like they
 				// we offset by a few more pixels than they should be.
 				// Using 30 instead looks right for some reason.
-				//Block->y = local_start_y + (local_iy * 7) - 30;
-
-				sprite_data[1] = local_start_x + (local_ix << 3) + 8;
 				sprite_data[0] = local_start_y + (local_iy * 7) - 30 + 16;
 				sprite_data[2] = cur_cluster.sprite - 128; // put it into the sprite memory.
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
-			else
-			{
-				Block->y = OFFSCREEN_Y;
-			}
-		}
-	}
-	else
-	{
-		for (i = 0; i < 4; ++i)
-		{
-			BlockSprites[i]->y = OFFSCREEN_Y;
 		}
 	}
 
