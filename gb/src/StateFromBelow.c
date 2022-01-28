@@ -1814,7 +1814,7 @@ void draw_gameplay_sprites(void)
 				// OOB area, but that resulted in sprites that looked like they
 				// we offset by a few more pixels than they should be.
 				// Using 30 instead looks right for some reason.
-				sprite_data[0] = local_start_y + (local_iy * 7) - 30 + 16;
+				sprite_data[0] = local_start_y + (local_iy * 7) - 29 + 16;
 				sprite_data[2] = cur_cluster.sprite - 128; // put it into the sprite memory.
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
