@@ -37,6 +37,7 @@
 #include "SGB.h"
 #include "Music.h"
 #include "BankManager.h"
+#include "Palette.h"
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -3955,13 +3956,8 @@ void fade_to_black()
 	// pal_bright(0);
 	// //delay(2);
 
-	#ifdef CGB
-	if (_cpu == CGB_TYPE)
-	{
-		FadeIn();
-		DISPLAY_OFF;
-	}
-	#endif // #ifdef CGB
+	FadeIn();
+	DISPLAY_OFF;
 }
 
 void fade_from_black()
@@ -3975,14 +3971,16 @@ void fade_from_black()
 	// pal_bright(4);
 	// //delay(2);
 
-	// hack to get around bug in DMG
-	#ifdef CGB
-	if (_cpu == CGB_TYPE)
-	{
-		DISPLAY_ON;
-		FadeOut();
-	}
-	#endif // #ifdef CGB
+	// Fade function on DMG reads the colors directly from registers before fading.
+	// As a result, the FadeOut fails by default because it trys to fade to a solid
+	// color.
+	// To fix this, we set the real colors right before FadeOut to set the proper
+	// destination colors.
+	BGP_REG = PAL_DEF(0, 1, 2, 3);
+	// NOTE: Shifting colors right to account for transparent Col0.
+	OBP0_REG = OBP1_REG = PAL_DEF(0, 0, 1, 2);
+	DISPLAY_ON;
+	FadeOut();
 }
 
 #if PLAT_NES
