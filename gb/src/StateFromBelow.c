@@ -2492,8 +2492,8 @@ void spawn_new_cluster()
 
 	for (i = 0; i < 4; ++i)
 	{
+		UPDATE_TILE_BY_VALUE(2 + i, 1, EMPTY_TILE, 0x10);
 		UPDATE_TILE_BY_VALUE(2 + i, 2, EMPTY_TILE, 0x10);
-		UPDATE_TILE_BY_VALUE(2 + i, 3, EMPTY_TILE, 0x10);
 	}
 
 	for (i = 0; i < 4; ++i)
@@ -2507,7 +2507,7 @@ void spawn_new_cluster()
 
 		one_vram_buffer(local_t, get_ppu_addr(cur_nt, 120 + (local_ix << 3), 8 + (local_iy << 3)));
 
-		UPDATE_TILE_BY_VALUE(2 + local_ix, 1 + local_iy, local_t, 0x10);
+		UPDATE_TILE_BY_VALUE(2 + local_ix, 0 + local_iy, local_t, 0x10);
 	}
 //PROFILE_POKE(0x1e); //none
 
