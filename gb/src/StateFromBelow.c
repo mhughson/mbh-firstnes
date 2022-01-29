@@ -3055,6 +3055,8 @@ void go_to_state(unsigned char new_state)
 			pal_bright(8);
 			vbl_delay(fade_delay);
 
+			fade_to_black();
+
 #if !VS_SYS_ENABLED
 			// address = get_ppu_addr(cur_nt, 96, 14<<3);
 			// multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
@@ -3071,7 +3073,18 @@ void go_to_state(unsigned char new_state)
 			// address += 32;
 			// multi_vram_buffer_horz("B-QUIT    ", 10, address);
 
-			PRINT(9,  8, "GAME OVER!");
+			const UINT8 over_top[] = { 113, 114, 115, 116, 0, 114, 117, 116, 118, 126 };
+			const UINT8 over_bot[] = { 119, 120, 121, 122, 0, 123, 124, 122, 125, 127 };
+
+			for (i = 0; i < 10; ++i)
+			{
+				UPDATE_TILE_BY_VALUE(9 + i, 7, over_top[i], 0x10);
+				UPDATE_TILE_BY_VALUE(9 + i, 8, over_bot[i], 0x10);
+			}
+
+			// TODO: This uses the default font palette, but it looks a little weird.
+			//		 Ideally this could be overwritten with an inverted palette. How
+			//		 would that work on DMG though? Maybe replace with icons or something.
 			PRINT(9,  9, "A-RESTART ");
 			PRINT(9, 10, "B-QUIT    ");
 #else
@@ -3089,6 +3102,8 @@ void go_to_state(unsigned char new_state)
 			// delay(fade_delay);
 			pal_bright(4);
 			//delay(fade_delay);
+
+			fade_from_black();
 			break;
 		}
 
