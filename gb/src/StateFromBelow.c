@@ -2026,8 +2026,8 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		//lines_cleared_one = 9;
-		//inc_lines_cleared();
+		lines_cleared_one = 9;
+		inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
@@ -3217,7 +3217,8 @@ void inc_lines_cleared()
 			{
 				if (cur_level == 30)
 				{
-					one_vram_buffer(SKULL_SPRITE, get_ppu_addr(cur_nt, 4<<3, 9<<3)); // skull
+					//one_vram_buffer(SKULL_SPRITE, get_ppu_addr(cur_nt, 4<<3, 9<<3)); // skull
+					UPDATE_TILE_BY_VALUE(4, 10, SKULL_SPRITE, 0x10);
 				}
 				kill_row_queued = 1;
 			}
@@ -3394,7 +3395,7 @@ void clear_rows_in_data(unsigned char start_y)
 		for (local_ix = 0; local_ix <= BOARD_END_X_PX_BOARD; ++local_ix)
 		{
 //PROFILE_POKE(0x5f); //green
-			if (game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == EMPTY_TILE || game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == GARBAGE_TILE)
+			if (game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == EMPTY_TILE || game_board[TILE_TO_BOARD_INDEX(local_ix,local_iy)] == KILL_SCREEN_TILE)
 			//if (is_block_free(ix, iy))
 			{
 				// This block is empty, so we can stop checking this row.
@@ -3802,16 +3803,14 @@ void add_block_at_bottom()
 	copy_board_to_nt();
 }
 
-
+#endif
 
 void add_row_at_bottom()
 {
-	memfill(&game_board[TILE_TO_BOARD_INDEX(0, BOARD_END_Y_PX_BOARD - kill_row_cur)], 1, BOARD_WIDTH);
+	memfill(&game_board[TILE_TO_BOARD_INDEX(0, BOARD_END_Y_PX_BOARD - kill_row_cur)], KILL_SCREEN_TILE, BOARD_WIDTH);
 	++kill_row_cur;
 	copy_board_to_nt();
 }
-
-#endif
 
 void reset_gameplay_area()
 {

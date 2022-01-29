@@ -75,13 +75,13 @@
 // No attract mode on the NES.
 #define MUSIC_PLAY_ATTRACT_WRAPPER(id) MUSIC_PLAY_WRAPPER(id)
 #endif // VS_SYS_ENABLED
-#define SKULL_SPRITE 0x3b
+#define SKULL_SPRITE 112
 
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
 
 #define EMPTY_TILE 0x00
-#define GARBAGE_TILE 0x01
+#define KILL_SCREEN_TILE 0x04
 #define BLOCK_TILE 0x02
 
 #if VS_SYS_ENABLED
@@ -604,8 +604,8 @@ const char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 // When the Kraken tentacle retreats the blocks it leaves in its place are special
 // partially destroyed-looking sprites. These are this sprites.
 #define NUM_GARBAGE_TYPES 3
-//const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
-const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { GARBAGE_TILE, GARBAGE_TILE, GARBAGE_TILE }; // TEMP GB
+const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+//const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { KILL_SCREEN_TILE, KILL_SCREEN_TILE, KILL_SCREEN_TILE }; // TEMP GB
 // Rather than randomly selecting a garbage type, this counter just picks the 
 // next one and loops back when it hits the max.
 unsigned char cur_garbage_type;
@@ -1004,7 +1004,7 @@ void try_collapse_empty_row_data(void);
 void copy_board_to_nt();
 
 void add_block_at_bottom() { } // PLAT_GB
-void add_row_at_bottom() { } // PLAT_GB
+void add_row_at_bottom();
 
 void reset_gameplay_area();
 
