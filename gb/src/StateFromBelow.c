@@ -703,7 +703,9 @@ void UPDATE()
 	{
 		if (pad_all & PAD_A && pad_all & PAD_B && pad_all & PAD_SELECT && pad_all & PAD_START)
 		{
+			fade_to_black();
 			go_to_state(STATE_MENU);
+			fade_from_black();
 		}
 	}
 #endif // !VS_SYS_ENABLED
@@ -1412,7 +1414,9 @@ void UPDATE()
 			if (pad_all_new & PAD_B)
 			{
 				//go_to_state(STATE_GAME);
+				fade_to_black();
 				go_to_state(STATE_MENU);
+				fade_from_black();
 			}
 			if (pad_all_new & PAD_A)
 			{
@@ -2742,7 +2746,7 @@ void go_to_state(unsigned char new_state)
 			attract_gameplay_enabled = 0;
 #endif // #if VS_SYS_ENABLED			
 
-			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST || prev_state == STATE_HIGH_SCORE_TABLE)
+//			if (prev_state == STATE_OPTIONS || prev_state == STATE_BOOT || prev_state == STATE_TY|| prev_state == STATE_SOUND_TEST || prev_state == STATE_HIGH_SCORE_TABLE)
 			{
 				oam_clear();
 				draw_menu_sprites();
@@ -2778,36 +2782,36 @@ void go_to_state(unsigned char new_state)
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 #endif
 			}
-			else
-			{
-				if (prev_state == STATE_OVER)
-				{
-					fade_to_black();
-				}
+// 			else
+// 			{
+// 				if (prev_state == STATE_OVER)
+// 				{
+// 					fade_to_black();
+// 				}
 
-				//reset_gameplay_area();
+// 				//reset_gameplay_area();
 
-				draw_menu_sprites();
+// 				draw_menu_sprites();
 
-#if PLAT_GB
-				scroll_y_game = 0;
-#else
-				scroll_y_game = 0x1df;
-#endif // PLAT_GB
-				//scroll(scroll_x_camera, scroll_y_game); // shift the bg down 1 pixel
-				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
+// #if PLAT_GB
+// 				scroll_y_game = 0;
+// #else
+// 				scroll_y_game = 0x1df;
+// #endif // PLAT_GB
+// 				//scroll(scroll_x_camera, scroll_y_game); // shift the bg down 1 pixel
+// 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 
-#if VS_SYS_ENABLED
-				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
-#else
-				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
-#endif
+// #if VS_SYS_ENABLED
+// 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 8<<3, 12<<3));
+// #else
+// 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
+// #endif
 
-				if (prev_state == STATE_OVER)
-				{
-					fade_from_black();
-				}
-			}
+// 				if (prev_state == STATE_OVER)
+// 				{
+// 					fade_from_black();
+// 				}
+// 			}
 
 			break;
 		}
@@ -3052,20 +3056,24 @@ void go_to_state(unsigned char new_state)
 			vbl_delay(fade_delay);
 
 #if !VS_SYS_ENABLED
-			address = get_ppu_addr(cur_nt, 96, 14<<3);
-			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
-			//address = get_ppu_addr(cur_nt, 96, 15<<3);
-			address += 32;
-			multi_vram_buffer_horz("\xaa\xab\xca\xcb\x00\x3a\x68\xcb\xdf\xf9", 10, address);
-
 			// address = get_ppu_addr(cur_nt, 96, 14<<3);
-			// multi_vram_buffer_horz("GAME OVER!", 10, address);
-			//address = get_ppu_addr(cur_nt, 96, 15<<3);
-			address += 32;
-			multi_vram_buffer_horz("A-RESTART ", 10, address);
-			//address = get_ppu_addr(cur_nt, 96, 16<<3);
-			address += 32;
-			multi_vram_buffer_horz("B-QUIT    ", 10, address);
+			// multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
+			// //address = get_ppu_addr(cur_nt, 96, 15<<3);
+			// address += 32;
+			// multi_vram_buffer_horz("\xaa\xab\xca\xcb\x00\x3a\x68\xcb\xdf\xf9", 10, address);
+
+			// // address = get_ppu_addr(cur_nt, 96, 14<<3);
+			// // multi_vram_buffer_horz("GAME OVER!", 10, address);
+			// //address = get_ppu_addr(cur_nt, 96, 15<<3);
+			// address += 32;
+			// multi_vram_buffer_horz("A-RESTART ", 10, address);
+			// //address = get_ppu_addr(cur_nt, 96, 16<<3);
+			// address += 32;
+			// multi_vram_buffer_horz("B-QUIT    ", 10, address);
+
+			PRINT(9,  8, "GAME OVER!");
+			PRINT(9,  9, "A-RESTART ");
+			PRINT(9, 10, "B-QUIT    ");
 #else
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
