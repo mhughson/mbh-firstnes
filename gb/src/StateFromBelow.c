@@ -38,6 +38,7 @@
 #include "Music.h"
 #include "BankManager.h"
 #include "Palette.h"
+#include "OAMManager.h"
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -70,8 +71,12 @@ IMPORT_MAP(gameplay_map);
 IMPORT_TILES(font);
 IMPORT_TILES(font_on_black);
 
-DECLARE_MUSIC(StressLoopKick);
-DECLARE_MUSIC(gameplay_WIP1);
+DECLARE_MUSIC(TitleMusic);
+DECLARE_MUSIC(GameplayMusic);
+DECLARE_MUSIC(GameplayStressMusic);
+DECLARE_MUSIC(PauseMusic);
+DECLARE_MUSIC(GameOverIntroMusic);
+DECLARE_MUSIC(GameOverOutroMusic);
 
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -3029,7 +3034,8 @@ void go_to_state(unsigned char new_state)
 			draw_gameplay_sprites();
 
 			StopMusic;
-			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER);
+			MUSIC_PLAY_WRAPPER(MUSIC_GAMEOVER_INTRO);
+
 
 			// Without music this delay feels really odd.
 #if !VS_SYS_ENABLED
@@ -3040,7 +3046,7 @@ void go_to_state(unsigned char new_state)
 #endif // !VS_SYS_ENABLED
 
 			// treat this like music, since it is a jingle.
-			SFX_MUSIC_PLAY_WRAPPER(SOUND_GAMEOVER_SONG);
+			MUSIC_PLAY_WRAPPER(MUSIC_GAMEOVER_OUTRO);
 
 			// Not sure why this was here. It causes the next block to
 			// vanish.
@@ -3553,17 +3559,12 @@ void reveal_empty_rows_to_nt()
 	clear_vram_buffer();
 		
 	// Force the sprites to hide themselves.
-	draw_gameplay_sprites();		
+	draw_gameplay_sprites();
 
-	// Calling SpriteManagerUpdate() SETS the current bank, and could leave us
-	// in the wrong bank. See: https://discord.com/channels/790342889318252555/790346049377927168/935599452322922560
-	// To account for this, we make a redundant PUSH call here, so that regardless of what 
-	// bank is SET in SpriteManagerUpdate, we can POP back to our State's bank.
-	// NOTE: Using _current_bank crashes the game on CGB. Value appeared to be 255 in debugger.
-	//       0 seems to work fine, but may have issues down the road if this state is not in Bank 0 (I think).
-	PUSH_BANK(0);
-	SpriteManagerUpdate();
-	POP_BANK;
+	// Force the OAM to update with the sprites
+	// now hidden.
+	SwapOAMs();	
+
 
 	// Reveal from the center out.
 	for (ix = 4; ix >= 0; --ix)

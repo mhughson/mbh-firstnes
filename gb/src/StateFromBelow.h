@@ -572,10 +572,12 @@ unsigned char test_song_active;
 unsigned char test_sound;
 
 // Index for each music track. This must start at 0 and line up with famitracker file.
-#define MUSIC_TITLE gameplay_WIP1
-#define MUSIC_GAMEPLAY gameplay_WIP1
-#define MUSIC_STRESS StressLoopKick
-#define MUSIC_PAUSE gameplay_WIP1
+#define MUSIC_TITLE TitleMusic
+#define MUSIC_GAMEPLAY GameplayMusic
+#define MUSIC_STRESS GameplayStressMusic
+#define MUSIC_PAUSE PauseMusic
+#define MUSIC_GAMEOVER_INTRO GameOverIntroMusic
+#define MUSIC_GAMEOVER_OUTRO GameOverOutroMusic
 
 // Index for each sound effect, as it appears in the famitracker source file.
 enum 
