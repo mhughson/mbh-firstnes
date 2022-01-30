@@ -1781,6 +1781,9 @@ void draw_menu_sprites(void)
 // Used to hide sprites off screen.
 #define OFFSCREEN_Y (144 + 32)
 
+#define SCREEN_START_X 8
+#define SCREEN_START_Y 16
+
 void draw_gameplay_sprites(void)
 {
 	static char shake_offset;
@@ -1818,12 +1821,12 @@ void draw_gameplay_sprites(void)
 			if (local_start_y + (local_iy * 7) > OOB_TOP)
 			{
 				//oam_spr(local_start_x + (local_ix << 3), local_start_y + (local_iy << 3), cur_cluster.sprite, 0);
-				sprite_data[1] = local_start_x + (local_ix << 3) + 8;
+				sprite_data[1] = local_start_x + (local_ix << 3) + SCREEN_START_X;
 				// Note sure why -30. -32 was to account for the non-visible
 				// OOB area, but that resulted in sprites that looked like they
 				// we offset by a few more pixels than they should be.
 				// Using 30 instead looks right for some reason.
-				sprite_data[0] = local_start_y + (local_iy * 7) - 29 + 16;
+				sprite_data[0] = local_start_y + (local_iy * 7) - 29 + SCREEN_START_Y;
 				sprite_data[2] = cur_cluster.sprite - 128; // put it into the sprite memory.
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
@@ -1877,19 +1880,19 @@ void draw_gameplay_sprites(void)
 					// gross. Try to detect if this is the last piece, and also the end of the arm.
 					if (local_iy == local_row_status - 1)
 					{
-					oam_spr(
-						BOARD_START_X_PX + (local_ix << 3) + shake_offset,
-						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-						0xf9,
-						1);
+						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X; // BOARD_START_X_PX + (local_ix << 3) + shake_offset;
+						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
+						sprite_data[2] = 0x8; // put it into the sprite memory.
+						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+						next_oam_idx += sizeof(sprite_data) >> 2;
 					}
 					else
 					{
-					oam_spr(
-						BOARD_START_X_PX + (local_ix << 3) + shake_offset,
-						(BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE << 3) - (local_iy << 3),
-						0xf8,
-						1);
+						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X;
+						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
+						sprite_data[2] = 0x7; // put it into the sprite memory.
+						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+						next_oam_idx += sizeof(sprite_data) >> 2;
 					}
 
 				}
@@ -2035,8 +2038,8 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		lines_cleared_one = 9;
-		inc_lines_cleared();
+		// lines_cleared_one = 9;
+		// inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
@@ -3743,8 +3746,6 @@ void copy_board_to_nt()
 	// }
 }
 
-#if PLAT_NES
-
 void add_block_at_bottom()
 {
 	static signed char ix;
@@ -3826,8 +3827,6 @@ void add_block_at_bottom()
 	// TODO: Only if changed above.
 	copy_board_to_nt();
 }
-
-#endif
 
 void add_row_at_bottom()
 {

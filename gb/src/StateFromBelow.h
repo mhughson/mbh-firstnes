@@ -44,7 +44,7 @@
 // NOTE: This is the position of the bottom right tile INCLUDED in the player area.
 //       So the actual end position in pixels would be +8 in both directions.
 #define BOARD_END_X_PX ((BOARD_START_X_PX) + (10<<3))
-#define BOARD_END_Y_PX (184) //(184 + 16) // not sure why +16. Likely just making an adjustment at some point and forgot to remove.
+#define BOARD_END_Y_PX (7 * 19) //(184 + 16) // not sure why +16. Likely just making an adjustment at some point and forgot to remove.
 
 // The last tile in the Out of Bounds area at the top of the board.
 // Again, this is the last tile in that area, so the actual number of rows in that
@@ -606,7 +606,7 @@ const char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 // When the Kraken tentacle retreats the blocks it leaves in its place are special
 // partially destroyed-looking sprites. These are this sprites.
 #define NUM_GARBAGE_TYPES 3
-const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 0x60, 0x70, 0x2f };
+const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 29, 30, 31 };
 //const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { KILL_SCREEN_TILE, KILL_SCREEN_TILE, KILL_SCREEN_TILE }; // TEMP GB
 // Rather than randomly selecting a garbage type, this counter just picks the 
 // next one and loops back when it hits the max.
@@ -1005,7 +1005,7 @@ void try_collapse_empty_row_data(void);
 // Finally reveal to resolved board with all blocks in final position.
 void copy_board_to_nt();
 
-void add_block_at_bottom() { } // PLAT_GB
+void add_block_at_bottom();
 void add_row_at_bottom();
 
 void reset_gameplay_area();
