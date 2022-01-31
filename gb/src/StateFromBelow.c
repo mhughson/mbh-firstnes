@@ -1828,6 +1828,7 @@ void draw_gameplay_sprites(void)
 				// Using 30 instead looks right for some reason.
 				sprite_data[0] = local_start_y + (local_iy * 7) - 29 + SCREEN_START_Y;
 				sprite_data[2] = cur_cluster.sprite - 128; // put it into the sprite memory.
+				sprite_data[3] = 0;
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
@@ -1883,6 +1884,7 @@ void draw_gameplay_sprites(void)
 						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X; // BOARD_START_X_PX + (local_ix << 3) + shake_offset;
 						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
 						sprite_data[2] = 0x8; // put it into the sprite memory.
+						sprite_data[3] = 0x1;
 						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 						next_oam_idx += sizeof(sprite_data) >> 2;
 					}
@@ -1891,6 +1893,7 @@ void draw_gameplay_sprites(void)
 						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X;
 						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
 						sprite_data[2] = 0x7; // put it into the sprite memory.
+						sprite_data[3] = 0x1;
 						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 						next_oam_idx += sizeof(sprite_data) >> 2;
 					}
@@ -3560,6 +3563,9 @@ void reveal_empty_rows_to_nt()
 	// of work in this function.
 	wait_vbl_done();
 	clear_vram_buffer();
+
+	// Clear OAM prior to drawing fresh.
+	ClearOAMs();	
 		
 	// Force the sprites to hide themselves.
 	draw_gameplay_sprites();
@@ -3648,7 +3654,9 @@ void try_collapse_empty_row_data(void)
 				//hit_reaction_remaining = 60;
 				--attack_row_status[ix];
 				wait_vbl_done();
+				ClearOAMs();	
 				draw_gameplay_sprites();
+				SwapOAMs();	
 				clear_vram_buffer();
 			}
 
@@ -3688,7 +3696,9 @@ void copy_board_to_nt()
 	// This also gets called when going back to the main menu.
 	if (state == STATE_GAME)
 	{
+		ClearOAMs();	
 		draw_gameplay_sprites();
+		SwapOAMs();	
 	}
 	//delay(1);
 	//clear_vram_buffer();
