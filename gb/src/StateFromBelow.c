@@ -39,6 +39,7 @@
 #include "BankManager.h"
 #include "Palette.h"
 #include "OAMManager.h"
+#include "SGBHelpers.h"
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -2766,6 +2767,8 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_screen), &title_screen, 0, 0);
+
+				sgb_init_menu();
 
 				// Disabled for now. If this is needed in the end remember
 				// to push the current_bank first.

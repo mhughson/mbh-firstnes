@@ -21,6 +21,8 @@
         "stdlib.h": "c",
         "limits": "c",
         "spritemanager.h": "c",
-        "sprite.h": "c"
+        "sprite.h": "c",
+        "sgb.h": "c",
+        "sgb_border.h": "c"
     }
 }

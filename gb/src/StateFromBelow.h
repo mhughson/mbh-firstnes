@@ -607,7 +607,6 @@ const char tenatcle_offsets[4] = { -1, 0, 1, 0 };
 // partially destroyed-looking sprites. These are this sprites.
 #define NUM_GARBAGE_TYPES 3
 const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { 29, 30, 31 };
-//const unsigned char garbage_types[NUM_GARBAGE_TYPES] = { KILL_SCREEN_TILE, KILL_SCREEN_TILE, KILL_SCREEN_TILE }; // TEMP GB
 // Rather than randomly selecting a garbage type, this counter just picks the 
 // next one and loops back when it hits the max.
 unsigned char cur_garbage_type;
