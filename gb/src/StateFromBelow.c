@@ -447,6 +447,7 @@ void START()
 #endif
 
 	LOAD_SGB_BORDER(gb_border);
+	sgb_init_pals();
 
 	CRITICAL {
 		remove_LCD(LCD_isr);
@@ -1782,8 +1783,8 @@ void draw_menu_sprites(void)
 // Used to hide sprites off screen.
 #define OFFSCREEN_Y (144 + 32)
 
-#define SCREEN_START_X 8
-#define SCREEN_START_Y 16
+#define SCREEN_START_X 8U
+#define SCREEN_START_Y 16U
 
 void draw_gameplay_sprites(void)
 {
@@ -1943,29 +1944,96 @@ void draw_gameplay_sprites(void)
 		if (attack_style == ATTACK_NEVER)
 		{
 			// sleeping
-			oam_spr(3 << 3, 25 << 3, 0x63, 1);
-			oam_spr(3 << 3, 26 << 3, 0x73, 1);
+			// oam_spr(3 << 3, 25 << 3, 0x63, 1);
+			// oam_spr(3 << 3, 26 << 3, 0x73, 1);
+
+			sprite_data[1] = (3 << 3) + SCREEN_START_X;
+			sprite_data[0] = (UINT8)(17 * 7) + (UINT8)SCREEN_START_Y;
+			sprite_data[2] = 10; // put it into the sprite memory.
+			sprite_data[3] = 1;
+			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+			next_oam_idx += sizeof(sprite_data) >> 2;
+
+			sprite_data[1] = (3 << 3) + SCREEN_START_X;
+			sprite_data[0] = (18 * 7) + (UINT8)SCREEN_START_Y;
+			sprite_data[2] = 13; // put it into the sprite memory.
+			sprite_data[3] = 1;
+			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+			next_oam_idx += sizeof(sprite_data) >> 2;
 		}
 		else
 		{
+
 			//pal_spr(palette_sp);
 			//pal_bg(palette_bg);
 			local_t = tick_count_large % BLINK_LEN;
 
-			if (local_t > BLINK_LEN - 5)
+			// if (pad_all_new & PAD_RIGHT)
+			// {
+			// 	++scroll_x_camera;
+
+			// 	if (scroll_x_camera > 3)
+			// 	{
+			// 		scroll_x_camera = 0;
+			// 	}
+			// }
+
+			if (local_t > BLINK_LEN - 10)
 			{
-				oam_spr(3 << 3, 25 << 3, 0x62, 1);
-				oam_spr(3 << 3, 26 << 3, 0x72, 1);
+				// oam_spr(3 << 3, 25 << 3, 0x62, 1);
+				// oam_spr(3 << 3, 26 << 3, 0x72, 1);
+				
+				sprite_data[1] = (3 << 3) + SCREEN_START_X; //12<<3
+				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U; // (17 * 7)
+				sprite_data[2] = 9; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
+
+				sprite_data[1] = (3 << 3) + SCREEN_START_X;
+				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
+				sprite_data[2] = 12; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
-			else if (local_t > (BLINK_LEN - 10))
+			else if (local_t > (BLINK_LEN - 20))
 			{
-				oam_spr(3 << 3, 25 << 3, 0x63, 1);
-				oam_spr(3 << 3, 26 << 3, 0x73, 1);
+				// oam_spr(3 << 3, 25 << 3, 0x63, 1);
+				// oam_spr(3 << 3, 26 << 3, 0x73, 1);
+				
+				sprite_data[1] = (3 << 3) + SCREEN_START_X;
+				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U;
+				sprite_data[2] = 10; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
+
+				sprite_data[1] = (3 << 3) + SCREEN_START_X;
+				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
+				sprite_data[2] = 13; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
-			else if (local_t > BLINK_LEN - 15)
+			else if (local_t > BLINK_LEN - 30)
 			{
-				oam_spr(3 << 3, 25 << 3, 0x62, 1);
-				oam_spr(3 << 3, 26 << 3, 0x72, 1);
+				// oam_spr(3 << 3, 25 << 3, 0x62, 1);
+				// oam_spr(3 << 3, 26 << 3, 0x72, 1);
+				
+				sprite_data[1] = (3 << 3) + SCREEN_START_X;
+				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U;
+				sprite_data[2] = 9; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
+
+				sprite_data[1] = (3 << 3) + SCREEN_START_X;
+				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
+				sprite_data[2] = 12; // put it into the sprite memory.
+				sprite_data[3] = 1;
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
 		}
 	}
@@ -3008,6 +3076,8 @@ void go_to_state(unsigned char new_state)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
+
+				sgb_int_gameplay();
 
 				fade_from_black();
 			}
