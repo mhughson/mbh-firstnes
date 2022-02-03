@@ -1918,9 +1918,30 @@ void draw_gameplay_sprites(void)
 	{
 		// -1, 0, 1
 		//r = (rand8() % 3) - 1;
-		oam_spr((3 << 3) /*+ r*/, (24 << 3), 0x65, 1);
-		oam_spr(3 << 3, 25 << 3, 0x64, 1);
-		oam_spr(3 << 3, 26 << 3, 0x74, 1);
+		// oam_spr((3 << 3) /*+ r*/, (24 << 3), 0x65, 1);
+		// oam_spr(3 << 3, 25 << 3, 0x64, 1);
+		// oam_spr(3 << 3, 26 << 3, 0x74, 1);	
+
+		sprite_data[1] = (3 << 3) + SCREEN_START_X;
+		sprite_data[0] = (16 * 7) + (UINT8)SCREEN_START_Y - 1U;
+		sprite_data[2] = 15; // put it into the sprite memory.
+		sprite_data[3] = 1;
+		memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+		next_oam_idx += sizeof(sprite_data) >> 2;
+
+		sprite_data[1] = (3 << 3) + SCREEN_START_X;
+		sprite_data[0] = (UINT8)(17 * 7) + (UINT8)SCREEN_START_Y - 1U;
+		sprite_data[2] = 11; // put it into the sprite memory.
+		sprite_data[3] = 1 | (1 << 4);
+		memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+		next_oam_idx += sizeof(sprite_data) >> 2;
+
+		sprite_data[1] = (3 << 3) + SCREEN_START_X;
+		sprite_data[0] = (18 * 7) + (UINT8)SCREEN_START_Y - 1U;
+		sprite_data[2] = 14; // put it into the sprite memory.
+		sprite_data[3] = 1 | (1 << 4);
+		memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+		next_oam_idx += sizeof(sprite_data) >> 2;		
 
 		// memcpy(temp_pal, palette_sp, sizeof(palette_sp));
 		// // blocks
@@ -1948,16 +1969,16 @@ void draw_gameplay_sprites(void)
 			// oam_spr(3 << 3, 26 << 3, 0x73, 1);
 
 			sprite_data[1] = (3 << 3) + SCREEN_START_X;
-			sprite_data[0] = (UINT8)(17 * 7) + (UINT8)SCREEN_START_Y;
+			sprite_data[0] = (UINT8)(17 * 7) + (UINT8)SCREEN_START_Y - 1U;
 			sprite_data[2] = 10; // put it into the sprite memory.
-			sprite_data[3] = 1;
+			sprite_data[3] = 1 | (1 << 4);
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 
 			sprite_data[1] = (3 << 3) + SCREEN_START_X;
-			sprite_data[0] = (18 * 7) + (UINT8)SCREEN_START_Y;
+			sprite_data[0] = (18 * 7) + (UINT8)SCREEN_START_Y - 1U;
 			sprite_data[2] = 13; // put it into the sprite memory.
-			sprite_data[3] = 1;
+			sprite_data[3] = 1 | (1 << 4);
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 		}
@@ -1986,14 +2007,14 @@ void draw_gameplay_sprites(void)
 				sprite_data[1] = (3 << 3) + SCREEN_START_X; //12<<3
 				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U; // (17 * 7)
 				sprite_data[2] = 9; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 
 				sprite_data[1] = (3 << 3) + SCREEN_START_X;
 				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
 				sprite_data[2] = 12; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
@@ -2005,14 +2026,14 @@ void draw_gameplay_sprites(void)
 				sprite_data[1] = (3 << 3) + SCREEN_START_X;
 				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U;
 				sprite_data[2] = 10; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 
 				sprite_data[1] = (3 << 3) + SCREEN_START_X;
 				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
 				sprite_data[2] = 13; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
@@ -2024,14 +2045,14 @@ void draw_gameplay_sprites(void)
 				sprite_data[1] = (3 << 3) + SCREEN_START_X;
 				sprite_data[0] = (17U * 7U) + SCREEN_START_Y - 1U;
 				sprite_data[2] = 9; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 
 				sprite_data[1] = (3 << 3) + SCREEN_START_X;
 				sprite_data[0] = (18U * 7U) + SCREEN_START_Y - 1U;
 				sprite_data[2] = 12; // put it into the sprite memory.
-				sprite_data[3] = 1;
+				sprite_data[3] = 1 | (1 << 4);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 			}
@@ -4083,7 +4104,11 @@ void fade_from_black()
 	// destination colors.
 	BGP_REG = PAL_DEF(0, 1, 2, 3);
 	// NOTE: Shifting colors right to account for transparent Col0.
-	OBP0_REG = OBP1_REG = PAL_DEF(0, 0, 1, 2);
+	OBP0_REG = PAL_DEF(0, 0, 1, 2);
+	// Blinking requires darkest shade. Although, if this becomes a problem
+	// that portion of the sprite make be able to be transparent and just
+	// show the black background tile for the eyebrow. Not sure.
+	OBP1_REG = PAL_DEF(0, 0, 1, 3);
 	DISPLAY_ON;
 	FadeOut();
 }
