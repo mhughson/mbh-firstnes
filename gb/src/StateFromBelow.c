@@ -762,6 +762,8 @@ void UPDATE()
 			// 	--scroll_y_camera;
 			// }
 
+			sgb_sound_test();
+			
 			if (tick_count % 128 == 0)
 			{
 #if VS_SYS_ENABLED

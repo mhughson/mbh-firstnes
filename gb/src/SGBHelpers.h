@@ -13,7 +13,66 @@
 #define COL_LOW(col) ((UINT8)col)
 #define COL_HIGH(col) ((UINT8)(col >> 8))
 
-unsigned char map_buf[20];
+UINT8 map_buf[16];
+
+UINT8 sound_a_pitch_table[] = {2,3,3,3,3,3,3,3,2,2,2,2,1,1,1,3,3,0,0,3,3,3,2,3,3,0,0,2,1,2,1,1,2,1,1,1,1,1,3,0,0,1,0,3,0,3,0,0,2};
+UINT8 sound_b_pitch_table[] = {0,2,2,2,1,1,1,2,0,0,0,0,3,2,3,3,1,0,1,2,0,3,2,3,0,0};
+void sgb_play_sounda(UINT8 index)
+{
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
+
+    memset(map_buf, 0, sizeof(map_buf));
+    map_buf[0] = (SGB_SOUND << 3) | 1; // play a sound effect
+    map_buf[1] = index; // sound effect A-1
+//    map_buf[2] = 0x0C; // sound effect B-3
+    map_buf[3] = sound_a_pitch_table[index]; // pitch 3 for A sound, pitch 2 for B sound. Both at max volume.
+
+    sgb_transfer(map_buf);  
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
+}
+
+void sgb_play_soundb(UINT8 index)
+{
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
+
+    memset(map_buf, 0, sizeof(map_buf));
+    map_buf[0] = (SGB_SOUND << 3) | 1; // play a sound effect
+//    map_buf[1] = index; // sound effect A-1
+    map_buf[2] = index; // sound effect B-3
+    map_buf[3] = sound_b_pitch_table[index] << 4; // pitch 3 for A sound, pitch 2 for B sound. Both at max volume.
+
+    sgb_transfer(map_buf);  
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
+}
+
+void sgb_play_testsound()
+{
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
+
+    memset(map_buf, 0, sizeof(map_buf));
+    map_buf[0] = (SGB_SOUND << 3) | 1; // play a sound effect
+//    map_buf[1] = 1; // sound effect A-1
+    map_buf[2] = 0x0C; // sound effect B-3
+    map_buf[3] = 3 | (3 << 4); // pitch 3 for A sound, pitch 2 for B sound. Both at max volume.
+
+    sgb_transfer(map_buf);  
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
+}
+
+void sgb_stop_testsound()
+{
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
+
+    memset(map_buf, 0, sizeof(map_buf));
+    map_buf[0] = (SGB_SOUND << 3) | 1; // play a sound effect
+    map_buf[1] = 0x80; // sound effect A-1
+    map_buf[2] = 0x80; // sound effect B-3
+    //map_buf[3] = 3 | (3 << 2) | (2 << 4); // a pitch | a vol |b pitch | b vol
+    //map_buf[4] = 2;
+
+    sgb_transfer(map_buf);  
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
+}
 
 void sgb_int_gameplay()
 {
@@ -362,6 +421,146 @@ void sgb_init_pals()
     sgb_transfer(map_buf);	
         
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE);
+}
+
+// Sound test for SGB sounds.
+void sgb_sound_test()
+{
+#if 0
+    const char* sound_a_names[] = {
+    "DUMMY FLAG, RE-TRIGGER",
+    "NINTENDO",
+    "GAME OVER",
+    "DROP",
+    "OK ... A",
+    "OK ... B",
+    "SELECT...A",
+    "SELECT...B",
+    "SELECT...C",
+    "MISTAKE...BUZZER",
+    "CATCH ITEM",
+    "GATE SQUEAKS 1 TIME",
+    "EXPLOSION...SMALL",
+    "EXPLOSION...MEDIUM",
+    "EXPLOSION...LARGE",
+    "ATTACKED...A",
+    "ATTACKED...B",
+    "HIT (PUNCH)...A",
+    "HIT (PUNCH)...B",
+    "BREATH IN AIR",
+    "ROCKET PROJECTILE...A",
+    "ROCKET PROJECTILE...B",
+    "ESCAPING BUBBLE",
+    "JUMP",
+    "FAST JUMP",
+    "JET (ROCKET) TAKEOFF",
+    "JET (ROCKET) LANDING",
+    "CUP BREAKING",
+    "GLASS BREAKING",
+    "LEVEL UP",
+    "INSERT AIR",
+    "SWORD SWING",
+    "WATER FALLING",
+    "FIRE",
+    "WALL COLLAPSING",
+    "CANCEL",
+    "WALKING",
+    "BLOCKING STRIKE",
+    "PICTURE FLOATS ON & OFF",
+    "FADE IN",
+    "FADE OUT",
+    "WINDOW BEING OPENED",
+    "WINDOW BEING CLOSED",
+    "BIG LASER",
+    "STONE GATE CLOSES/OPENS",
+    "TELEPORTATION",
+    "LIGHTNING",
+    "EARTHQUAKE",
+    "SMALL LASER",
+    "EFFECT A, STOP/SILENT",
+    };
+    const char* sound_b_names[] = {
+        "DUMMY FLAG, RE-TRIGGER",
+        "APPLAUSE...SMALL GROUPS",
+        "APPLAUSE...MEDIUM GROUPS",
+        "APPLAUSE...LARGE GROUPS",
+        "WINDS",
+        "RAINS",
+        "STORMS",
+        "STORM WITH WIND/THUNDERS",
+        "LIGHTNINGS",
+        "EARTHQUAKES",
+        "AVALANCHES",
+        "WAVES",
+        "RIVERS",
+        "WATERFALLS",
+        "SMALL CHARACTER RUNNINGS",
+        "HORSE RUNNINGS",
+        "WARNING SOUNDS",
+        "APPROACHING CARS",
+        "JET FLYINGS",
+        "UFO FLYINGS",
+        "ELECTROMAGNETIC WAVESS",
+        "SCORE UPS",
+        "FIRES",
+        "CAMERA SHUTTER, FORMANTOS",
+        "WRITE, FORMANTOS",
+        "SHOW UP TITLE, FORMANTOS",
+    };
+
+    if (pad_all_new & PAD_LEFT)
+    {
+        if (scroll_y_camera > 0)
+        {
+            --scroll_y_camera;
+        }
+    }
+    else if (pad_all_new & PAD_RIGHT)
+    {
+        if (scroll_y_camera < (scroll_x_camera == 0 ? 0x30 : 0x19))
+        {
+            ++scroll_y_camera;
+        }
+    }
+
+    if (pad_all_new & PAD_UP)
+    {
+        if (scroll_x_camera > 0)
+        {
+            --scroll_x_camera;
+        }
+    }
+    else if (pad_all_new & PAD_DOWN)
+    {
+        if (scroll_x_camera < 1)
+        {
+            ++scroll_x_camera;
+            scroll_y_camera = MIN(scroll_y_camera, 0x19);
+        }
+    }
+
+    PRINT_POS(0,1);
+    Printf("TABLE %s ID: %d", scroll_x_camera == 0 ? "A" : "B", scroll_y_camera);
+
+    PRINT(0,3,"                    ");
+    PRINT(0,3, scroll_x_camera == 0 ? sound_a_names[scroll_y_camera] : sound_b_names[scroll_y_camera]);
+
+    if (pad_all_new & PAD_A)
+    {
+        if (scroll_x_camera == 0)
+        {
+            sgb_play_sounda(scroll_y_camera);
+        }
+        else
+        {
+            sgb_play_soundb(scroll_y_camera);
+        }
+    }
+    else if (pad_all_new & PAD_B)
+    {
+        sgb_stop_testsound();
+    }
+#endif // #if 0
 }
 
 #endif /* D161F945_3DE5_43C6_BBE0_9786D5BA6B6C */
