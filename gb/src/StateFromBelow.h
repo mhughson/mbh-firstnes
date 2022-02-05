@@ -84,6 +84,12 @@
 #define KILL_SCREEN_TILE 0x04
 #define BLOCK_TILE 0x02
 
+// Used to hide sprites off screen.
+#define OFFSCREEN_Y (144 + 32)
+
+#define SCREEN_START_X 8U
+#define SCREEN_START_Y 16U
+
 #if VS_SYS_ENABLED
 // Note: 1 based to match documentation and user face numbering.
 #define DIP1 (PEEK(0x4016) & 1<<3) // FREE PLAY

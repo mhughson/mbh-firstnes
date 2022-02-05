@@ -1250,6 +1250,20 @@ void UPDATE()
 				SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 				display_options();
 			}
+
+			sprite_data[1] = (1 << 3) + SCREEN_START_X - 5 + tenatcle_offsets[(tick_count / 16) % 4];
+			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
+			sprite_data[2] = 16;
+			sprite_data[3] = 0;
+			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+			next_oam_idx += sizeof(sprite_data) >> 2;
+
+			sprite_data[1] = (2 << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
+			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
+			sprite_data[2] = 16;
+			sprite_data[3] = 0 | (1 << 5);
+			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+			next_oam_idx += sizeof(sprite_data) >> 2;
 #endif
 			break;
 		}
@@ -1810,12 +1824,6 @@ void draw_menu_sprites(void)
 }
 
 #endif // PLAT_NES
-
-// Used to hide sprites off screen.
-#define OFFSCREEN_Y (144 + 32)
-
-#define SCREEN_START_X 8U
-#define SCREEN_START_Y 16U
 
 void draw_gameplay_sprites(void)
 {
@@ -4048,26 +4056,26 @@ void display_options()
 	multi_vram_buffer_horz(hard_drop_types[hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
 	PRINT(11,14, hard_drop_types[hard_drops_on]);
 
-	// NOTE: One redundant call.
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+2)<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+4)<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+6)<<3));
-	multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+8)<<3));
+	// // NOTE: One redundant call.
+	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
+	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+2)<<3));
+	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+4)<<3));
+	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+6)<<3));
+	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y+8)<<3));
 
-	for (i = 0 ; i < 5; ++i)
-	{
-		UPDATE_TILE_BY_VALUE(1, 6 + (i*2), 0, 0x10);
-		UPDATE_TILE_BY_VALUE(2, 6 + (i*2), 0, 0x10);
-	}
+	// for (i = 0 ; i < 5; ++i)
+	// {
+	// 	UPDATE_TILE_BY_VALUE(1, 6 + (i*2), 0, 0x10);
+	// 	UPDATE_TILE_BY_VALUE(2, 6 + (i*2), 0, 0x10);
+	// }
 
-	multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
-	UPDATE_TILE_BY_VALUE(1, 6 + (cur_option * 2), 1, 0x10);
-	UPDATE_TILE_BY_VALUE(2, 6 + (cur_option * 2), 2, 0x10);
+	// multi_vram_buffer_horz(option_icon, 2, get_ppu_addr(0, 7<<3, (start_y + (cur_option<<1)<<3)));
+	// UPDATE_TILE_BY_VALUE(1, 6 + (cur_option * 2), 1, 0x10);
+	// UPDATE_TILE_BY_VALUE(2, 6 + (cur_option * 2), 2, 0x10);
 
 	// Avoid overrun when mashing mode change.
-	wait_vbl_done();
-	clear_vram_buffer();
+	//wait_vbl_done();
+	//clear_vram_buffer();
 }
 
 void fade_to_black()
