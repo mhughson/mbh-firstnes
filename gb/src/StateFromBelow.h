@@ -1009,8 +1009,8 @@ void add_row_at_bottom();
 
 void reset_gameplay_area();
 
-void display_song() { } // PLAT_GB
-void display_sound() { } // PLAT_GB
+void display_song();
+void display_sound();
 void display_options();
 
 void fade_to_black();

@@ -1443,7 +1443,7 @@ void UPDATE()
 			// MUSIC
 			//
 
-			if (pad_all_new & PAD_DOWN && test_song < 15)
+			if (pad_all_new & PAD_DOWN && test_song < 5)
 			{
 				++test_song;
 				display_song();
@@ -1463,8 +1463,37 @@ void UPDATE()
 				}
 				else
 				{
+					#define FORCE_PLAY(id) PlayMusic(id, 1)
+					#define FORCE_PLAY_ONCE(id) PlayMusic(id, 0)
 					test_song_active = test_song;
-					// ignore settings.
+					// hack
+					switch (test_song)
+					{
+					case 0:
+						// ignore settings.
+						FORCE_PLAY(MUSIC_TITLE);
+						break;
+					case 1:
+						FORCE_PLAY(MUSIC_GAMEPLAY);
+						break;
+					case 2:
+						FORCE_PLAY(MUSIC_STRESS);
+						break;
+					case 3:
+						FORCE_PLAY(MUSIC_PAUSE);
+						break;
+					case 4:
+						FORCE_PLAY_ONCE(MUSIC_GAMEOVER_INTRO);
+						test_song_active = -1;
+						break;
+					case 5:
+						FORCE_PLAY_ONCE(MUSIC_GAMEOVER_OUTRO);
+						test_song_active = -1;
+						break;
+					
+					default:
+						break;
+					}
 					music_play(test_song);
 				}
 			}
@@ -2859,6 +2888,8 @@ void go_to_state(unsigned char new_state)
 				//vram_unrle(title_and_game_area);
 				InitScroll(BANK(title_screen), &title_screen, 0, 0);
 
+ 				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);				
+
 				sgb_init_menu();
 
 				// Disabled for now. If this is needed in the end remember
@@ -3976,58 +4007,24 @@ void reset_gameplay_area()
 	copy_board_to_nt();
 }
 
-#if PLAT_NES
 
 #if !VS_SYS_ENABLED	
 void display_song()
 {
-	static unsigned char temp;
-	static unsigned char i;
-
-	temp = test_song;
-	i = 0;
-
-	if (test_song < 100)
-	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,(4<<3),(14<<3)));
-	}
-
-	while(temp != 0)
-    {
-        unsigned char digit = temp % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(0, (6<<3) - (i << 3), (14<<3) ));
-
-        temp = temp / 10;
-		++i;
-    }
+	static unsigned char num[3];
+	UIntToString(test_song, num);
+	PRINT(0,0,num);
 }
 
 void display_sound()
-{
+{	
+	static unsigned char num[3];
+	UIntToString(test_sound, num);
+	PRINT(0,1,num);
 
-	static unsigned char temp;
-	static unsigned char i;
-
-	temp = test_sound;
-	i = 0;
-
-	if (test_song < 100)
-	{
-		multi_vram_buffer_horz("000", 3, get_ppu_addr(0,(25<<3),(14<<3)));
-	}
-
-	while(temp != 0)
-    {
-        unsigned char digit = temp % 10;
-        one_vram_buffer('0' + digit, get_ppu_addr(0, (27<<3) - (i << 3), (14<<3) ));
-
-        temp = temp / 10;
-		++i;
-	}
 }
 
 #endif //#if !VS_SYS_ENABLED	
-#endif // PLAT_NES
 
 void display_options()
 {
