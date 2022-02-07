@@ -743,6 +743,7 @@ void UPDATE()
 		}
 		case STATE_MENU:
 		{
+			send_byte();
 			draw_menu_sprites();
 
 			// if (pad1 & PAD_RIGHT)
