@@ -1499,11 +1499,11 @@ void UPDATE()
 						break;
 					case 4:
 						FORCE_PLAY_ONCE(MUSIC_GAMEOVER_INTRO);
-						test_song_active = -1;
+						test_song_active = 0xff;
 						break;
 					case 5:
 						FORCE_PLAY_ONCE(MUSIC_GAMEOVER_OUTRO);
-						test_song_active = -1;
+						test_song_active = 0xff;
 						break;
 					
 					default:
