@@ -110,9 +110,11 @@ GB:
 * [SIO] More variety in garbage.
 * [SIO] Allow client to change music/sound/hdrop.
 * [SIO] Replicate "mode" choice by host.
-* [SIO] Wait for shoulder-tap before starting multiplayer mode.
 * [SIO] Garbage rows should be 4 if 4 lines cleared (special case).
-* [SIO] Don't show "you lose" in single player game.
+* [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
+* [SIO] Proper "1-Player | 2-Player" menu choice.
+* [SIO] Seed RNG to ensure players get same blocks.
+* [SIO] Either disable pause, or replicate it.
 
 FEATURES:
 
@@ -857,11 +859,38 @@ void UPDATE()
 
 			// Check to see if a connect GB hit start on the main menu.
 			UINT8 host_advanced = 0;
+
+			// For now A means try to play SIO game.
+			if (pad_all_new & PAD_A)
+			{
+				// Send out the HOST START event. It only does something
+				// if we get an ack back.
+				_io_out = MP_TITLE_HOST_START;
+				send_byte();
+				while((_io_status == IO_SENDING));
+				receive_byte();
+			}
+
 			if (_io_status != IO_RECEIVING)
 			{
-				if (_io_in & MP_TITLE_MENU_ADVANCE != 0)
+				// Did another sysmte try to start a SIO match?
+				if (_io_in == MP_TITLE_HOST_START)
+				{
+					// Let them know we got it, and move to the 
+					// next menu as a CLIENT.
+					host_advanced = 1;
+					is_host = 0;
+					_io_out = MP_TITLE_HOST_ACK;
+					send_byte();
+					while((_io_status == IO_SENDING));
+				}
+
+				// Another device ACK'd our HOST_START event. Officially
+				// become the HOST and move to the next menu.
+				if (_io_in == MP_TITLE_HOST_ACK)
 				{
 					host_advanced = 1;
+					is_host = 1;
 				}
 
 				// Start listening again.
@@ -886,18 +915,15 @@ void UPDATE()
 				else
 #endif //#if !VS_SYS_ENABLED
 				{
-					// Check above is going to add network packet case, so this will 
-					// detect the case where the user pressed start to enter here.
-					if (host_advanced == 0)
+					// If we got here through an SIO event, this is an SIO game.
+					if (host_advanced)
 					{
-						is_host = 1;
-
-						queued_packet |= MP_TITLE_MENU_ADVANCE;
-						send_queued_packet();
+						is_sio_game = 1;
 					}
 					else
 					{
-						is_host = 0;
+						// This is an offline game so we are always the host.
+						is_host = 1;
 					}
 
 					fade_to_black();
@@ -1105,7 +1131,7 @@ void UPDATE()
 			// Check if the host advanced to gameplay.
 			// TODO: This should probably require both 
 			UINT8 host_advanced = 0;
-			if (_io_status != IO_RECEIVING)
+			if (is_sio_game && _io_status != IO_RECEIVING)
 			{
 				if (_io_in & MP_OPTIONS_MENU_ADVANCE != 0)
 				{
@@ -1357,7 +1383,7 @@ void UPDATE()
 			UINT8 garbage_rows = 0;
 			UINT8 other_lost = 0;
 
-			if (_io_status != IO_RECEIVING)
+			if (is_sio_game && _io_status != IO_RECEIVING)
 			{
 				packet_in = _io_in;
 
@@ -1504,7 +1530,7 @@ void UPDATE()
 				add_garbage_row_at_bottom(garbage_rows);
 			}
 
-			if (other_lost)
+			if (other_lost && is_sio_game)
 			{
 				go_to_state(STATE_OVER);
 
@@ -1558,7 +1584,7 @@ void UPDATE()
 			UINT8 menu_choice_quit = 0;
 			UINT8 menu_choice_replay = 0;
 
-			if (_io_status != IO_RECEIVING)
+			if (is_sio_game && _io_status != IO_RECEIVING)
 			{
 				packet_in = _io_in;
 
@@ -2826,7 +2852,10 @@ void spawn_new_cluster()
 		send_queued_packet();
 		go_to_state(STATE_OVER);
 
-		PRINT(9, 12, " YOU LOSE ");
+		if (is_sio_game)
+		{
+			PRINT(9, 12, " YOU LOSE ");
+		}
 	}
 }
 
@@ -3033,6 +3062,10 @@ void go_to_state(unsigned char new_state)
 		}
 		case STATE_MENU:
 		{
+			// Seems like a good point to say we are "disconnected". Require a new handshake
+			// to enter an SIO match again.
+			is_sio_game = 0;
+
 			// Start looking for incoming packets the moment we enter the title
 			// screen.
 			receive_byte();

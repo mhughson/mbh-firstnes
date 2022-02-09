@@ -961,7 +961,9 @@ const unsigned char metasprite_tentacle_title[]={
 };
 
 // Move to the next menu.
-#define MP_TITLE_MENU_ADVANCE 1
+#define MP_TITLE_HOST_START 0xff
+// Hand shake to single that a 2nd player got the message.
+#define MP_TITLE_HOST_ACK 0xfe
 
 // Move to gameplay.
 #define MP_OPTIONS_MENU_ADVANCE 1
@@ -995,6 +997,8 @@ UINT8 packet_count_in;
 UINT8 packet_count_out;
 // Temp for storing the packet that came in.
 UINT8 packet_in;
+// Tracks if this is a multiplayer game.
+UINT8 is_sio_game;
 
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.
