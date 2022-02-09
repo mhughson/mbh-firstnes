@@ -50,6 +50,7 @@
 // Again, this is the last tile in that area, so the actual number of rows in that
 // area is 4 not 3.
 #define BOARD_OOB_END 3
+// TODO: This is NOT in pixels. Something got messed up along the way, and this is in tiles.
 #define BOARD_END_X_PX_BOARD 9 // left edge of last block (width = 10)
 #define BOARD_END_Y_PX_BOARD 23 // top edge of last block (height = 24)
 
@@ -696,6 +697,8 @@ unsigned char game_board[BOARD_SIZE];
 unsigned char game_board_temp[BOARD_SIZE];
 // An empty row of the board is just 10 0's. Used for quick memcpy.
 const char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+// TODO: It would be nice to have a more random selection.
+const UINT8 garbage_row[10] = { 29, 29, 0, 29, 29, 29, 29, 29, 29, 29 };
 // When selecting an option in the settings screen, and little cursor moves around.
 // This is done via the nametable, and these are the sprites used to clear and set
 // that cursor.
@@ -957,6 +960,46 @@ const unsigned char metasprite_tentacle_title[]={
 	128
 };
 
+// Move to the next menu.
+#define MP_TITLE_MENU_ADVANCE 1
+
+// Move to gameplay.
+#define MP_OPTIONS_MENU_ADVANCE 1
+
+// Offset to the flag signaling that the other player lost.
+#define MP_GAME_OTHER_LOST_SHIFT 7
+// Flag saying that the other player lost.
+#define MP_GAME_OTHER_LOST (1 << MP_GAME_OTHER_LOST_SHIFT)
+// The number of rows of garbage the other player is sending
+// is the first 2 bits (max value 4).
+#define MP_GAME_GARBAGE_MASK 0x3
+
+// Move back to main menu from Game Over.
+#define MP_OVER_QUIT   (1<<0)
+// Play again!
+#define MP_OVER_REPLAY (1<<1)
+
+// Gameplay packet byte:
+/*
+   0      0 0 0 0 0     0 0  
+gameover   height    #garbage
+*/
+
+// 1 for the player who presses "start" on the main menu.
+// They will have control of all menus after that point.
+UINT8 is_host;
+// The queued up packet to send to the other player.
+UINT8 queued_packet;
+// Debug for tracking how many packets have been recieved and sent.
+UINT8 packet_count_in;
+UINT8 packet_count_out;
+// Temp for storing the packet that came in.
+UINT8 packet_in;
+
+// Helper for sending the queued_packet, and then turning on 
+// receiving again after.
+void send_queued_packet();
+
 // PROTOTYPES
 
 void draw_menu_sprites(void) { } // PLAT_GB
@@ -1012,6 +1055,7 @@ void copy_board_to_nt();
 
 void add_block_at_bottom();
 void add_row_at_bottom();
+void add_garbage_row_at_bottom(UINT8 num_rows);
 
 void reset_gameplay_area();
 

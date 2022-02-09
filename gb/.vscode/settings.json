@@ -23,6 +23,14 @@
         "spritemanager.h": "c",
         "sprite.h": "c",
         "sgb.h": "c",
-        "sgb_border.h": "c"
+        "sgb_border.h": "c",
+        "cstring": "c",
+        "iosfwd": "c",
+        "xlocale": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "crash_handler.h": "c",
+        "setautobank.h": "c",
+        "main.h": "c"
     }
 }

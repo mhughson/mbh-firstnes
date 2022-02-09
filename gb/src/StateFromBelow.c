@@ -95,6 +95,25 @@ UINT8 sprite_data[4];
 
 ..::TODO::..
 
+
+GB:
+
+* [SGB] Arrows on Options for H.Drop are wrong palette.
+* [SGB] Long delay setting attributes. Can this be done with linear array?
+* Missing all sound effects.
+* Font on Options is mix and match.
+* Add "save" support.
+* Better hint of early Kraken Tentacle.
+* [DMG] Credits text hard to see.
+* Hitch when tentacle advances.
+* Bottom of well looks weird going straight into water.
+* [SIO] More variety in garbage.
+* [SIO] Allow client to change music/sound/hdrop.
+* [SIO] Replicate "mode" choice by host.
+* [SIO] Wait for shoulder-tap before starting multiplayer mode.
+* [SIO] Garbage rows should be 4 if 4 lines cleared (special case).
+* [SIO] Don't show "you lose" in single player game.
+
 FEATURES:
 
 //must have
@@ -455,6 +474,14 @@ void START()
 		add_LCD(my_interrupt);
 	}
 
+	CRITICAL {
+        add_SIO(nowait_int_handler);    // disable waiting VRAM state before return
+
+		// Add SIO interrupt to the list. The other flags are copied from
+		// ZGB main.
+        set_interrupts(VBL_IFLAG | TIM_IFLAG | LCD_IFLAG | SIO_IFLAG);
+    }
+
 	ppu_off(); // screen off
 
 	// use the second set of tiles for sprites
@@ -618,6 +645,9 @@ void UPDATE()
 	++tick_count;
 	++tick_count_large;
 	++ticks_in_state_large;
+	
+	// Every frame clear the queued packet.
+	queued_packet = 0;
 
 	// pad1 = pad_poll(0); // read the first controller
 	// pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
@@ -743,7 +773,6 @@ void UPDATE()
 		}
 		case STATE_MENU:
 		{
-			send_byte();
 			draw_menu_sprites();
 
 			// if (pad1 & PAD_RIGHT)
@@ -825,7 +854,24 @@ void UPDATE()
 			// Any A or B, or 1, 3, 4.
 			else if (((pad1_new & PAD_SELECT) || (pad_all_new & (PAD_START | PAD_A | PAD_B))) && (credits_remaining >= game_cost || free_play_enabled)) // free play
 #else
-			if (pad_all_new & PAD_START)
+
+			// Check to see if a connect GB hit start on the main menu.
+			UINT8 host_advanced = 0;
+			if (_io_status != IO_RECEIVING)
+			{
+				if (_io_in & MP_TITLE_MENU_ADVANCE != 0)
+				{
+					host_advanced = 1;
+				}
+
+				// Start listening again.
+				receive_byte();
+			}
+
+			// Move to the next screen if pressing START or if a remote
+			// host presses start.
+			// TODO: This should require a shoulder-tap.
+			if (pad_all_new & PAD_START || host_advanced)
 #endif //VS_SYS_ENABLED
 			{
 				srand(tick_count_large);
@@ -840,6 +886,20 @@ void UPDATE()
 				else
 #endif //#if !VS_SYS_ENABLED
 				{
+					// Check above is going to add network packet case, so this will 
+					// detect the case where the user pressed start to enter here.
+					if (host_advanced == 0)
+					{
+						is_host = 1;
+
+						queued_packet |= MP_TITLE_MENU_ADVANCE;
+						send_queued_packet();
+					}
+					else
+					{
+						is_host = 0;
+					}
+
 					fade_to_black();
 					go_to_state(STATE_OPTIONS);
 					fade_from_black();
@@ -1042,8 +1102,28 @@ void UPDATE()
 				multi_vram_buffer_horz(clear_push_start, sizeof(clear_push_start)-1, get_ppu_addr(0, 12<<3, 12<<3));
 			}
 
-			if (pad_all_new & PAD_START)
+			// Check if the host advanced to gameplay.
+			// TODO: This should probably require both 
+			UINT8 host_advanced = 0;
+			if (_io_status != IO_RECEIVING)
 			{
+				if (_io_in & MP_OPTIONS_MENU_ADVANCE != 0)
+				{
+					host_advanced = 1;
+				}
+
+				// Start listening again.
+				receive_byte();
+			}
+
+			if ((pad_all_new & PAD_START && is_host) || host_advanced)
+			{
+				if (!host_advanced)
+				{
+					queued_packet |= MP_OPTIONS_MENU_ADVANCE;
+					send_queued_packet();
+				}
+
 				StopMusic;
 				SFX_PLAY_WRAPPER(SOUND_START);
 
@@ -1075,7 +1155,8 @@ void UPDATE()
 				go_to_state(STATE_GAME);
 			}
 
-			if (pad_all_new & PAD_B)
+			// TODO: This breaks the game in Multiplayer.
+			if (pad_all_new & PAD_B && is_host)
 			{
 				fade_to_black();
 				go_to_state(STATE_MENU);
@@ -1235,13 +1316,13 @@ void UPDATE()
 				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 				display_options();
 			}
-			else if (pad_all_new & PAD_DOWN)
+			else if (pad_all_new & PAD_DOWN && is_host)
 			{
 				cur_option = (cur_option + 1) % NUM_OPTIONS;
 				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 				display_options();
 			}
-			else if (pad_all_new & PAD_UP)
+			else if (pad_all_new & PAD_UP && is_host)
 			{
 				if (cur_option == 0)
 				{
@@ -1271,6 +1352,26 @@ void UPDATE()
 
 		case STATE_GAME:
 		{
+
+			packet_in = 0;
+			UINT8 garbage_rows = 0;
+			UINT8 other_lost = 0;
+
+			if (_io_status != IO_RECEIVING)
+			{
+				packet_in = _io_in;
+
+				garbage_rows = (packet_in & MP_GAME_GARBAGE_MASK);
+				other_lost = (packet_in & MP_GAME_OTHER_LOST) >> MP_GAME_OTHER_LOST_SHIFT;
+
+				++packet_count_in;
+				// PRINT_POS(0,4);
+				// Printf("I:%d %d %d", packet_count_in, garbage_rows, other_lost);
+
+				// Start listening again...
+				receive_byte();
+			}
+
 			if (hit_reaction_remaining > 0)
 			{
 				--hit_reaction_remaining;
@@ -1397,6 +1498,20 @@ void UPDATE()
 			// 	//go_to_state(STATE_OVER);
 			// }
 #endif
+
+			if (garbage_rows > 0)
+			{
+				add_garbage_row_at_bottom(garbage_rows);
+			}
+
+			if (other_lost)
+			{
+				go_to_state(STATE_OVER);
+
+				PRINT(9, 12, " YOU WIN! ");
+			}
+
+			send_queued_packet();
 //PROFILE_POKE(PROF_CLEAR);
 			break;
 		}
@@ -1435,19 +1550,61 @@ void UPDATE()
 				fade_from_black();
 			}
 #else
-			if (pad_all_new & PAD_B)
+
+
+			queued_packet = 0;
+
+			packet_in = 0;
+			UINT8 menu_choice_quit = 0;
+			UINT8 menu_choice_replay = 0;
+
+			if (_io_status != IO_RECEIVING)
 			{
+				packet_in = _io_in;
+
+				if (packet_in & MP_OVER_QUIT)
+				{
+					menu_choice_quit = 1;
+				}
+				else if (packet_in & MP_OVER_REPLAY)
+				{
+					menu_choice_replay = 1;
+				}
+
+				++packet_count_in;
+				// PRINT_POS(0,4);
+				// Printf("I:%d %d    ", menu_choice_quit, menu_choice_replay);
+
+				// Start listening again...
+				receive_byte();
+			}
+
+			if (pad_all_new & PAD_B || menu_choice_quit)
+			{
+				// Don't resend the same event back.
+				if (!menu_choice_quit)
+				{
+					queued_packet |= MP_OVER_QUIT;
+					send_queued_packet();
+				}
 				//go_to_state(STATE_GAME);
 				fade_to_black();
 				go_to_state(STATE_MENU);
 				fade_from_black();
 			}
-			if (pad_all_new & PAD_A)
+			if (pad_all_new & PAD_A || menu_choice_replay)
 			{
+				if (!menu_choice_replay)
+				{
+					queued_packet |= MP_OVER_REPLAY;
+					send_queued_packet();
+				}
 				//go_to_state(STATE_GAME);
 				go_to_state(STATE_GAME);
 			}
 #endif
+
+			send_queued_packet();
 
 			break;
 		}
@@ -2665,7 +2822,11 @@ void spawn_new_cluster()
 		// trigger game over. First place the new block in nt, then
 		// move the the game over state.
 		put_cur_cluster();
+		queued_packet |= MP_GAME_OTHER_LOST;
+		send_queued_packet();
 		go_to_state(STATE_OVER);
+
+		PRINT(9, 12, " YOU LOSE ");
 	}
 }
 
@@ -2872,6 +3033,10 @@ void go_to_state(unsigned char new_state)
 		}
 		case STATE_MENU:
 		{
+			// Start looking for incoming packets the moment we enter the title
+			// screen.
+			receive_byte();
+
 			pal_bg(palette_bg);
 			pal_spr(palette_sp);
 
@@ -2964,6 +3129,9 @@ void go_to_state(unsigned char new_state)
 		case STATE_OPTIONS:
 		{
 			oam_clear();
+
+			// TODO: Needed?
+			receive_byte();			
 
 			// get rid of any queued up changes as they are no longer valid.
 			// fixes bug where "press a button" is on screen in settings because it got queued up
@@ -3078,6 +3246,10 @@ void go_to_state(unsigned char new_state)
 
 			if (prev_state != STATE_PAUSE)
 			{
+				// Start listening again...
+				// TODO: Needed?
+				receive_byte();
+
 				oam_clear();
 
 				fade_to_black();
@@ -3643,6 +3815,14 @@ void clear_rows_in_data(unsigned char start_y)
 			SFX_PLAY_WRAPPER(SOUND_ROW);
 		}
 
+		// Send one less than the number of rows cleared to the
+		// other player as garbage.
+		if (i > 1)
+		{
+			// Add the number of rows cleared to the packet.
+			queued_packet |= (i - 1);
+		}
+
 		// 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
 		switch (i)
 		{
@@ -3981,6 +4161,24 @@ void add_row_at_bottom()
 	copy_board_to_nt();
 }
 
+void add_garbage_row_at_bottom(UINT8 num_rows)
+{
+	static UINT8 dest_row;
+
+	for(dest_row = 0; dest_row <= (BOARD_END_Y_PX_BOARD - num_rows); ++dest_row)
+	{
+		memcpy(&game_board[TILE_TO_BOARD_INDEX(0, dest_row)], &game_board[TILE_TO_BOARD_INDEX(0, dest_row + num_rows)], BOARD_WIDTH);
+	}
+
+	for (dest_row = BOARD_END_Y_PX_BOARD; dest_row > (BOARD_END_Y_PX_BOARD - num_rows); --dest_row)
+	{
+		memcpy(&game_board[TILE_TO_BOARD_INDEX(0, dest_row)], garbage_row, BOARD_WIDTH);
+	}
+
+	copy_board_to_nt();
+}
+
+
 void reset_gameplay_area()
 {
 	memfill(game_board, 0, BOARD_SIZE);
@@ -4232,3 +4430,21 @@ void debug_display_number(unsigned char num, unsigned char index)
 }
 #endif //DEBUG_ENABLED
 #endif // PLAT_NES
+
+void send_queued_packet()
+{
+	if (queued_packet != 0)
+	{
+		++packet_count_out;
+		// PRINT_POS(0,0);
+		// Printf("O:%d %d ", packet_count_out, queued_packet);
+		_io_out = queued_packet;
+		send_byte();
+		queued_packet = 0;
+		// Wait for the byte to get sent.
+		while((_io_status == IO_SENDING));
+
+		// Start listening again...
+		receive_byte();
+	}
+}
