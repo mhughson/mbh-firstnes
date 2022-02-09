@@ -31,6 +31,8 @@
         "xutility": "c",
         "crash_handler.h": "c",
         "setautobank.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "cstdlib": "c",
+        "algorithm": "cpp"
     }
 }

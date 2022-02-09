@@ -999,6 +999,8 @@ UINT8 packet_count_out;
 UINT8 packet_in;
 // Tracks if this is a multiplayer game.
 UINT8 is_sio_game;
+// Tracks the shared seed in SIO matches for debugging.
+UINT16 seed_value;
 
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.

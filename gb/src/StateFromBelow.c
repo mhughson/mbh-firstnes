@@ -113,8 +113,9 @@ GB:
 * [SIO] Garbage rows should be 4 if 4 lines cleared (special case).
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
 * [SIO] Proper "1-Player | 2-Player" menu choice.
-* [SIO] Seed RNG to ensure players get same blocks.
 * [SIO] Either disable pause, or replicate it.
+* [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN!.
+* [SIO] BUG: Rarely one player gets stuck on white screen after loading. Probably need to spam send until success.
 
 FEATURES:
 
@@ -897,13 +898,91 @@ void UPDATE()
 				receive_byte();
 			}
 
+
+
+// version when seed was used to transition
+
+			// 	// Did another sysmte try to start a SIO match?
+			// 	if (_io_in == MP_TITLE_HOST_START)
+			// 	{
+			// 		// Let them know we got it, and move to the 
+			// 		// next menu as a CLIENT.
+			// 		host_advanced = 1;
+			// 		is_host = 0;
+
+			// 		UINT8 half_seed = (tick_count_large >> 8);
+					
+			// 		if (half_seed == 0 || half_seed == MP_TITLE_HOST_START)
+			// 		{
+			// 			Printf("%u", FALLBACK_RNG_SEED);
+			// 			//srand(FALLBACK_RNG_SEED);
+			// 			_io_out = FALLBACK_RNG_SEED;
+			// 		}
+			// 		else
+			// 		{
+			// 			Printf("%u", half_seed);
+			// 			//srand(half_seed);
+			// 			_io_out = half_seed;
+			// 		}
+			// 		send_byte();
+			// 		while((_io_status == IO_SENDING));
+
+			// 		receive_byte();
+			// 		while((_io_status == IO_RECEIVING));
+
+			// 		half_seed = (tick_count_large & 0xff);
+					
+			// 		if (half_seed == 0 || half_seed == MP_TITLE_HOST_START)
+			// 		{
+			// 			Printf("%u", FALLBACK_RNG_SEED);
+			// 			//srand(FALLBACK_RNG_SEED);
+			// 			_io_out = FALLBACK_RNG_SEED;
+			// 		}
+			// 		else
+			// 		{
+			// 			Printf("%u", half_seed);
+			// 			//srand(half_seed);
+			// 			_io_out = half_seed;
+			// 		}
+			// 		send_byte();
+			// 		while((_io_status == IO_SENDING));
+			// 		srand(tick_count_large);
+			// 		seed_value = tick_count_large;
+			// 	}
+
+			// 	// Another device ACK'd our HOST_START event. Officially
+			// 	// become the HOST and move to the next menu.
+			// 	else if (_io_in != 0)
+			// 	{
+			// 		UINT16 new_seed = _io_in << 8;
+			// 		_io_out = 0x69;
+			// 		send_byte();
+			// 		while((_io_status == IO_SENDING));
+			// 		receive_byte();
+			// 		while((_io_status == IO_RECEIVING));
+			// 		new_seed |= _io_in;
+			// 		srand(new_seed);
+			// 		host_advanced = 1;
+			// 		is_host = 1;
+			// 		seed_value = new_seed;
+			// 	}
+
+			// 	// Start listening again.
+			// 	receive_byte();
+			// }
+
+
+//
+
+
+
+
 			// Move to the next screen if pressing START or if a remote
 			// host presses start.
 			// TODO: This should require a shoulder-tap.
 			if (pad_all_new & PAD_START || host_advanced)
 #endif //VS_SYS_ENABLED
 			{
-				srand(tick_count_large);
 
 #if !VS_SYS_ENABLED
 				if (cur_konami_index >= KONAMI_CODE_LEN)
@@ -1181,8 +1260,9 @@ void UPDATE()
 				go_to_state(STATE_GAME);
 			}
 
-			// TODO: This breaks the game in Multiplayer.
-			if (pad_all_new & PAD_B && is_host)
+			// Don't allow backing out in multiplayer. This could be added, but will require
+			// a packet to tell the client to back out too.
+			if (pad_all_new & PAD_B && !is_sio_game)
 			{
 				fade_to_black();
 				go_to_state(STATE_MENU);
@@ -3279,13 +3359,65 @@ void go_to_state(unsigned char new_state)
 
 			if (prev_state != STATE_PAUSE)
 			{
-				// Start listening again...
-				// TODO: Needed?
-				receive_byte();
-
 				oam_clear();
 
 				fade_to_black();
+
+				// sync up a 16bit srand value...
+				if (is_sio_game)
+				{
+					if (is_host)
+					{
+						// First send the upper byte.
+						_io_out = (tick_count_large >> 8);
+						send_byte();
+						while(_io_status == IO_SENDING);
+
+						// Now wait for client to get the upper byte and send
+						// back and ACK.
+						receive_byte();
+						while(_io_status == IO_RECEIVING);
+
+						// Client has sent ACK. Value doesn't matter, as we just
+						// assume success at this point.
+
+						// Send lower byte.
+						_io_out = (tick_count_large & 0xff);
+						send_byte();
+						while(_io_status == IO_SENDING);
+
+						// Seed the RNG with this synced value.
+						srand(tick_count_large);
+
+						seed_value = tick_count_large;
+					}
+					else
+					{
+						seed_value = 0;
+
+						// First thing that should happen is that the host will send
+						// the upper byte of the seed.
+						//receive_byte();
+						while(_io_status == IO_RECEIVING);
+						seed_value = (_io_in << 8);
+
+						// Now that we have the first byte, let the host know we are
+						// ready for the second byte.
+						_io_out = 0x69;
+						send_byte();
+						while(_io_status == IO_SENDING);
+
+						// The second byte should be arriving next.
+						receive_byte();
+						while(_io_status == IO_RECEIVING);
+						seed_value |= _io_in;
+
+						// Seed the RNG with this synced value.
+						srand(seed_value);
+					}
+
+					receive_byte();
+				}
 
 #if VS_SYS_ENABLED
 				if (!attract_gameplay_enabled && credits_remaining >= game_cost)
@@ -3332,9 +3464,6 @@ void go_to_state(unsigned char new_state)
 
 				memfill(attack_row_status, 0, BOARD_WIDTH);
 
-				// Reseed rng at the start of each match to incrase randomness.
-				srand(tick_count_large);
-
 				// where to start the attack!
 				i = (unsigned char)rand() % BOARD_WIDTH;
 				attack_row_status[i] = 1;
@@ -3346,6 +3475,9 @@ void go_to_state(unsigned char new_state)
 				}
 
 				sgb_int_gameplay();
+
+				// PRINT_POS(0,0);
+				// Printf("%u", seed_value);
 
 				fade_from_black();
 			}
@@ -4224,6 +4356,15 @@ void reset_gameplay_area()
 	delay_lock_remaining = -1;
 	kill_row_cur = 0;
 	start_delay_remaining = START_DELAY;
+	attack_queued = 0;
+	delay_spawn_remaining = -1;
+	// We don't want the previous round's blocks to impact the choice
+	// the starting blocks next round, as that will cause a desync in 
+	// sio matches.
+	// TODO: Would -1 be better? I think the way it is, it would be
+	// very rare for piece 0 to get picked.
+	memfill(&next_cluster, 0, sizeof(next_cluster));
+	memfill(&cur_cluster, 0, sizeof(cur_cluster));
 
 	// load the palettes
 	time_of_day = 0;
@@ -4466,7 +4607,7 @@ void debug_display_number(unsigned char num, unsigned char index)
 
 void send_queued_packet()
 {
-	if (queued_packet != 0)
+	if (is_sio_game && queued_packet != 0)
 	{
 		++packet_count_out;
 		// PRINT_POS(0,0);
