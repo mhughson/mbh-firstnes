@@ -1422,13 +1422,13 @@ void UPDATE()
 				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 				display_options();
 			}
-			else if (pad_all_new & PAD_DOWN && is_host)
+			else if (pad_all_new & PAD_DOWN)
 			{
 				cur_option = (cur_option + 1) % NUM_OPTIONS;
 				SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 				display_options();
 			}
-			else if (pad_all_new & PAD_UP && is_host)
+			else if (pad_all_new & PAD_UP)
 			{
 				if (cur_option == 0)
 				{
@@ -3320,6 +3320,11 @@ void go_to_state(unsigned char new_state)
 			wait_vbl_done();
 			clear_vram_buffer();
 			display_highscore();
+
+			if (!is_host)
+			{
+				PRINT(2, 2, "WAITING FOR HOST");
+			}
 #endif
 
 			break;
