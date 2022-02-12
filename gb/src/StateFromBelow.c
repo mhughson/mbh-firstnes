@@ -1442,14 +1442,14 @@ void UPDATE()
 			sprite_data[1] = (1 << 3) + SCREEN_START_X - 5 + tenatcle_offsets[(tick_count / 16) % 4];
 			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
 			sprite_data[2] = 16;
-			sprite_data[3] = 0;
+			sprite_data[3] = 1;
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 
 			sprite_data[1] = (2 << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
 			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
 			sprite_data[2] = 16;
-			sprite_data[3] = 0 | (1 << 5);
+			sprite_data[3] = 1 | (1 << 5);
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 #endif
@@ -3284,13 +3284,13 @@ void go_to_state(unsigned char new_state)
 #else
 #if PLAT_GB
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
-			INIT_FONT(font_on_black, PRINT_BKG);
+			INIT_FONT(font, PRINT_BKG);
 
 			// Clear out the temp tiles used to force tile index.
-			UPDATE_TILE_BY_VALUE(0,0,4,NULL);
-			UPDATE_TILE_BY_VALUE(1,0,4,NULL);
-			UPDATE_TILE_BY_VALUE(2,0,4,NULL);
-			UPDATE_TILE_BY_VALUE(3,0,4,NULL);
+			// UPDATE_TILE_BY_VALUE(0,0,4,NULL);
+			// UPDATE_TILE_BY_VALUE(1,0,4,NULL);
+			// UPDATE_TILE_BY_VALUE(2,0,4,NULL);
+			// UPDATE_TILE_BY_VALUE(3,0,4,NULL);
 
 			// Disabled for now. Remember to add PUSH/POP bank
 			//
