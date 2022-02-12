@@ -362,6 +362,9 @@ unsigned char hard_drop_tap_required;
 enum { STATE_BOOT, STATE_TY, STATE_MENU, STATE_OPTIONS, STATE_GAME, STATE_PAUSE, STATE_OVER, STATE_SOUND_TEST, STATE_HIGH_SCORE_TABLE };
 // The state the game is in right now.
 unsigned char state = STATE_BOOT;
+// Some states have sub states to track. This is reset
+// every time a new main state is entered.
+UINT8 sub_state;
 
 // Konami code is used on the title screen to enter Sound Test.
 // It works by storing a current index in to the code. If the player

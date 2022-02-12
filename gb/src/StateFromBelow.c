@@ -499,7 +499,7 @@ void START()
 	cur_nt = 2;
 
 #if PLAT_GB
-	INIT_FONT(font_on_black, PRINT_BKG);
+	INIT_FONT(font, PRINT_BKG);
 	//vram_unrle(title_and_game_area);
 	//InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 #else
@@ -861,8 +861,11 @@ void UPDATE()
 			// Check to see if a connect GB hit start on the main menu.
 			UINT8 host_advanced = 0;
 
-			// For now A means try to play SIO game.
-			if (pad_all_new & PAD_A)
+			// If the player presses STARRT while selecting
+			// the "2 player" option.
+			if (pad_all_new & PAD_START && 
+				sub_state == 1 && 
+				cur_option == 1)
 			{
 				// Send out the HOST START event. It only does something
 				// if we get an ack back.
@@ -884,6 +887,9 @@ void UPDATE()
 					_io_out = MP_TITLE_HOST_ACK;
 					send_byte();
 					while((_io_status == IO_SENDING));
+					// jump to the next start if we aren't there already so that
+					// it will move to the next scren.
+					sub_state = 1;
 				}
 
 				// Another device ACK'd our HOST_START event. Officially
@@ -892,125 +898,85 @@ void UPDATE()
 				{
 					host_advanced = 1;
 					is_host = 1;
+					// jump to the next start if we aren't there already so that
+					// it will move to the next scren.
+					// This likely will already be 1 but there may be a button mash case.
+					sub_state = 1;
 				}
 
 				// Start listening again.
 				receive_byte();
 			}
 
-
-
-// version when seed was used to transition
-
-			// 	// Did another sysmte try to start a SIO match?
-			// 	if (_io_in == MP_TITLE_HOST_START)
-			// 	{
-			// 		// Let them know we got it, and move to the 
-			// 		// next menu as a CLIENT.
-			// 		host_advanced = 1;
-			// 		is_host = 0;
-
-			// 		UINT8 half_seed = (tick_count_large >> 8);
-					
-			// 		if (half_seed == 0 || half_seed == MP_TITLE_HOST_START)
-			// 		{
-			// 			Printf("%u", FALLBACK_RNG_SEED);
-			// 			//srand(FALLBACK_RNG_SEED);
-			// 			_io_out = FALLBACK_RNG_SEED;
-			// 		}
-			// 		else
-			// 		{
-			// 			Printf("%u", half_seed);
-			// 			//srand(half_seed);
-			// 			_io_out = half_seed;
-			// 		}
-			// 		send_byte();
-			// 		while((_io_status == IO_SENDING));
-
-			// 		receive_byte();
-			// 		while((_io_status == IO_RECEIVING));
-
-			// 		half_seed = (tick_count_large & 0xff);
-					
-			// 		if (half_seed == 0 || half_seed == MP_TITLE_HOST_START)
-			// 		{
-			// 			Printf("%u", FALLBACK_RNG_SEED);
-			// 			//srand(FALLBACK_RNG_SEED);
-			// 			_io_out = FALLBACK_RNG_SEED;
-			// 		}
-			// 		else
-			// 		{
-			// 			Printf("%u", half_seed);
-			// 			//srand(half_seed);
-			// 			_io_out = half_seed;
-			// 		}
-			// 		send_byte();
-			// 		while((_io_status == IO_SENDING));
-			// 		srand(tick_count_large);
-			// 		seed_value = tick_count_large;
-			// 	}
-
-			// 	// Another device ACK'd our HOST_START event. Officially
-			// 	// become the HOST and move to the next menu.
-			// 	else if (_io_in != 0)
-			// 	{
-			// 		UINT16 new_seed = _io_in << 8;
-			// 		_io_out = 0x69;
-			// 		send_byte();
-			// 		while((_io_status == IO_SENDING));
-			// 		receive_byte();
-			// 		while((_io_status == IO_RECEIVING));
-			// 		new_seed |= _io_in;
-			// 		srand(new_seed);
-			// 		host_advanced = 1;
-			// 		is_host = 1;
-			// 		seed_value = new_seed;
-			// 	}
-
-			// 	// Start listening again.
-			// 	receive_byte();
-			// }
-
-
-//
-
-
-
-
-			// Move to the next screen if pressing START or if a remote
-			// host presses start.
-			// TODO: This should require a shoulder-tap.
-			if (pad_all_new & PAD_START || host_advanced)
-#endif //VS_SYS_ENABLED
+			if (sub_state == 0) // PRESS START state.
 			{
-
-#if !VS_SYS_ENABLED
-				if (cur_konami_index >= KONAMI_CODE_LEN)
+				if (pad_all & PAD_ALL_BUTTONS)
 				{
-					SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
-					StopMusic;
-					go_to_state(STATE_SOUND_TEST);
-				}
-				else
-#endif //#if !VS_SYS_ENABLED
-				{
-					// If we got here through an SIO event, this is an SIO game.
-					if (host_advanced)
-					{
-						is_sio_game = 1;
-					}
-					else
-					{
-						// This is an offline game so we are always the host.
-						is_host = 1;
-					}
-
-					fade_to_black();
-					go_to_state(STATE_OPTIONS);
-					fade_from_black();
+					sub_state = 1;
+					// Show the player options
+					PRINT(6,12,"1 PLAYER");
+					PRINT(6,13,"2 PLAYER");
 				}
 			}
+			else if (sub_state == 1) // 1/2 Player State
+			{
+				if (pad_all_new & PAD_UP)
+				{
+					if (cur_option == 1)
+					{
+						cur_option = 0;
+					}
+				}
+				else if (pad_all_new & PAD_DOWN)
+				{
+					if (cur_option == 0)
+					{
+						cur_option = 1;
+					}
+				}
 
+				// Cursor
+				sprite_data[1] = ((4) << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
+				sprite_data[0] = ((12 + cur_option) * 7) + SCREEN_START_Y - 1;
+				sprite_data[2] = 16;
+				sprite_data[3] = 1 | (1 << 5);
+				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+				next_oam_idx += sizeof(sprite_data) >> 2;
+
+				// If play player presses START while selecting
+				// 1-player, or if there is a host event 
+				// (happens on both host and client).
+				if ((pad_all_new & PAD_START && cur_option == 0) || host_advanced)
+	#endif //VS_SYS_ENABLED
+				{
+
+	#if !VS_SYS_ENABLED
+					if (cur_konami_index >= KONAMI_CODE_LEN)
+					{
+						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+						StopMusic;
+						go_to_state(STATE_SOUND_TEST);
+					}
+					else
+	#endif //#if !VS_SYS_ENABLED
+					{
+						// If we got here through an SIO event, this is an SIO game.
+						if (host_advanced)
+						{
+							is_sio_game = 1;
+						}
+						else
+						{
+							// This is an offline game so we are always the host.
+							is_host = 1;
+						}
+
+						fade_to_black();
+						go_to_state(STATE_OPTIONS);
+						fade_from_black();
+					}
+				}
+			}
 #if VS_SYS_ENABLED
 			// "attract mode" to avoid burn in. Just go back to the start.
 			// Timed to be when the title track finishes for a 2nd time.
@@ -3008,6 +2974,9 @@ void go_to_state(unsigned char new_state)
 	fade_delay = 5;
 	prev_state = state;
 
+	sub_state = 0;
+	cur_option = 0;
+
 	switch (state)
 	{
 		case STATE_BOOT:
@@ -3313,7 +3282,6 @@ void go_to_state(unsigned char new_state)
 			// handle case where player used cheat to jump 10 levels, and then quit back
 			// to the main menu.
 			cur_level %= 10;
-			cur_option = 0;
 
 			ppu_on_all();
 
