@@ -1217,8 +1217,10 @@ void UPDATE()
 					host_advanced = 1;
 				}
 
-				// Start listening again.
-				receive_byte();
+				// Don't start listening again until we are in the go_to_state section
+				// that handle the event, otherwise we could get the next send before
+				// we are ready for it.
+				// receive_byte();
 			}
 
 			if ((pad_all_new & PAD_START && is_host) || host_advanced)
@@ -3366,30 +3368,61 @@ void go_to_state(unsigned char new_state)
 			{
 				oam_clear();
 
-				fade_to_black();
-
 				// sync up a 16bit srand value...
 				if (is_sio_game)
 				{
+					// TODO: Delay may not actually be needed now that fade was moved to after this.
+					#define SAFE_DELAY (5) // 30, 2x60 works
+					send_result = 0;
+
+					PRINT_POS(0,0);
+					Printf("0");
+
 					if (is_host)
 					{
-						// First send the upper byte.
-						_io_out = (tick_count_large >> 8);
-						send_byte();
-						while(_io_status == IO_SENDING);
+						// Hack to delay the send to give the Super Game Boy version a chance to start
+						// receiving before we send. I thought looping of == IO_ERROR would be good enough
+						// but it doesn't work.
+						vbl_delay(SAFE_DELAY);
+						//do
+						//{
+							// First send the upper byte.
+							_io_out = (tick_count_large >> 8);
+							send_byte();
+							while(_io_status == IO_SENDING);
+						//} while (_io_status == IO_ERROR);
+
+						send_result |= _io_status;
+
+						PRINT_POS(0,0);
+						Printf("1");
 
 						// Now wait for client to get the upper byte and send
 						// back and ACK.
 						receive_byte();
 						while(_io_status == IO_RECEIVING);
 
+						PRINT_POS(0,0);
+						Printf("2");
+
 						// Client has sent ACK. Value doesn't matter, as we just
 						// assume success at this point.
 
-						// Send lower byte.
-						_io_out = (tick_count_large & 0xff);
-						send_byte();
-						while(_io_status == IO_SENDING);
+						// Hack
+						vbl_delay(SAFE_DELAY);
+
+						//do
+						//{
+							// Send lower byte.
+							_io_out = (tick_count_large & 0xff);
+							send_byte();
+							while(_io_status == IO_SENDING);
+						//} while (_io_status == IO_ERROR);
+
+						PRINT_POS(0,0);
+						Printf("3");
+
+						send_result |= _io_status;
 
 						// Seed the RNG with this synced value.
 						srand(tick_count_large);
@@ -3402,20 +3435,38 @@ void go_to_state(unsigned char new_state)
 
 						// First thing that should happen is that the host will send
 						// the upper byte of the seed.
-						//receive_byte();
+						if (_io_status != IO_RECEIVING)
+						{
+							receive_byte();
+						}
 						while(_io_status == IO_RECEIVING);
 						seed_value = (_io_in << 8);
 
-						// Now that we have the first byte, let the host know we are
-						// ready for the second byte.
-						_io_out = 0x69;
-						send_byte();
-						while(_io_status == IO_SENDING);
+						PRINT_POS(0,0);
+						Printf("1");
+
+						vbl_delay(SAFE_DELAY);
+						//do
+						//{
+							// Now that we have the first byte, let the host know we are
+							// ready for the second byte.
+							_io_out = 0x69;
+							send_byte();
+							while(_io_status == IO_SENDING);
+						//} while (_io_status == IO_ERROR);
+
+						send_result |= _io_status;
+
+						PRINT_POS(0,0);
+						Printf("2");
 
 						// The second byte should be arriving next.
 						receive_byte();
 						while(_io_status == IO_RECEIVING);
 						seed_value |= _io_in;
+
+						PRINT_POS(0,0);
+						Printf("3");
 
 						// Seed the RNG with this synced value.
 						srand(seed_value);
@@ -3423,6 +3474,9 @@ void go_to_state(unsigned char new_state)
 
 					receive_byte();
 				}
+
+				// Fade after the SIO stuff to avoid issues.
+				fade_to_black();
 
 #if VS_SYS_ENABLED
 				if (!attract_gameplay_enabled && credits_remaining >= game_cost)
@@ -3481,8 +3535,8 @@ void go_to_state(unsigned char new_state)
 
 				sgb_int_gameplay();
 
-				// PRINT_POS(0,0);
-				// Printf("%u", seed_value);
+				PRINT_POS(0,1);
+				Printf("%d", send_result);
 
 				fade_from_black();
 			}
