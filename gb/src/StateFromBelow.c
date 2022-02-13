@@ -108,14 +108,11 @@ GB:
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
 * [SIO] More variety in garbage.
-* [SIO] Allow client to change music/sound/hdrop.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] Garbage rows should be 4 if 4 lines cleared (special case).
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
-* [SIO] Proper "1-Player | 2-Player" menu choice.
 * [SIO] Either disable pause, or replicate it.
 * [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN!.
-* [SIO] BUG: Rarely one player gets stuck on white screen after loading. Probably need to spam send until success.
 
 FEATURES:
 
@@ -1550,7 +1547,7 @@ void UPDATE()
 
 // No pause in the arcade, fool!
 #if !VS_SYS_ENABLED
-			if (pad_all_new & PAD_START)
+			if (pad_all_new & PAD_START && !is_sio_game)
 			{
 				go_to_state(STATE_PAUSE);
 			}
