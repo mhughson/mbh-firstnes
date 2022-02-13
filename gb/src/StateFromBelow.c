@@ -109,9 +109,7 @@ GB:
 * Bottom of well looks weird going straight into water.
 * [SIO] More variety in garbage.
 * [SIO] Replicate "mode" choice by host.
-* [SIO] Garbage rows should be 4 if 4 lines cleared (special case).
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
-* [SIO] Either disable pause, or replicate it.
 * [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN!.
 
 FEATURES:
@@ -1572,6 +1570,15 @@ void UPDATE()
 
 			if (garbage_rows > 0)
 			{
+				// Rows counts come in as 1 minus the amount
+				// cleared by the other player. This is how 
+				// many garbage rows should be added, except for 
+				// the case of 4 rows, which should add 4 as a
+				// special bonus.
+				if (garbage_rows == 3)
+				{
+					garbage_rows = 4;
+				}
 				add_garbage_row_at_bottom(garbage_rows);
 			}
 
