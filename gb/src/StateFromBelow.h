@@ -66,9 +66,9 @@
 
 #define BLINK_LEN (60 * 5)
 
-#define SFX_PLAY_WRAPPER(id) if (sfx_on) { sfx_play((id), 0); }
+#define SFX_PLAY_WRAPPER(id) if (sfx_on) { id; }
 // play a sound effect that is treated like music to the user (jingles, etc).
-#define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { sfx_play((id), 0); }
+#define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { id; }
 #define MUSIC_PLAY_WRAPPER(id) if (music_on) { PlayMusic(id, 1); }
 #if VS_SYS_ENABLED
 #define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && (DIP8 == 0 || credits_remaining >= game_cost)) { music_play((id)); }
@@ -588,14 +588,6 @@ unsigned char test_sound;
 #define MUSIC_PAUSE PauseMusic
 #define MUSIC_GAMEOVER_INTRO GameOverIntroMusic
 #define MUSIC_GAMEOVER_OUTRO GameOverOutroMusic
-
-// Index for each sound effect, as it appears in the famitracker source file.
-enum 
-{ 
-    SOUND_ROTATE, SOUND_LAND, SOUND_ROW, SOUND_MULTIROW, SOUND_GAMEOVER, 
-    SOUND_START, SOUND_BLOCKED, SOUND_LEVELUP, SOUND_LEVELUP_MULTI, 
-    SOUND_PAUSE, SOUND_MENU_HIGH, SOUND_MENU_LOW, SOUND_GAMEOVER_SONG
-};
 
 // During gameplay if the blocks reach high enough (See: STRESS_MUSIC_LEVEL) a more
 // stressful version of the music will play. This tracks which music is playing.

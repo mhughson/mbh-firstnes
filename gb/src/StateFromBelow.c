@@ -41,6 +41,29 @@
 #include "OAMManager.h"
 #include "SGBHelpers.h"
 
+#include "cbtfx.h"
+#include "beep_sfx.h"
+#include "block_land_sfx.h"
+#include "block_rotate_sfx.h"
+#include "bop_sfx.h"
+#include "level_up_4_sfx.h"
+#include "level_up_sfx.h"
+#include "multi_row_destroyed_sfx.h"
+#include "row_destroyed_sfx.h"
+#include "start_game_sfx.h"
+#include "unable_rotate_sfx.h"
+
+#define SOUND_ROTATE			CBTFX_PLAY_block_rotate_sfx
+#define SOUND_LAND				CBTFX_PLAY_block_land_sfx
+#define SOUND_ROW				CBTFX_PLAY_row_destroyed_sfx
+#define SOUND_MULTIROW			CBTFX_PLAY_multi_row_destroyed_sfx
+#define SOUND_START				CBTFX_PLAY_start_game_sfx
+#define SOUND_BLOCKED			CBTFX_PLAY_unable_rotate_sfx
+#define SOUND_LEVELUP			CBTFX_PLAY_level_up_sfx
+#define SOUND_LEVELUP_MULTI		CBTFX_PLAY_level_up_4_sfx
+#define SOUND_MENU_HIGH			CBTFX_PLAY_beep_sfx
+#define SOUND_MENU_LOW			CBTFX_PLAY_bop_sfx
+
 #include <gbdk/platform.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -100,7 +123,6 @@ GB:
 
 * [SGB] Arrows on Options for H.Drop are wrong palette.
 * [SGB] Long delay setting attributes. Can this be done with linear array?
-* Missing all sound effects.
 * Font on Options is mix and match.
 * Add "save" support.
 * Better hint of early Kraken Tentacle.
@@ -111,6 +133,7 @@ GB:
 * [SIO] Replicate "mode" choice by host.
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
 * [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN!.
+* [SIO] BUG: Mash A on "game over" on faster system causes soft lock (sending even before other is ready).
 
 FEATURES:
 
@@ -627,6 +650,12 @@ void START()
 
 	// Get sprite graphics into memory.
 	SpriteManagerLoad(SpriteBlock);
+
+	// This don't get enabled until music is actually
+	// played, so force them on right at the start.
+	NR52_REG = 0x80; //Enables sound, you should always setup this first
+	NR51_REG = 0xFF; //Enables all channels (left and right)
+	NR50_REG = 0x77; //Max volume
 }
 
 void UPDATE()

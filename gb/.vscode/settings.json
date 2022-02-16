@@ -33,6 +33,18 @@
         "setautobank.h": "c",
         "main.h": "c",
         "cstdlib": "c",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "cbtfx.h": "c",
+        "beep_sfx.h": "c",
+        "block_rotate_sfx.h": "c",
+        "multi_row_destroyed_sfx.h": "c",
+        "level_up_4_sfx.h": "c",
+        "xlocnum": "c",
+        "block_land_sfx.h": "c",
+        "row_destroyed_sfx.h": "c",
+        "start_game_sfx.h": "c",
+        "unable_rotate_sfx.h": "c",
+        "level_up_sfx.h": "c",
+        "bop_sfx.h": "c"
     }
 }
