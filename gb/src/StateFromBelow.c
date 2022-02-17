@@ -138,6 +138,11 @@ GB:
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
+* Add GB Credits.
+* Add Thank You.
+* Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
+* BUG: Sound Effects cut out music in an un-natural way.
+* BUG: Music sometimes has an extended first note.
 
 FEATURES:
 
