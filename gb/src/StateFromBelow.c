@@ -141,6 +141,8 @@ GB:
 * Add GB Credits.
 * Add Thank You.
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
+* Pause Text (or some other visual to show you are paused)
+* Flash (or similar) on level up.
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
 
