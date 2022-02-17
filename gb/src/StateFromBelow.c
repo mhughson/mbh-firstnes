@@ -121,22 +121,23 @@ UINT8 sprite_data[4];
 
 GB:
 
+* [DMG] Credits text hard to see.
 * [SGB] Arrows on Options for H.Drop are wrong palette.
 * [SGB] Long delay setting attributes. Can this be done with linear array?
-* Add "save" support.
-* Better hint of early Kraken Tentacle.
-* [DMG] Credits text hard to see.
-* Hitch when tentacle advances.
-* Bottom of well looks weird going straight into water.
+* [SGB] Title screen colors are all wrong now.
+* [SGB] Options screen colors are wrong now.
 * [SIO] More variety in garbage.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
 * [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
-* High contrast mode.
 * [SIO] Display opponent line height.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
-* [SGB] Title screen colors are all wrong now.
-* [SGB] Options screen colors are wrong now.
+* [SIO] Deliver garbage on block landing
+* Add "save" support.
+* Better hint of early Kraken Tentacle.
+* Hitch when tentacle advances.
+* Bottom of well looks weird going straight into water.
+* High contrast mode.
 
 FEATURES:
 
