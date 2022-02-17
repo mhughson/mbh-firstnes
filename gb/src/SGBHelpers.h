@@ -323,17 +323,45 @@ void sgb_init_menu()
     // 2 bits - pal on line
     // 1 bit - 1 split up/down
     map_buf[1] = 1	| (0 << 2) | (1 << 4) | (1 << 6);
-    map_buf[2] = 12;	
+    map_buf[2] = 8;	
     sgb_transfer(map_buf);
 
+    // disabled for now because the palettes got all messed up.
+    // memset(map_buf, 0, sizeof(map_buf));
+    // map_buf[0] = (SGB_ATTR_LIN << 3) | 3;
+    // map_buf[1] = 1;
+    // // 5 bits - line number
+    // // 2 bits - pal
+    // // 1 bit - 1 horz
+    // map_buf[2] = (17U) | (2U << 5) | (1U << 7);
+    // sgb_transfer(map_buf);	 
+
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
+}
+
+void sgb_init_settings()
+{
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE); 
+    
     memset(map_buf, 0, sizeof(map_buf));
-    map_buf[0] = (SGB_ATTR_LIN << 3) | 3;
-    map_buf[1] = 1;
-    // 5 bits - line number
-    // 2 bits - pal
-    // 1 bit - 1 horz
-    map_buf[2] = (17U) | (2U << 5) | (1U << 7);
-    sgb_transfer(map_buf);	
+    map_buf[0] = (SGB_ATTR_DIV << 3) | 3;
+    // 2 bits - pal below
+    // 2 bits - pal above
+    // 2 bits - pal on line
+    // 1 bit - 1 split up/down
+    map_buf[1] = 0	| (0 << 2) | (0 << 4) | (1 << 6);
+    map_buf[2] = 0;	
+    sgb_transfer(map_buf);
+
+    // disabled for now because the palettes got all messed up.
+    // memset(map_buf, 0, sizeof(map_buf));
+    // map_buf[0] = (SGB_ATTR_LIN << 3) | 3;
+    // map_buf[1] = 1;
+    // // 5 bits - line number
+    // // 2 bits - pal
+    // // 1 bit - 1 horz
+    // map_buf[2] = (17U) | (2U << 5) | (1U << 7);
+    // sgb_transfer(map_buf);	
 
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
 }

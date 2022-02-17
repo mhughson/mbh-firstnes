@@ -145,6 +145,7 @@ GB:
 * Flash (or similar) on level up.
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
+* BUG: DMG doesn't seem to be waiting 120 frames for music. CNR: I think I *might* have run the wrong build?
 
 FEATURES:
 
@@ -554,7 +555,7 @@ void START()
 	//music_play(0);
 
 	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
-	music_on = 0; //1;
+	music_on = 1; //1;
 	sfx_on = 1;
 	hard_drops_on = 1;
 	block_style = BLOCK_STYLE_CLASSIC;
@@ -3300,6 +3301,8 @@ void go_to_state(unsigned char new_state)
 #if PLAT_GB
 			InitScroll(BANK(options_screen), &options_screen, 0, 0);
 			INIT_FONT(font, PRINT_BKG);
+
+			sgb_init_settings();
 
 			// Clear out the temp tiles used to force tile index.
 			// UPDATE_TILE_BY_VALUE(0,0,4,NULL);
