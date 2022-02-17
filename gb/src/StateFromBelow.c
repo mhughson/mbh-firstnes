@@ -123,7 +123,6 @@ GB:
 
 * [SGB] Arrows on Options for H.Drop are wrong palette.
 * [SGB] Long delay setting attributes. Can this be done with linear array?
-* Font on Options is mix and match.
 * Add "save" support.
 * Better hint of early Kraken Tentacle.
 * [DMG] Credits text hard to see.
@@ -132,8 +131,12 @@ GB:
 * [SIO] More variety in garbage.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
-* [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN!.
-* [SIO] BUG: Mash A on "game over" on faster system causes soft lock (sending even before other is ready).
+* [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
+* High contrast mode.
+* [SIO] Display opponent line height.
+* [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
+* [SGB] Title screen colors are all wrong now.
+* [SGB] Options screen colors are wrong now.
 
 FEATURES:
 
@@ -3577,8 +3580,9 @@ void go_to_state(unsigned char new_state)
 
 
 			// Without music this delay feels really odd.
+			// However, we need to keep the SIO game in sync, so always wait in that case.
 #if !VS_SYS_ENABLED
-			if (music_on)
+			if (music_on || is_sio_game)
 			{
 				vbl_delay(120);
 			}
