@@ -122,7 +122,6 @@ UINT8 sprite_data[4];
 GB:
 
 * [DMG] Credits text hard to see.
-* [SGB] Arrows on Options for H.Drop are wrong palette.
 * [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
@@ -1262,6 +1261,9 @@ void UPDATE()
 					cur_level += 10;
 				}
 				go_to_state(STATE_GAME);
+
+				// skip the drawing at the end of the case.
+				break;
 			}
 
 			// Don't allow backing out in multiplayer. This could be added, but will require
@@ -1271,6 +1273,9 @@ void UPDATE()
 				fade_to_black();
 				go_to_state(STATE_MENU);
 				fade_from_black();
+
+				// skip the drawing at the end of the case.
+				break;
 			}
 			else if (pad_all_new & PAD_RIGHT)
 			{
@@ -3021,6 +3026,13 @@ void go_to_state(unsigned char new_state)
 
 	sub_state = 0;
 	cur_option = 0;
+
+	// Clear OAM prior to drawing fresh.
+	ClearOAMs();
+
+	// Force the OAM to update with the sprites
+	// now hidden.
+	SwapOAMs();		
 
 	switch (state)
 	{
