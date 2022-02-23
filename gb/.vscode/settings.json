@@ -45,6 +45,8 @@
         "start_game_sfx.h": "c",
         "unable_rotate_sfx.h": "c",
         "level_up_sfx.h": "c",
-        "bop_sfx.h": "c"
+        "bop_sfx.h": "c",
+        "palette.h": "c",
+        "CGB.H": "cpp"
     }
 }

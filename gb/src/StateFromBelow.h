@@ -955,6 +955,11 @@ const unsigned char metasprite_tentacle_title[]={
 	128
 };
 
+// When a level up happens, this gets set to the number of frames the
+// screen should flash for.
+// NOTE: Currently just used as a binary on/off flag.
+unsigned char level_up_remaining;
+
 // Move to the next menu.
 #define MP_TITLE_HOST_START 0xff
 // Hand shake to single that a 2nd player got the message.

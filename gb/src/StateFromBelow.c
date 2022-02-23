@@ -105,6 +105,10 @@ DECLARE_MUSIC(GameOverOutroMusic);
 const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+// Palettes to flash between when leveling up on CGB.
+const UWORD palette_flash[4] = { 0x7fff, 0x7ab4, 0x65ce, 0x0 };
+const UWORD palette_normal[4] = { 0x7f97, 0x7ab4, 0x65ce, 0x0 };
+
 // current sprite index in ZGB
 extern UINT8 next_oam_idx;
 // pointer to OAM data in ZGB
@@ -125,10 +129,11 @@ GB:
 * [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
+* [SGB] Flash on level up looks a little weird.
 * [SIO] More variety in garbage.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
-* [SIO] Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
+* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * [SIO] Display opponent line height.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] Deliver garbage on block landing
@@ -141,7 +146,7 @@ GB:
 * Add Thank You.
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
 * Pause Text (or some other visual to show you are paused)
-* Flash (or similar) on level up.
+* BUG: RNG is the same every time the game is launched. Likely knock on from SIO.
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
 * BUG: DMG doesn't seem to be waiting 120 frames for music. CNR: I think I *might* have run the wrong build?
@@ -1472,6 +1477,25 @@ void UPDATE()
 			UINT8 garbage_rows = 0;
 			UINT8 other_lost = 0;
 
+			if (level_up_remaining > 0)
+			{
+				level_up_remaining = 0;
+				// if (level_up_remaining % 8 > 3)
+				// {
+				// 	//set_palette_entry(1, 0, 0x7fff);
+				// 	set_bkg_palette(1, 1, palette_flash);
+				// 	BGP_REG = PAL_DEF(1, 2, 3, 3);
+				// }
+				// else
+				// {
+				// 	//set_palette_entry(1, 0, 0x7fff);
+				// 	set_bkg_palette(1, 1, palette_normal);
+				// 	BGP_REG = PAL_DEF(0, 1, 2, 3);
+				// }
+
+				// --level_up_remaining;
+			}
+
 			if (is_sio_game && _io_status != IO_RECEIVING)
 			{
 				packet_in = _io_in;
@@ -2452,7 +2476,7 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		// lines_cleared_one = 9;
+		// lines_cleared_one = 8;
 		// inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
@@ -4053,6 +4077,8 @@ void clear_rows_in_data(unsigned char start_y)
 			{
 				SFX_PLAY_WRAPPER(SOUND_LEVELUP);
 			}
+				
+			level_up_remaining = 60;
 		}
 		else if (i == 4)
 		{
@@ -4190,10 +4216,31 @@ void reveal_empty_rows_to_nt()
 		// 		BOARD_START_X_PX + ((BOARD_END_X_PX_BOARD - ix) << 3),
 		// 		BOARD_START_Y_PX + ((BOARD_OOB_END + 1) << 3)));
 
+		// Flash the screen when leveling up.
+		if (level_up_remaining > 0)
+		{			
+			if (ix % 2 == 1)
+			{
+				// CGB
+				set_bkg_palette(1, 1, palette_flash);
+				// DMG
+				BGP_REG = PAL_DEF(1, 2, 3, 3);
+			}
+			else
+			{
+				set_bkg_palette(1, 1, palette_normal);
+				BGP_REG = PAL_DEF(0, 1, 2, 3);
+			}
+		}
+
 		// Reveal these 2 new columns, and then move to the next one.
 		vbl_delay(5);
 		clear_vram_buffer();
 	}
+
+	// Just in case...
+	BGP_REG = PAL_DEF(0, 1, 2, 3);
+	set_bkg_palette(1, 1, palette_normal);
 
 	// Move on to the next phase...
 	try_collapse_empty_row_data();
@@ -4445,6 +4492,7 @@ void reset_gameplay_area()
 	start_delay_remaining = START_DELAY;
 	attack_queued = 0;
 	delay_spawn_remaining = -1;
+	level_up_remaining = 0;
 	// We don't want the previous round's blocks to impact the choice
 	// the starting blocks next round, as that will cause a desync in 
 	// sio matches.
