@@ -146,7 +146,6 @@ GB:
 * Add Thank You.
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
 * Pause Text (or some other visual to show you are paused)
-* BUG: RNG is the same every time the game is launched. Likely knock on from SIO.
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
 * BUG: DMG doesn't seem to be waiting 120 frames for music. CNR: I think I *might* have run the wrong build?
@@ -3524,6 +3523,10 @@ void go_to_state(unsigned char new_state)
 					}
 
 					receive_byte();
+				}
+				else
+				{
+					srand(tick_count_large);
 				}
 
 				// Fade after the SIO stuff to avoid issues.
