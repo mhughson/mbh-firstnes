@@ -145,7 +145,6 @@ GB:
 * Add GB Credits.
 * Add Thank You.
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
-* Pause Text (or some other visual to show you are paused)
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
 * BUG: DMG doesn't seem to be waiting 120 frames for music. CNR: I think I *might* have run the wrong build?
@@ -1677,6 +1676,8 @@ void UPDATE()
 			// 	oam_clear();
 			// }
 
+			draw_pause_sprites();
+
 
 			if (pad_all_new & PAD_START)
 			{
@@ -2428,6 +2429,43 @@ void draw_gameplay_sprites(void)
 	// oam_spr(27 << 3, 10 << 3, local_ix, 0);
 
 	//debug_draw_board_area();
+}
+
+
+void draw_pause_sprites(void)
+{
+	// "A" == 211/D3
+	static const UINT8 pause_test[] = "PAUSE";
+	static UINT8 i;
+	static UINT8 speed;
+	static UINT8 shake_offset;
+
+	// NOTE: Loop accounts for null term.
+	for(i = 0; i < sizeof(pause_test) - 1; ++i)
+	{
+		speed = tick_count >> 4;
+		shake_offset = tenatcle_offsets[((i + speed) & 3)]; // &3 = %4 = number of entries in array.
+
+		sprite_data[1] = ((11 + i) << 3) + SCREEN_START_X + 4;
+		sprite_data[0] = (UINT8)(9 * 7) + (UINT8)SCREEN_START_Y - 1U + shake_offset;
+		sprite_data[2] = pause_test[i] + (0xd3 - 0x41); // put it into the sprite memory.
+		sprite_data[3] = 1;
+		memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+		next_oam_idx += sizeof(sprite_data) >> 2;
+
+		// For now only draw the drop shadow on CGB, as DMG palettes will be the
+		// same for the text color.
+		// TODO: Switch DMG OBJ pals when entering pause.
+		// NOTE: Draw order is front to back.
+		if (_cpu == CGB_TYPE) 
+		{
+			sprite_data[0] += 1;
+			// currently grey scale default.
+			sprite_data[3] = 2;
+			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+			next_oam_idx += sizeof(sprite_data) >> 2;
+		}
+	}
 }
 
 void movement(void)

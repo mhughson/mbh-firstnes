@@ -1012,6 +1012,7 @@ void send_queued_packet();
 
 void draw_menu_sprites(void) { } // PLAT_GB
 void draw_gameplay_sprites(void);
+void draw_pause_sprites(void);
 void movement(void);
 
 // Set a block in x, y (board space)
