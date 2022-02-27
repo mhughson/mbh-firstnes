@@ -138,7 +138,6 @@ GB:
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] Deliver garbage on block landing
 * Add "save" support.
-* Better hint of early Kraken Tentacle.
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
@@ -2213,7 +2212,7 @@ void draw_gameplay_sprites(void)
 			local_row_status = attack_row_status[local_ix];
 			if (local_row_status > 0)
 			{
-				for (local_iy = 0; local_iy < local_row_status /*&& local_iy < ATTACK_QUEUE_SIZE*/; ++local_iy)
+				for (local_iy = local_row_status - 1; local_iy < local_row_status /*&& local_iy < ATTACK_QUEUE_SIZE*/; --local_iy)
 				{
 					//if (attack_queue_ticks_remaining < 120)
 					{
@@ -2225,25 +2224,24 @@ void draw_gameplay_sprites(void)
 
 					shake_offset = tenatcle_offsets[((local_iy + speed) & 3)]; // &3 = %4 = number of entries in array.
 
-					// gross. Try to detect if this is the last piece, and also the end of the arm.
+					sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X;
+					sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
+					sprite_data[2] = 0x7; // put it into the sprite memory.
+					sprite_data[3] = 0x1;
+
+					// gross. Try to detect if this is the last piece, and alsothe end of the arm.
 					if (local_iy == local_row_status - 1)
 					{
-						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X; // BOARD_START_X_PX + (local_ix << 3) + shake_offset;
-						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
-						sprite_data[2] = 0x8; // put it into the sprite memory.
-						sprite_data[3] = 0x1;
-						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
-						next_oam_idx += sizeof(sprite_data) >> 2;
+						sprite_data[2] = 0x8;
 					}
-					else
+
+					if (local_iy < 3)
 					{
-						sprite_data[1] = BOARD_START_X_PX + (local_ix << 3) + shake_offset + SCREEN_START_X;
-						sprite_data[0] = (BOARD_END_Y_PX) + (ATTACK_QUEUE_SIZE * 7) - (local_iy * 7) + SCREEN_START_Y;
-						sprite_data[2] = 0x7; // put it into the sprite memory.
-						sprite_data[3] = 0x1;
-						memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
-						next_oam_idx += sizeof(sprite_data) >> 2;
+						sprite_data[0] -= ((2 - local_iy) * 7) + (local_iy * 2) - 2;
 					}
+
+					memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+					next_oam_idx += sizeof(sprite_data) >> 2;
 
 				}
 			}
