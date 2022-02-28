@@ -1003,6 +1003,8 @@ UINT8 is_sio_game;
 UINT16 seed_value;
 // Debug tracking of where the hand shake got to.
 UINT8 send_result;
+// Number of garbage rows queued up.
+UINT8 garbage_row_queue;
 
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.

@@ -136,7 +136,7 @@ GB:
 * [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * [SIO] Display opponent line height.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
-* [SIO] Deliver garbage on block landing
+* [SIO] Play sound effect/visuals when garbage incoming.
 * Add "save" support.
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
@@ -1646,7 +1646,7 @@ void UPDATE()
 				{
 					garbage_rows = 4;
 				}
-				add_garbage_row_at_bottom(garbage_rows);
+				garbage_row_queue += garbage_rows;
 			}
 
 			if (other_lost && is_sio_game)
@@ -2875,6 +2875,13 @@ void put_cur_cluster()
 
 	}
 //PROFILE_POKE(0x3f); //green
+
+
+	if (garbage_row_queue)
+	{
+		add_garbage_row_at_bottom(garbage_row_queue);
+		garbage_row_queue = 0;
+	}
 }
 
 unsigned char is_block_free(unsigned char x, unsigned char y)
