@@ -13,6 +13,7 @@
 // When set to 1, certain debug features will be enabled.
 // Should be set to 0 before shipping.
 #define DEBUG_ENABLED 0
+#define HIGHWATER_ON 1
 
 #if DEBUG_ENABLED
 // Used to profile sections of code using emphasis bit.
@@ -975,6 +976,9 @@ unsigned char level_up_remaining;
 // The number of rows of garbage the other player is sending
 // is the first 2 bits (max value 4).
 #define MP_GAME_GARBAGE_MASK 0x3
+// Offset to the 5 bit value representing the high water of the players.
+#define MP_GAME_HIGHWATER_SHIFT 2
+#define MP_GAME_HIGHWATER_MASK (0x1f << MP_GAME_HIGHWATER_SHIFT)
 
 // Move back to main menu from Game Over.
 #define MP_OVER_QUIT   (1<<0)
@@ -1005,6 +1009,15 @@ UINT16 seed_value;
 UINT8 send_result;
 // Number of garbage rows queued up.
 UINT8 garbage_row_queue;
+// pointer to the currently evaluated line of the game board
+// for finding the high water.
+UINT8* cur_high_water_row;
+#define START_GAMEPLAY_AREA_INDEX ((BOARD_OOB_END + 1) * BOARD_WIDTH)
+
+// Tracks the previous high water row of this player to avoid spamming the 
+// SIO events too much (which causes interupt glitches sometimes).
+unsigned char prev_high_water;
+
 
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.

@@ -47,6 +47,7 @@
         "level_up_sfx.h": "c",
         "bop_sfx.h": "c",
         "palette.h": "c",
-        "CGB.H": "cpp"
+        "CGB.H": "cpp",
+        "string.h": "c"
     }
 }

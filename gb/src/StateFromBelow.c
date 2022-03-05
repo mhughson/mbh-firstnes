@@ -73,6 +73,21 @@
 // stdlib.h
 void srand(unsigned int seed) { initrand(seed); }
 
+// https://github.com/Zal0/ZGB/commit/6bedcf160723a95595d21f70ae8d229d34373584
+// memcmp while it is being added into GBDK
+int memcmp(const char *s1, const char *s2, int n) {
+	UINT8 i;
+	char* c1 = (char*)s1;
+	char* c2 = (char*)s2;
+	for(i = 0; i != n; ++i, ++c1, ++c2) {
+		if(*c1 != *c2){
+			return (*c1 > *c2) ? 1 : -1;
+		}
+	}
+	return 0;
+}
+
+
 // defined in ZGB main.c. Need to be able to remove it.
 extern void LCD_isr() NONBANKED;
 extern void UPDATE_TILE(INT16 x, INT16 y, UINT8* t, UINT8* c);
@@ -134,9 +149,11 @@ GB:
 * [SIO] Replicate "mode" choice by host.
 * [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
 * [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
-* [SIO] Display opponent line height.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] Play sound effect/visuals when garbage incoming.
+* [SIO] BUG: Sometimes when the first piece lands, garbage is sent over.
+* [SIO] BUG: Once match ended for one player for no reason.
+* [SIO] BUG: Sometimes player exits gameover screen without input, almost immediately (likely a gameplay SIO event interpretted as a player menu choice)
 * Add "save" support.
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
@@ -669,6 +686,8 @@ void START()
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
+
+	queued_packet = 0;
 }
 
 void UPDATE()
@@ -1469,10 +1488,10 @@ void UPDATE()
 
 		case STATE_GAME:
 		{
-
 			packet_in = 0;
 			UINT8 garbage_rows = 0;
 			UINT8 other_lost = 0;
+			UINT8 other_highwater = 0;
 
 			if (level_up_remaining > 0)
 			{
@@ -1498,6 +1517,7 @@ void UPDATE()
 				packet_in = _io_in;
 
 				garbage_rows = (packet_in & MP_GAME_GARBAGE_MASK);
+				other_highwater = (packet_in & MP_GAME_HIGHWATER_MASK) >> MP_GAME_HIGHWATER_SHIFT;
 				other_lost = (packet_in & MP_GAME_OTHER_LOST) >> MP_GAME_OTHER_LOST_SHIFT;
 
 				++packet_count_in;
@@ -1633,6 +1653,79 @@ void UPDATE()
 			// 	//debug_copy_board_data_to_nt();
 			// 	//go_to_state(STATE_OVER);
 			// }
+#endif
+
+#if HIGHWATER_ON
+
+			// bar goes from [8,19] up to [8, 0]
+			// 19 for left side.
+
+			// Check each row of the board, starting from the top, looking for the first,
+			// non-empty row. That is the high water mark that should be sent to the other
+			// player.
+			if (is_sio_game)
+			{
+				// Is this row NOT empty?
+				if (memcmp(cur_high_water_row, empty_row, BOARD_WIDTH) != 0)
+				{
+					// Has the high water changed?
+					// NOTE: Since a value of 0 is used to indicate an "empty"
+					// queued_pakcet, we use 1 more than the actual highwater.
+					// It will be subtracted on the recieving end.
+					if (prev_high_water != (high_water_y + 1))
+					{
+						prev_high_water = high_water_y + 1;
+						queued_packet |= (prev_high_water << MP_GAME_HIGHWATER_SHIFT);
+					}
+					// PRINT_POS(0,0);
+					// Printf("P1:%d", BOARD_HEIGHT - high_water_y);
+					
+					// Got back to the top of the board and start again.
+					high_water_y = 0;
+					cur_high_water_row = &game_board[((BOARD_OOB_END + 1) * BOARD_WIDTH)];
+				}
+				else
+				{
+					// This row was empty, so next frame check the row below it.
+					++high_water_y;
+					cur_high_water_row += BOARD_WIDTH; // pointer arithmetic
+
+					// When we hit the end of the game board, go back to the top.
+					// We don't send this as an event, so technically this means that
+					// if the player was able to completely clear the play area, it will
+					// not be refected by the other player, but that's almost impossible
+					// and pretty unimportant.
+					if (high_water_y >= BOARD_HEIGHT) 
+					{ 
+						cur_high_water_row = &game_board[((BOARD_OOB_END + 1) * BOARD_WIDTH)];
+						high_water_y = 0; 
+						prev_high_water = (BOARD_HEIGHT + 1); 
+					}
+				}
+
+				// Check if the incoming packet had a high water for the other player.
+				if (other_highwater != 0)
+				{
+					UINT8 h = BOARD_HEIGHT - (other_highwater - 1);
+					// PRINT_POS(0,1);
+					// Printf("P2:%d", h);
+
+					// Loop through the column showing the high water, updating the
+					// tiles to reflect it. This is brute force, and doesn't try to 
+					// reduce the number of tiles that get changed.
+					for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
+					{
+						if (local_iy < h)
+						{
+							UPDATE_TILE_BY_VALUE(8, 19 - local_iy, 135, 0x10);
+						}
+						else
+						{
+							UPDATE_TILE_BY_VALUE(8, 19 - local_iy, 136, 0x10);
+						}
+					}
+				}
+			}
 #endif
 
 			if (garbage_rows > 0)
@@ -3013,6 +3106,11 @@ void spawn_new_cluster()
 		// move the the game over state.
 		put_cur_cluster();
 		queued_packet |= MP_GAME_OTHER_LOST;
+
+		// Force to row 20 since it will not have time to detect it
+		// with the normal flow.
+		queued_packet |= (1 << MP_GAME_HIGHWATER_SHIFT);
+
 		send_queued_packet();
 		go_to_state(STATE_OVER);
 
@@ -3628,6 +3726,18 @@ void go_to_state(unsigned char new_state)
 				if (attack_style == ATTACK_ON_TIME)
 				{
 					attack_queue_ticks_remaining = attack_delay;
+				}
+
+				if (is_sio_game)
+				{
+					// Create a column for the hugh water.
+					for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
+					{
+						UPDATE_TILE_BY_VALUE(8, 19 - local_iy, 136, 0x10);
+					}
+
+					// Pointer to the start fo the game data.
+					cur_high_water_row = &game_board[(BOARD_OOB_END + 1) * BOARD_WIDTH];
 				}
 
 				sgb_int_gameplay();
