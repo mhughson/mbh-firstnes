@@ -1017,7 +1017,8 @@ UINT8* cur_high_water_row;
 // Tracks the previous high water row of this player to avoid spamming the 
 // SIO events too much (which causes interupt glitches sometimes).
 unsigned char prev_high_water;
-
+// Tracks which current row is being checked from highwater across multiple frames.
+unsigned char high_water_y;
 
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.
