@@ -147,10 +147,9 @@ GB:
 * [SGB] Flash on level up looks a little weird.
 * [SIO] More variety in garbage.
 * [SIO] Replicate "mode" choice by host.
-* [SIO] BUG: Edge case where a line clear event comes in on the same frame as game over triggers a menu selection?
-* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] Play sound effect/visuals when garbage incoming.
+* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * [SIO] BUG: Sometimes when the first piece lands, garbage is sent over.
 * [SIO] BUG: Once match ended for one player for no reason.
 * [SIO] BUG: Sometimes player exits gameover screen without input, almost immediately (likely a gameplay SIO event interpretted as a player menu choice)
@@ -687,7 +686,7 @@ void START()
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
 
-	queued_packet = 0;
+	queued_packet = queued_packet_required = 0;
 }
 
 void UPDATE()
@@ -706,7 +705,7 @@ void UPDATE()
 	++ticks_in_state_large;
 	
 	// Every frame clear the queued packet.
-	queued_packet = 0;
+	queued_packet = queued_packet_required = 0;
 
 	// pad1 = pad_poll(0); // read the first controller
 	// pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
@@ -1792,7 +1791,7 @@ void UPDATE()
 #else
 
 
-			queued_packet = 0;
+			queued_packet = queued_packet_required = 0;
 
 			packet_in = 0;
 			UINT8 menu_choice_quit = 0;
@@ -3106,6 +3105,10 @@ void spawn_new_cluster()
 		// move the the game over state.
 		put_cur_cluster();
 		queued_packet |= MP_GAME_OTHER_LOST;
+		// This state change MUST get through. Everything else will self correct or
+		// has error handling in other ways, but this change to game over should try
+		// over and over until it gets through.
+		queued_packet_required = 1;
 
 		// Force to row 20 since it will not have time to detect it
 		// with the normal flow.
@@ -3190,6 +3193,11 @@ void go_to_state(unsigned char new_state)
 
 	sub_state = 0;
 	cur_option = 0;
+
+	// Handle the case where the packet was queued prior to changing states, and then
+	// may end up still getting sent at the end of this frame, but for a new
+	// state!
+	queued_packet = queued_packet_required = 0;
 
 	// Clear OAM prior to drawing fresh.
 	ClearOAMs();
@@ -4649,6 +4657,7 @@ void reset_gameplay_area()
 	attack_queued = 0;
 	delay_spawn_remaining = -1;
 	level_up_remaining = 0;
+	garbage_row_queue = 0;
 	// We don't want the previous round's blocks to impact the choice
 	// the starting blocks next round, as that will cause a desync in 
 	// sio matches.
@@ -4904,10 +4913,21 @@ void send_queued_packet()
 		// PRINT_POS(0,0);
 		// Printf("O:%d %d ", packet_count_out, queued_packet);
 		_io_out = queued_packet;
-		send_byte();
-		queued_packet = 0;
-		// Wait for the byte to get sent.
-		while((_io_status == IO_SENDING));
+
+		do {
+			send_byte();
+			/* Wait for IO completion... */
+			while((_io_status == IO_SENDING));
+		 // If this packet is required, keep trying until it sends! This will deadlock
+		 // if host and client have required packets at the same time, or the cable gets
+		 // disconnected which a packet is queued up.
+		 // TODO: Detect timeout and disconnect, but make sure its not enough for all the
+		 // 	  delay and fade calls.
+		} while(queued_packet_required && (_io_status != IO_IDLE));
+
+		// Probably not needed since queued packet is cleared at the start of
+		// the frame.
+		queued_packet = queued_packet_required = 0;
 
 		// Start listening again...
 		receive_byte();

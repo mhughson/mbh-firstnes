@@ -996,6 +996,10 @@ gameover   height    #garbage
 UINT8 is_host;
 // The queued up packet to send to the other player.
 UINT8 queued_packet;
+// The queued_packet MUST be sent, and cannot be missed. Only really works if
+// we never have both client and server trying to send required packets at
+// the same time, else it will deadlock.
+UINT8 queued_packet_required;
 // Debug for tracking how many packets have been recieved and sent.
 UINT8 packet_count_in;
 UINT8 packet_count_out;
