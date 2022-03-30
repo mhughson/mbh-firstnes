@@ -2519,8 +2519,33 @@ void draw_gameplay_sprites(void)
 	// oam_spr(27 << 3, 10 << 3, local_ix, 0);
 
 	//debug_draw_board_area();
-}
 
+	// Blocks spitting out prototype.
+	//
+	
+	// for (i = 0; i < NUM_BLOCK_PARTICLES; ++i)
+	// {
+	// 	block_particle_x[i] += block_particle_vel_x[i];
+	// 	block_particle_vel_y[i] += 30;
+	// 	block_particle_y[i] += block_particle_vel_y[i];
+
+	// 	if (block_particle_y[i] > (200 << 8))
+	// 	{
+	// 		block_particle_x[i] = 0;
+	// 		block_particle_y[i] = (32 << 8);
+	// 		block_particle_vel_x[i] = ((unsigned char)rand() % 64U) + 128U;
+	// 		block_particle_vel_y[i] = -((unsigned char)rand() << 1);
+	// 		block_particle_spr[i] = ((unsigned char)rand() % 7);
+	// 	}
+
+	// 	sprite_data[1] = (block_particle_x[i] >> 8) + SCREEN_START_X; //x
+	// 	sprite_data[0] = (block_particle_y[i] >> 8) + SCREEN_START_Y; //y
+	// 	sprite_data[2] = block_particle_spr[i]; //sprite
+	// 	sprite_data[3] = 0; //attr
+	// 	memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+	// 	next_oam_idx += sizeof(sprite_data) >> 2;
+	// }
+}
 
 void draw_pause_sprites(void)
 {

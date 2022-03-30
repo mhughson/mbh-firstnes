@@ -48,6 +48,7 @@
         "bop_sfx.h": "c",
         "palette.h": "c",
         "CGB.H": "cpp",
-        "string.h": "c"
+        "string.h": "c",
+        "rand.h": "c"
     }
 }

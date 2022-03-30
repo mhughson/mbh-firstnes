@@ -1024,6 +1024,13 @@ unsigned char prev_high_water;
 // Tracks which current row is being checked from highwater across multiple frames.
 unsigned char high_water_y;
 
+// #define NUM_BLOCK_PARTICLES 4
+// unsigned int block_particle_x[NUM_BLOCK_PARTICLES];
+// unsigned int block_particle_y[NUM_BLOCK_PARTICLES] ;
+// unsigned int block_particle_vel_x[NUM_BLOCK_PARTICLES] ;
+// signed int block_particle_vel_y[NUM_BLOCK_PARTICLES] ;
+// unsigned char block_particle_spr[NUM_BLOCK_PARTICLES];
+
 // Helper for sending the queued_packet, and then turning on 
 // receiving again after.
 void send_queued_packet();
