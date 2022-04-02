@@ -154,7 +154,6 @@ SHOULD:
 * [SIO] More variety in garbage.
 * [SIO] Play sound effect/visuals when garbage incoming.
 * Add "save" support.
-* Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
 * Add Thank You.
@@ -2243,6 +2242,14 @@ void draw_gameplay_sprites(void)
 	static unsigned char speed;
 	static unsigned char i;
 	static unsigned char j;
+
+	// steady moving sprite to find hitches
+	// sprite_data[1] = SCREEN_START_X + tick_count_large % 160;
+	// sprite_data[0] = SCREEN_START_Y;
+	// sprite_data[2] = 0; // put it into the sprite memory.
+	// sprite_data[3] = 0;
+	// memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+	// next_oam_idx += sizeof(sprite_data) >> 2;
 
 //PROFILE_POKE(0x5f); // green
 	// clear all sprites from sprite buffer
@@ -4649,6 +4656,9 @@ void add_block_at_bottom()
 				// stay at 1 larger than the queue size to avoid overrun.
 				//attack_row_status[ix] = ATTACK_QUEUE_SIZE + 1;
 			}
+
+			// found the attack, exit the search loop.
+			break;
 		}
 	}
 
@@ -4660,7 +4670,34 @@ void add_block_at_bottom()
 	}
 
 	// TODO: Only if changed above.
-	copy_board_to_nt();
+	//copy_board_to_nt();
+
+	// custom logic to update nt in 1 single row.
+
+	// Clear out any existing vram commands to ensure we can safely do a bunch
+	// of work in this function.
+
+	// This also gets called when going back to the main menu.
+	if (state == STATE_GAME)
+	{
+		ClearOAMs();	
+		draw_gameplay_sprites();
+		SwapOAMs();	
+	}
+
+	local_ix = ix;
+
+	// copy a column into an array.
+	for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
+	{
+		copy_board_data[local_iy] = game_board[TILE_TO_BOARD_INDEX(local_ix, local_iy + BOARD_OOB_END + 1)];
+
+		UPDATE_TILE_BY_VALUE(
+			(BOARD_START_X_PX >> 3) + (local_ix), 
+			(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
+			copy_board_data[local_iy],
+			0x10);
+	}
 }
 
 void add_row_at_bottom()
