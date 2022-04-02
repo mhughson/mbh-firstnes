@@ -138,31 +138,46 @@ UINT8 sprite_data[4];
 ..::TODO::..
 
 
-GB:
+--GB--
 
-* [DMG] Credits text hard to see.
-* [SGB] Long delay setting attributes. Can this be done with linear array?
+MUST:
+
+* Add GB Credits (add make more visible)
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
-* [SGB] Flash on level up looks a little weird.
+* Add "Pocket" to title screen.
+
+SHOULD:
+
+* Updated Options graphics.
+* [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SIO] More variety in garbage.
-* [SIO] Replicate "mode" choice by host.
-* [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] Play sound effect/visuals when garbage incoming.
-* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
-* [SIO] BUG: Sometimes when the first piece lands, garbage is sent over.
-* [SIO] BUG: Once match ended for one player for no reason.
-* [SIO] BUG: Sometimes player exits gameover screen without input, almost immediately (likely a gameplay SIO event interpretted as a player menu choice)
 * Add "save" support.
 * Hitch when tentacle advances.
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
-* Add GB Credits.
 * Add Thank You.
+
+PROBABLY CUT:
+
+* [SIO] Replicate "mode" choice by host.
+* [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
+* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
+* Updated title screen.
+
+CNR:
+
+* [SGB] Flash on level up looks a little weird.
+* [SIO] BUG: Sometimes when the first piece lands, garbage is sent over.
+* [SIO] BUG: Once match ended for one player for no reason.
+* [SIO] BUG: Sometimes player exits gameover screen without input, almost immediately (likely a gameplay SIO event interpretted as a player menu choice)
 * BUG: DMG doesn't seem to be waiting 120 frames for music. CNR: I think I *might* have run the wrong build?
+
+-------------------
 
 FEATURES:
 
