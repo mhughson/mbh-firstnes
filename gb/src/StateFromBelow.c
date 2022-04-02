@@ -2522,7 +2522,7 @@ void draw_gameplay_sprites(void)
 
 	// Blocks spitting out prototype.
 	//
-	
+
 	// for (i = 0; i < NUM_BLOCK_PARTICLES; ++i)
 	// {
 	// 	block_particle_x[i] += block_particle_vel_x[i];
@@ -2628,7 +2628,7 @@ void movement(void)
 		//  delay(1);
 		//  inc_lines_cleared();
 		//  delay(1);
-		// lines_cleared_one = 8;
+		// lines_cleared_one = 9;
 		// inc_lines_cleared();
 		//add_block_at_bottom();
 		//spawn_new_cluster();
@@ -3403,6 +3403,12 @@ void go_to_state(unsigned char new_state)
  				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);				
 
 				sgb_init_menu();
+
+				// Needs to be called to reset the cur_level back to the saved_level.
+				// On the NES, this was done below in the else...gameover case, but that is
+				// all commented out now.
+				//reset_gameplay_area();
+				cur_level = saved_starting_level;
 
 				// Disabled for now. If this is needed in the end remember
 				// to push the current_bank first.
