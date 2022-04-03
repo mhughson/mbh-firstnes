@@ -4668,7 +4668,8 @@ void add_block_at_bottom()
 		// where to start the attack!
 		attack_row_status[(unsigned char)rand() % BOARD_WIDTH] = 1;
 	}
-
+	else
+	{
 	// TODO: Only if changed above.
 	//copy_board_to_nt();
 
@@ -4697,6 +4698,7 @@ void add_block_at_bottom()
 			(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
 			copy_board_data[local_iy],
 			0x10);
+		}
 	}
 }
 
