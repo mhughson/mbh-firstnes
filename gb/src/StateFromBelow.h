@@ -82,7 +82,7 @@
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
 
-#define EMPTY_TILE 0x00
+#define EMPTY_TILE 0x05
 #define KILL_SCREEN_TILE 0x04
 #define BLOCK_TILE 0x02
 
@@ -692,7 +692,7 @@ unsigned char game_board[BOARD_SIZE];
 // memmove would be function to use, but it does not exist in this library.
 unsigned char game_board_temp[BOARD_SIZE];
 // An empty row of the board is just 10 0's. Used for quick memcpy.
-const char empty_row[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const char empty_row[10] = { EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE,  };
 // TODO: It would be nice to have a more random selection.
 const UINT8 garbage_row[10] = { 29, 29, 0, 29, 29, 29, 29, 29, 29, 29 };
 // When selecting an option in the settings screen, and little cursor moves around.

@@ -1622,7 +1622,7 @@ void UPDATE()
 				local_t = 0;
 				for (local_iy = 0; local_iy < STRESS_MUSIC_LEVEL * 10; ++local_iy)
 				{
-					if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != 0)
+					if (game_board[local_iy + ((BOARD_OOB_END + 1) * 10)] != EMPTY_TILE)
 					{
 						// music is stressed even if it doesn't start playing this frame.
 						local_t = 1;
@@ -3032,7 +3032,7 @@ unsigned char is_block_free(unsigned char x, unsigned char y)
 	}
 
 	//return get_block(x, y) == 0;
-	return game_board[TILE_TO_BOARD_INDEX(x,y)] == 0;
+	return game_board[TILE_TO_BOARD_INDEX(x,y)] == EMPTY_TILE;
 }
 
 unsigned char is_cluster_colliding()
@@ -3061,7 +3061,7 @@ unsigned char is_cluster_colliding()
 		}
 
 		//return get_block(x, y) == 0;
-		if(game_board[TILE_TO_BOARD_INDEX(x,y)]) // != 5 && game_board[TILE_TO_BOARD_INDEX(x,y)] != 0)
+		if(game_board[TILE_TO_BOARD_INDEX(x,y)] != EMPTY_TILE) // != 5 && game_board[TILE_TO_BOARD_INDEX(x,y)] != 0)
 		{
 			return 1;
 		}
@@ -4635,7 +4635,7 @@ void add_block_at_bottom()
 				for (iy = BOARD_END_Y_PX_BOARD; iy > BOARD_OOB_END; --iy)
 				{
 					// travel till we hit the first empty spot, which is where we will copy up to.
-					if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == 0)
+					if (game_board[TILE_TO_BOARD_INDEX(ix, iy)] == EMPTY_TILE)
 					{
 						// Now work our way back down, copying upwards as we go.
 						for (; iy <= BOARD_END_Y_PX_BOARD; ++iy)
@@ -4670,34 +4670,34 @@ void add_block_at_bottom()
 	}
 	else
 	{
-	// TODO: Only if changed above.
-	//copy_board_to_nt();
+		// TODO: Only if changed above.
+		//copy_board_to_nt();
 
-	// custom logic to update nt in 1 single row.
+		// custom logic to update nt in 1 single row.
 
-	// Clear out any existing vram commands to ensure we can safely do a bunch
-	// of work in this function.
+		// Clear out any existing vram commands to ensure we can safely do a bunch
+		// of work in this function.
 
-	// This also gets called when going back to the main menu.
-	if (state == STATE_GAME)
-	{
-		ClearOAMs();	
-		draw_gameplay_sprites();
-		SwapOAMs();	
-	}
+		// This also gets called when going back to the main menu.
+		if (state == STATE_GAME)
+		{
+			ClearOAMs();	
+			draw_gameplay_sprites();
+			SwapOAMs();	
+		}
 
-	local_ix = ix;
+		local_ix = ix;
 
-	// copy a column into an array.
-	for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
-	{
-		copy_board_data[local_iy] = game_board[TILE_TO_BOARD_INDEX(local_ix, local_iy + BOARD_OOB_END + 1)];
+		// copy a column into an array.
+		for (local_iy = 0; local_iy < BOARD_HEIGHT; ++local_iy)
+		{
+			copy_board_data[local_iy] = game_board[TILE_TO_BOARD_INDEX(local_ix, local_iy + BOARD_OOB_END + 1)];
 
-		UPDATE_TILE_BY_VALUE(
-			(BOARD_START_X_PX >> 3) + (local_ix), 
-			(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
-			copy_board_data[local_iy],
-			0x10);
+			UPDATE_TILE_BY_VALUE(
+				(BOARD_START_X_PX >> 3) + (local_ix), 
+				(BOARD_START_Y_PX >> 3) + (BOARD_OOB_END + 1) + local_iy - 4,
+				copy_board_data[local_iy],
+				0x10);
 		}
 	}
 }
@@ -4729,7 +4729,7 @@ void add_garbage_row_at_bottom(UINT8 num_rows)
 
 void reset_gameplay_area()
 {
-	memfill(game_board, 0, BOARD_SIZE);
+	memfill(game_board, EMPTY_TILE, BOARD_SIZE);
 
 	// Reset stats.
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_score = 0;
