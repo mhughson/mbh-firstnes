@@ -102,6 +102,7 @@ unsigned char sound_screen[] = { 0 };
 IMPORT_MAP(gb_border);
 IMPORT_MAP(game_area);
 IMPORT_MAP(title_screen);
+IMPORT_MAP(title_screen_dmg);
 IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
 IMPORT_MAP(ty_screen);
@@ -497,15 +498,17 @@ void vbl_delay(UINT8 frames)
 uint8_t counter = 0; 
 void my_interrupt() NONBANKED {
 
-    while (STAT_REG & STATF_BUSY);
-    SCY_REG++;
-    LYC_REG+=7;
-    if (counter == 20) {
-        counter = 0;
-        SCY_REG = 1; 
-        LYC_REG = 5; // 6 to trim top instead of bottom
-    } else counter++;
-
+	if (state == STATE_GAME || state == STATE_OVER)
+	{
+		while (STAT_REG & STATF_BUSY);
+		SCY_REG++;
+		LYC_REG+=7;
+		if (counter == 20) {
+			counter = 0;
+			SCY_REG = 1; 
+			LYC_REG = 5; // 6 to trim top instead of bottom
+		} else counter++;
+	}
 	// ++counter;
 	// move_bkg(0, counter);
 
@@ -1040,11 +1043,36 @@ void UPDATE()
 							is_host = 1;
 						}
 
-						fade_to_black();
-						go_to_state(STATE_OPTIONS);
-						fade_from_black();
+						sub_state = 2;
 					}
 				}
+			}
+			/*else*/ if (sub_state == 2)
+			{
+				// #define FADE_STEP_FRAMES 8
+				// ++scroll_y_camera;
+				// ++scroll_y_camera;
+				// scroll(0, scroll_y_camera);
+
+				// if ((scroll_y_camera % FADE_STEP_FRAMES) == 0)
+				// {
+				// 	FadeInStep(scroll_y_camera / FADE_STEP_FRAMES);
+				// }
+
+				// if (scroll_y_camera >= (FADE_STEP_FRAMES * 5))
+				// {
+				// 	//fade_to_black();
+				// 	DISPLAY_OFF;
+				// 	go_to_state(STATE_OPTIONS);
+				// 	fade_from_black();
+				// }
+
+				// Currently this substate isn't actually used. It was put in 
+				// place to allow a scroll/fade out but it caused too many
+				// problems so I just went back to a straight fade.
+				fade_to_black();
+				go_to_state(STATE_OPTIONS);
+				fade_from_black();				
 			}
 #if VS_SYS_ENABLED
 			// "attract mode" to avoid burn in. Just go back to the start.
@@ -3420,7 +3448,18 @@ void go_to_state(unsigned char new_state)
 				ppu_off();
 #if PLAT_GB
 				//vram_unrle(title_and_game_area);
-				InitScroll(BANK(title_screen), &title_screen, 0, 0);
+
+				// Using PNG for backgrounds causes the DMG version to look bad
+				// because the palettes get mapped poorly. To avoid this, we just
+				// have a unique background for the DMG consoles.
+				if (_cpu == CGB_TYPE) 		
+				{		
+					InitScroll(BANK(title_screen), &title_screen, 0, 0);
+				}
+				else	
+				{		
+					InitScroll(BANK(title_screen_dmg), &title_screen_dmg, 0, 0);
+				}
 
  				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);				
 
