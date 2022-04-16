@@ -496,6 +496,8 @@ void vbl_delay(UINT8 frames)
 // https://discord.com/channels/790342889318252555/790346049377927168/928576481624473600
 // 
 
+//const INT8 wave_table[] = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, -1, -1, -1, -1 };
+
 uint8_t counter = 0; 
 void my_interrupt() NONBANKED {
 
@@ -510,6 +512,17 @@ void my_interrupt() NONBANKED {
 			LYC_REG = 5; // 6 to trim top instead of bottom
 		} else counter++;
 	}
+	// else
+	// {
+	// 	while (STAT_REG & STATF_BUSY);
+	// 	SCX_REG = wave_table[(counter + (tick_count>>4)) % 16];
+	// 	LYC_REG+=8;
+	// 	if (counter == 16) {
+	// 		counter = 0;
+	// 		SCX_REG = 0; 
+	// 		LYC_REG = 0; // 6 to trim top instead of bottom
+	// 	} else counter++;
+	// }
 	// ++counter;
 	// move_bkg(0, counter);
 
