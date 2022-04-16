@@ -105,11 +105,13 @@ IMPORT_MAP(title_screen);
 IMPORT_MAP(title_screen_dmg);
 IMPORT_MAP(boot_screen);
 IMPORT_MAP(options_screen);
+IMPORT_MAP(options_screen_dmg);
 IMPORT_MAP(ty_screen);
 IMPORT_MAP(gameplay_map);
 
 IMPORT_TILES(font);
 IMPORT_TILES(font_on_black);
+IMPORT_TILES(font_options_bright);
 
 DECLARE_MUSIC(TitleMusic);
 DECLARE_MUSIC(GameplayMusic);
@@ -146,11 +148,10 @@ MUST:
 * Add GB Credits (add make more visible)
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
-* Add "Pocket" to title screen.
+* Update "waiting for host" for new options screen.
 
 SHOULD:
 
-* Updated Options graphics.
 * [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SIO] More variety in garbage.
 * [SIO] Play sound effect/visuals when garbage incoming.
@@ -158,6 +159,7 @@ SHOULD:
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
 * Add Thank You.
+* When transitioning to gameplay from menu, the squish effect kicks in before transition is done, because fade is done inside state change.
 
 PROBABLY CUT:
 
@@ -167,7 +169,6 @@ PROBABLY CUT:
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
-* Updated title screen.
 
 CNR:
 
@@ -986,8 +987,14 @@ void UPDATE()
 				{
 					sub_state = 1;
 					// Show the player options
-					PRINT(6,12,"1 PLAYER");
-					PRINT(6,13,"2 PLAYER");
+					UPDATE_TILE_BY_VALUE(7,6, '\x34', 0x10);
+					UPDATE_TILE_BY_VALUE(7,7, '\x43', 0x10);
+
+					for (local_start_x = 0; local_start_x < 4; ++local_start_x)
+					{
+						UPDATE_TILE_BY_VALUE(8 + local_start_x,6, 0x35 + local_start_x, 0x10);
+						UPDATE_TILE_BY_VALUE(8 + local_start_x,7, 0x35 + local_start_x, 0x10);
+					}
 				}
 			}
 			else if (sub_state == 1) // 1/2 Player State
@@ -1008,8 +1015,8 @@ void UPDATE()
 				}
 
 				// Cursor
-				sprite_data[1] = ((4) << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
-				sprite_data[0] = ((12 + cur_option) * 7) + SCREEN_START_Y - 1;
+				sprite_data[1] = ((6) << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
+				sprite_data[0] = ((6 + cur_option) << 3) + SCREEN_START_Y - 1;
 				sprite_data[2] = 16;
 				sprite_data[3] = 1 | (1 << 5);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
@@ -1344,7 +1351,7 @@ void UPDATE()
 				switch (cur_option)
 				{
 
-				case 0: // starting level
+				case 1: // starting level
 
 					if (cur_level < 9 )
 					{
@@ -1356,7 +1363,7 @@ void UPDATE()
 					}
 					break;
 
-				case 1: // Attack style
+				case 0: // Attack style
 
 					//attack_style = (attack_style + 1) % ATTACK_NUM;
 
@@ -1417,7 +1424,7 @@ void UPDATE()
 				switch (cur_option)
 				{
 
-				case 0: // starting level
+				case 1: // starting level
 
 					if (cur_level != 0)
 					{
@@ -1429,7 +1436,7 @@ void UPDATE()
 					}
 					break;
 
-				case 1: // Attack style
+				case 0: // Attack style
 					// if (attack_style == 0)
 					// {
 					// 	attack_style = ATTACK_NUM;
@@ -1510,15 +1517,24 @@ void UPDATE()
 				display_options();
 			}
 
-			sprite_data[1] = (1 << 3) + SCREEN_START_X - 5 + tenatcle_offsets[(tick_count / 16) % 4];
-			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
+			// mode at the top
+			local_start_y = 3;
+
+			// jump down to the other options.
+			if (cur_option > 0)
+			{
+				local_start_y = cur_option + 6;
+			}
+
+			sprite_data[1] = (3 << 3) + SCREEN_START_X - 5 + tenatcle_offsets[(tick_count / 16) % 4];
+			sprite_data[0] = (local_start_y << 3) + SCREEN_START_Y;
 			sprite_data[2] = 16;
 			sprite_data[3] = 1;
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 
-			sprite_data[1] = (2 << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
-			sprite_data[0] = (((6) + (cur_option * 2)) * 7) + SCREEN_START_Y - 1;
+			sprite_data[1] = (4 << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
+			sprite_data[0] = (local_start_y << 3) + SCREEN_START_Y;
 			sprite_data[2] = 16;
 			sprite_data[3] = 1 | (1 << 5);
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
@@ -3461,6 +3477,12 @@ void go_to_state(unsigned char new_state)
 					InitScroll(BANK(title_screen_dmg), &title_screen_dmg, 0, 0);
 				}
 
+				for (i = 0; i < 5; ++i)
+				{
+					UPDATE_TILE_BY_VALUE(7+i, 6, 0xff, 0x10);
+					UPDATE_TILE_BY_VALUE(7+i, 7, 0xff, 0x10);
+				}
+
  				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);				
 
 				sgb_init_menu();
@@ -3575,8 +3597,20 @@ void go_to_state(unsigned char new_state)
 			option_state = 0;
 #else
 #if PLAT_GB
-			InitScroll(BANK(options_screen), &options_screen, 0, 0);
-			INIT_FONT(font, PRINT_BKG);
+
+			// Using PNG for backgrounds causes the DMG version to look bad
+			// because the palettes get mapped poorly. To avoid this, we just
+			// have a unique background for the DMG consoles.
+			if (_cpu == CGB_TYPE) 		
+			{		
+				InitScroll(BANK(options_screen), &options_screen, 0, 0);
+			}
+			else	
+			{		
+				InitScroll(BANK(options_screen_dmg), &options_screen_dmg, 0, 0);
+			}
+
+			INIT_FONT(font_options_bright, PRINT_BKG);
 
 			sgb_init_settings();
 
@@ -3616,7 +3650,7 @@ void go_to_state(unsigned char new_state)
 
 			if (!is_host)
 			{
-				PRINT(2, 2, "WAITING FOR HOST");
+				PRINT(6, 1, "WAITING.");
 			}
 #endif
 
@@ -4194,14 +4228,14 @@ void display_highscore()
 
 	// clear out any old score.
 	multi_vram_buffer_horz("0000000", 7, get_ppu_addr(0, 17<<3, 27<<3));
-	PRINT(11, 17, "0000000");
+	PRINT(6, 13, "00000000");
 
 	i = 0;
 	while(temp_score != 0)
     {
         unsigned char digit = temp_score % 10;
         one_vram_buffer('0' + digit, get_ppu_addr(0, (23<<3) - (i << 3), 27<<3 ));
-		PRINT(17 - i, 17, digits[digit]);
+		PRINT(13 - i, 13, digits[digit]);
 
         temp_score = temp_score / 10;
 		++i;
@@ -4843,15 +4877,17 @@ void display_options()
 	clear_vram_buffer();
 
 	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,start_y<<3));
-	PRINT(11,6, digits[cur_level]);
+	PRINT(15,7, digits[cur_level]);
 	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
-	PRINT(11,8, attack_style_strings[attack_style]);
+	PRINT(5,3, attack_style_strings[attack_style]);
+	PRINT(5,4, attack_style__desc_strings_01[attack_style]);
+	PRINT(5,5, attack_style__desc_strings_02[attack_style]);
 	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
-	PRINT(11,10, off_on_string[music_on]);
+	PRINT(13,8, off_on_string[music_on]);
 	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
-	PRINT(11,12, off_on_string[sfx_on]);
+	PRINT(13,9, off_on_string[sfx_on]);
 	multi_vram_buffer_horz(hard_drop_types[hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
-	PRINT(11,14, hard_drop_types[hard_drops_on]);
+	PRINT(12,10, hard_drop_types[hard_drops_on]);
 
 	// // NOTE: One redundant call.
 	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
