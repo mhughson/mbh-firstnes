@@ -1031,7 +1031,7 @@ void UPDATE()
 				sprite_data[1] = ((6) << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
 				sprite_data[0] = ((6 + cur_option) << 3) + SCREEN_START_Y - 1;
 				sprite_data[2] = 16;
-				sprite_data[3] = 1 | (1 << 5);
+				sprite_data[3] = 1 | (1 << 4) | (1 << 5);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 				next_oam_idx += sizeof(sprite_data) >> 2;
 
@@ -3286,6 +3286,7 @@ void go_to_state(unsigned char new_state)
 	static unsigned char i;
 	static unsigned char fade_delay;
 	static unsigned char prev_state;
+	static unsigned char empty_menu_tile;
 #if VS_SYS_ENABLED
 	static unsigned char j;
 	static unsigned char k;
