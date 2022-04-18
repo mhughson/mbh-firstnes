@@ -501,7 +501,7 @@ void vbl_delay(UINT8 frames)
 uint8_t counter = 0; 
 void my_interrupt() NONBANKED {
 
-	if (state == STATE_GAME || state == STATE_OVER)
+	if (state == STATE_GAME || state == STATE_OVER || state == STATE_PAUSE)
 	{
 		while (STAT_REG & STATF_BUSY);
 		SCY_REG++;
