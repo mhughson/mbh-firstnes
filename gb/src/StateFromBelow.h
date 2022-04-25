@@ -82,7 +82,7 @@
 // The time before another code will be accepted.
 #define CREDIT_DELAY 70
 
-#define EMPTY_TILE 0x05
+#define EMPTY_TILE 0x00 //0x05
 #define KILL_SCREEN_TILE 0x04
 #define BLOCK_TILE 0x02
 

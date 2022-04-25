@@ -112,6 +112,7 @@ IMPORT_MAP(gameplay_map);
 IMPORT_TILES(font);
 IMPORT_TILES(font_on_black);
 IMPORT_TILES(font_options_bright);
+IMPORT_TILES(font_gameplay);
 
 DECLARE_MUSIC(TitleMusic);
 DECLARE_MUSIC(GameplayMusic);
@@ -1816,7 +1817,7 @@ void UPDATE()
 			{
 				go_to_state(STATE_OVER);
 
-				PRINT(9, 12, " YOU WIN! ");
+				PRINT(10, 4, "YOU WIN!");
 			}
 
 			send_queued_packet();
@@ -3223,7 +3224,7 @@ void spawn_new_cluster()
 
 		if (is_sio_game)
 		{
-			PRINT(9, 12, " YOU LOSE ");
+			PRINT(10, 4, "YOU LOSE");
 		}
 	}
 }
@@ -3849,7 +3850,7 @@ void go_to_state(unsigned char new_state)
 				// scroll_y_game = 0;
 				// scroll(0, scroll_y_game);
 				
-				INIT_FONT(font, PRINT_BKG);
+				INIT_FONT(font_gameplay, PRINT_BKG);
 				InitScroll(BANK(gameplay_map), &gameplay_map, 0, 0);
 				// Clear out the temp tiles used to force tile index.
 				// UPDATE_TILE_BY_VALUE(0,0,3,NULL);
@@ -3973,20 +3974,80 @@ void go_to_state(unsigned char new_state)
 			// address += 32;
 			// multi_vram_buffer_horz("B-QUIT    ", 10, address);
 
-			const UINT8 over_top[] = { 113, 114, 115, 116, 0, 114, 117, 116, 118, 126 };
-			const UINT8 over_bot[] = { 119, 120, 121, 122, 0, 123, 124, 122, 125, 127 };
+			//const UINT8 over_top[] = { 113, 114, 115, 116, 0, 114, 117, 116, 118, 126 };
+			//const UINT8 over_bot[] = { 119, 120, 121, 122, 0, 123, 124, 122, 125, 127 };
+
 
 			for (i = 0; i < 10; ++i)
 			{
-				UPDATE_TILE_BY_VALUE(9 + i, 7, over_top[i], 0x10);
-				UPDATE_TILE_BY_VALUE(9 + i, 8, over_bot[i], 0x10);
+				for (UINT8 j = 0; j < 14; ++j)
+				{
+					if (j == 0 && i == 0)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 181, 0x10);
+					}
+					else if (j == 0 && i == 9)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 183, 0x10);
+					}
+					else if (j == 13 && i ==0)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 186, 0x10);
+					}
+					else if (j == 13 && i == 9)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 188, 0x10);
+					}
+					else if (j == 13)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 187, 0x10);
+					}
+					else if (j == 0)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 182, 0x10);
+					}
+					else if (i == 0)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 184, 0x10);
+					}
+					else if (i == 9)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 185, 0x10);
+					}
+					else
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 0x0, 0x10);
+					}
+				}
 			}
 
-			// TODO: This uses the default font palette, but it looks a little weird.
-			//		 Ideally this could be overwritten with an inverted palette. How
-			//		 would that work on DMG though? Maybe replace with icons or something.
-			PRINT(9,  9, "A-RESTART ");
-			PRINT(9, 10, "B-QUIT    ");
+			// for(i = 0; i < 9; ++i)
+			// {
+			// 	UPDATE_TILE_BY_VALUE(9, 6 + i, 184, 0x10);
+			// 	UPDATE_TILE_BY_VALUE(18, 6 + i, 185, 0x10);
+			// }
+
+			UINT8 tile = 137;
+			const UINT8 x_offset = 10;
+			const UINT8 y_offset = 6;
+
+			//for (UINT8 j = 0; j < 5; ++j)
+			{
+				for (i = 0; i < 8; ++i)
+				{
+					UPDATE_TILE_BY_VALUE(x_offset + i, y_offset, tile, 0x10);
+					UPDATE_TILE_BY_VALUE(x_offset + i, y_offset + 1, tile + 8, 0x10);
+					UPDATE_TILE_BY_VALUE(x_offset + i, y_offset + 2, tile + 16, 0x10);
+					UPDATE_TILE_BY_VALUE(x_offset + i, y_offset + 3, tile + 24, 0x10);
+					UPDATE_TILE_BY_VALUE(x_offset + i, y_offset + 4, tile + 32, 0x10);
+					++tile;
+				}
+			}
+
+			UPDATE_TILE_BY_VALUE(10, 12, 177, 0x10);
+			UPDATE_TILE_BY_VALUE(10, 14, 178, 0x10);
+			PRINT(11, 12, "RESTART");
+			PRINT(11, 14, "QUIT   ");
 #else
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);
@@ -4190,7 +4251,7 @@ void display_lines_cleared()
 	//UPDATE_TILE_BY_VALUE(4,3,0,0);
 	//UIntToString(lines_cleared_hundred, text);
 	//PRINT(4,1,text);
-	PRINT(2,5, "LINES");
+	//PRINT(2,5, "LINES");
 	PRINT_POS(4,6);
 	Printf("%d", lines_cleared_hundred);
 	PRINT_POS(5,6);
@@ -4213,7 +4274,7 @@ void display_score()
 
 	temp_score = cur_score;
 
-	PRINT(2, 7, "SCORE");
+	//PRINT(2, 7, "SCORE");
 
 	// clear out any old score.
 	multi_vram_buffer_horz("      ", 6, get_ppu_addr(cur_nt, 0, 6<<3));
@@ -4265,7 +4326,7 @@ void display_level()
 	static unsigned char i;
 	static unsigned char res[2];
 
-	PRINT(2, 9, "LEVEL");
+	//PRINT(2, 9, "LEVEL");
 
 	temp_level = cur_level;
 	i = 0;
