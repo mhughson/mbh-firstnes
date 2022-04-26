@@ -150,6 +150,7 @@ MUST:
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
 * Update "waiting for host" for new options screen.
+* Test kill screen is working.
 
 SHOULD:
 
@@ -2636,15 +2637,15 @@ void draw_pause_sprites(void)
 	static UINT8 shake_offset;
 
 	// NOTE: Loop accounts for null term.
-	for(i = 0; i < sizeof(pause_test) - 1; ++i)
+	for(i = 0; i < 5; ++i)
 	{
 		speed = tick_count >> 4;
 		shake_offset = tenatcle_offsets[((i + speed) & 3)]; // &3 = %4 = number of entries in array.
 
-		sprite_data[1] = ((11 + i) << 3) + SCREEN_START_X + 4;
+		sprite_data[1] = ((11 + i) << 3) + SCREEN_START_X + 5;
 		sprite_data[0] = (UINT8)(9 * 7) + (UINT8)SCREEN_START_Y - 1U + shake_offset;
-		sprite_data[2] = pause_test[i] + (0xd3 - 0x41); // put it into the sprite memory.
-		sprite_data[3] = 1;
+		sprite_data[2] = 17 + i; // put it into the sprite memory.
+		sprite_data[3] = 1 | (1 << 4);
 		memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 		next_oam_idx += sizeof(sprite_data) >> 2;
 
@@ -2652,14 +2653,14 @@ void draw_pause_sprites(void)
 		// same for the text color.
 		// TODO: Switch DMG OBJ pals when entering pause.
 		// NOTE: Draw order is front to back.
-		if (_cpu == CGB_TYPE) 
-		{
-			sprite_data[0] += 1;
-			// currently grey scale default.
-			sprite_data[3] = 2;
-			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
-			next_oam_idx += sizeof(sprite_data) >> 2;
-		}
+		// if (_cpu == CGB_TYPE) 
+		// {
+		// 	sprite_data[0] += 1;
+		// 	// currently grey scale default.
+		// 	sprite_data[3] = 2;
+		// 	memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
+		// 	next_oam_idx += sizeof(sprite_data) >> 2;
+		// }
 	}
 }
 
