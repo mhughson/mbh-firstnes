@@ -503,7 +503,7 @@ void vbl_delay(UINT8 frames)
 uint8_t counter = 0; 
 void my_interrupt() NONBANKED {
 
-	if (state == STATE_GAME || state == STATE_OVER || state == STATE_PAUSE)
+	//if (state == STATE_GAME || state == STATE_OVER || state == STATE_PAUSE)
 	{
 		while (STAT_REG & STATF_BUSY);
 		SCY_REG++;
@@ -1001,14 +1001,26 @@ void UPDATE()
 				if (pad_all & PAD_ALL_BUTTONS)
 				{
 					sub_state = 1;
+
+					UINT8 p1 = '\x35';
+					UINT8 p2 = '\x44';
+					UINT8 player = 0x36;
+
+					if (_cpu != CGB_TYPE)	
+					{
+						p1 = '\x34';
+						p2 = '\x43';
+						player = 0x35;
+					}
+
 					// Show the player options
-					UPDATE_TILE_BY_VALUE(7,6, '\x34', 0x10);
-					UPDATE_TILE_BY_VALUE(7,7, '\x43', 0x10);
+					UPDATE_TILE_BY_VALUE(7,6, p1, 0x10);
+					UPDATE_TILE_BY_VALUE(7,7, p2, 0x10);
 
 					for (local_start_x = 0; local_start_x < 4; ++local_start_x)
 					{
-						UPDATE_TILE_BY_VALUE(8 + local_start_x,6, 0x35 + local_start_x, 0x10);
-						UPDATE_TILE_BY_VALUE(8 + local_start_x,7, 0x35 + local_start_x, 0x10);
+						UPDATE_TILE_BY_VALUE(8 + local_start_x,6, player + local_start_x, 0x10);
+						UPDATE_TILE_BY_VALUE(8 + local_start_x,7, player + local_start_x, 0x10);
 					}
 				}
 			}
@@ -1031,7 +1043,7 @@ void UPDATE()
 
 				// Cursor
 				sprite_data[1] = ((6) << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
-				sprite_data[0] = ((6 + cur_option) << 3) + SCREEN_START_Y - 1;
+				sprite_data[0] = ((6 + cur_option) * 7) + SCREEN_START_Y - 1;
 				sprite_data[2] = 16;
 				sprite_data[3] = 1 | (1 << 4) | (1 << 5);
 				memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
@@ -1542,14 +1554,14 @@ void UPDATE()
 			}
 
 			sprite_data[1] = (3 << 3) + SCREEN_START_X - 5 + tenatcle_offsets[(tick_count / 16) % 4];
-			sprite_data[0] = (local_start_y << 3) + SCREEN_START_Y;
+			sprite_data[0] = (local_start_y * 7) + SCREEN_START_Y;
 			sprite_data[2] = 16;
 			sprite_data[3] = 1;
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
 			next_oam_idx += sizeof(sprite_data) >> 2;
 
 			sprite_data[1] = (4 << 3) + SCREEN_START_X - 2 - tenatcle_offsets[(tick_count / 16) % 4];
-			sprite_data[0] = (local_start_y << 3) + SCREEN_START_Y;
+			sprite_data[0] = (local_start_y * 7) + SCREEN_START_Y;
 			sprite_data[2] = 16;
 			sprite_data[3] = 1 | (1 << 5);
 			memcpy(oam + (next_oam_idx << 2), sprite_data, sizeof(sprite_data));
