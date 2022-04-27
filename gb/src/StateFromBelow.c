@@ -149,7 +149,6 @@ MUST:
 * Add GB Credits (add make more visible)
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
-* Update "waiting for host" for new options screen.
 * Test kill screen is working.
 
 SHOULD:
@@ -161,7 +160,6 @@ SHOULD:
 * Bottom of well looks weird going straight into water.
 * High contrast mode.
 * Add Thank You.
-* When transitioning to gameplay from menu, the squish effect kicks in before transition is done, because fade is done inside state change.
 
 PROBABLY CUT:
 
@@ -3640,6 +3638,12 @@ void go_to_state(unsigned char new_state)
 
 			INIT_FONT(font_options_bright, PRINT_BKG);
 
+			PRINT(5, 7,  "LEVEL");
+			PRINT(5, 8,  "MUSIC");
+			PRINT(5, 9,  "SOUNDS");
+			PRINT(5, 10, "H.DROP");
+			PRINT(6, 12, "HI-SCORE");			
+
 			sgb_init_settings();
 
 			// Clear out the temp tiles used to force tile index.
@@ -3678,7 +3682,11 @@ void go_to_state(unsigned char new_state)
 
 			if (!is_host)
 			{
-				PRINT(6, 1, "WAITING.");
+				PRINT(5, 1, "WAITING...");
+			}
+			else
+			{
+				PRINT(6, 1, "SETTINGS");
 			}
 #endif
 
