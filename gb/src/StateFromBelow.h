@@ -67,12 +67,12 @@
 
 #define BLINK_LEN (60 * 5)
 
-#define SFX_PLAY_WRAPPER(id) if (sfx_on) { id; }
+#define SFX_PLAY_WRAPPER(id) if (savegame.sfx_on) { id; }
 // play a sound effect that is treated like music to the user (jingles, etc).
-#define SFX_MUSIC_PLAY_WRAPPER(id) if (music_on) { id; }
-#define MUSIC_PLAY_WRAPPER(id) if (music_on) { PlayMusic(id, 1); }
+#define SFX_MUSIC_PLAY_WRAPPER(id) if (savegame.music_on) { id; }
+#define MUSIC_PLAY_WRAPPER(id) if (savegame.music_on) { PlayMusic(id, 1); }
 #if VS_SYS_ENABLED
-#define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (music_on && (DIP8 == 0 || credits_remaining >= game_cost)) { music_play((id)); }
+#define MUSIC_PLAY_ATTRACT_WRAPPER(id) if (savegame.music_on && (DIP8 == 0 || credits_remaining >= game_cost)) { music_play((id)); }
 #else
 // No attract mode on the NES.
 #define MUSIC_PLAY_ATTRACT_WRAPPER(id) MUSIC_PLAY_WRAPPER(id)
@@ -211,9 +211,6 @@ unsigned int scroll_y_camera;
 // The currently selected option on the settings screen.
 unsigned char cur_option;
 
-// The current game mode. See ATTACK_ON_TIME and other at the top of this file.
-unsigned char attack_style;
-
 // Length of the string used to describe the game type ("Classic", etc) on the settings
 // screen.
 #define ATTACK_STRING_LEN 8
@@ -325,13 +322,6 @@ unsigned long high_scores_vs_value[ATTACK_NUM][4][3] =
 unsigned char cur_initial_index;
 #endif
 
-// High scores for the 3 game modes. 32 bit numbers to allow for scores
-// in the millions.
-unsigned long high_scores[ATTACK_NUM] = { 0, 0, 0}; // NOTE: long!
-
-// Is the music and sound currently enabled?
-unsigned char music_on;
-unsigned char sfx_on;
 // Length of the string used to display "on" and "off" in the settings screen.
 #define OFF_ON_STRING_LEN 4
 
@@ -349,8 +339,6 @@ const unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '
 // NOTE: The game does not feature battery save.
 unsigned char saved_starting_level;
 
-// This stores an enum for the 3 types of hard drop (off, hold, and tap).
-unsigned char hard_drops_on;
 // In the case of "hold" hard drops, this tracks how much time remains of
 // the player holding UP before the block hard drops.
 unsigned char hard_drop_hold_remaining;

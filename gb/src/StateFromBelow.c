@@ -40,6 +40,7 @@
 #include "Palette.h"
 #include "OAMManager.h"
 #include "SGBHelpers.h"
+#include "savegame.h"
 
 #include "cbtfx.h"
 #include "beep_sfx.h"
@@ -149,7 +150,6 @@ MUST:
 * Add GB Credits (add make more visible)
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
-* Test kill screen is working.
 
 SHOULD:
 
@@ -563,6 +563,9 @@ void START()
         set_interrupts(VBL_IFLAG | TIM_IFLAG | LCD_IFLAG | SIO_IFLAG);
     }
 
+	// enable SRAM for the entire program.
+	ENABLE_RAM;
+
 	ppu_off(); // screen off
 
 	// use the second set of tiles for sprites
@@ -602,10 +605,17 @@ void START()
 
 	//music_play(0);
 
-	attack_style = ATTACK_ON_TIME;// ATTACK_ON_LAND;
-	music_on = 1; //1;
-	sfx_on = 1;
-	hard_drops_on = 1;
+	// Uninitialized save game. It would have already gone through integritiy checks
+	// which will zero out the struct if it's new or corrupted.
+	if (savegame.version == 0)
+	{
+		savegame.version = 1;
+		savegame.attack_style = ATTACK_ON_TIME;
+		savegame.music_on = 1;
+		savegame.sfx_on = 1;
+		savegame.hard_drops_on = 1;
+	}
+
 	block_style = BLOCK_STYLE_CLASSIC;
 	state = 0xff; // uninitialized so that we don't trigger a "leaving state".
 	cur_garbage_type = 0;
@@ -617,8 +627,8 @@ void START()
 	{
 		game_cost = 4; // cost of 3 seems odd.
 	}
-	music_on = DIP6 == 0;
-	sfx_on = DIP7 == 0;
+	savegame.music_on = DIP6 == 0;
+	savegame.sfx_on = DIP7 == 0;
 	high_score_entry_placement = 0xff;
 	// DIP	Val	PPU
 	// 000 	0	RP2C04-0001
@@ -1142,37 +1152,37 @@ void UPDATE()
 				{
 					if (pad_all_new & PAD_RIGHT)
 					{
-							if (attack_style < ATTACK_NUM - 1)
+							if (savegame.attack_style < ATTACK_NUM - 1)
 							{
 								for (i = 0; i < 4; ++i)
 								{
-									pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+									pal_col(i + (4 * savegame.attack_style), palette_vs_options_inactive[i]);
 								}
 
-								++attack_style;
+								++savegame.attack_style;
 								SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 
 								for (i = 0; i < 4; ++i)
 								{
-									pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+									pal_col(i + (4 * savegame.attack_style), palette_vs_options_active[i]);
 								}
 							}
 					}
 					else if (pad_all_new & PAD_LEFT)
 					{
-							if (attack_style > 0)
+							if (savegame.attack_style > 0)
 							{
 								for (i = 0; i < 4; ++i)
 								{
-									pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+									pal_col(i + (4 * savegame.attack_style), palette_vs_options_inactive[i]);
 								}
 
-								--attack_style;
+								--savegame.attack_style;
 								SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 								for (i = 0; i < 4; ++i)
 								{
-									pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+									pal_col(i + (4 * savegame.attack_style), palette_vs_options_active[i]);
 								}
 							}
 					}
@@ -1187,7 +1197,7 @@ void UPDATE()
 						option_state = 1;
 						for (i = 0; i < 4; ++i)
 						{
-							pal_col(i + (4 * attack_style), palette_vs_options_inactive[i]);
+							pal_col(i + (4 * savegame.attack_style), palette_vs_options_inactive[i]);
 						}
 						for (i = 0; i < 4; ++i)
 						{
@@ -1390,27 +1400,27 @@ void UPDATE()
 
 				case 0: // Attack style
 
-					//attack_style = (attack_style + 1) % ATTACK_NUM;
+					//savegame.attack_style = (savegame.attack_style + 1) % ATTACK_NUM;
 
-					if (attack_style < ATTACK_NUM - 1)
+					if (savegame.attack_style < ATTACK_NUM - 1)
 					{
-						++attack_style;
+						++savegame.attack_style;
 						display_highscore();
 					}
 					break;
 
 				case 2: // Music off/on
 
-					//music_on = (music_on + 1) % 2;
+					//savegame.music_on = (savegame.music_on + 1) % 2;
 
-					if (music_on == 0)
+					if (savegame.music_on == 0)
 					{
-						music_on = 1;
+						savegame.music_on = 1;
 						MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
 						music_pause(0);
 					}
 
-					// if (music_on == 0)
+					// if (savegame.music_on == 0)
 					// {
 					// 	StopMusic;
 					// }
@@ -1422,18 +1432,18 @@ void UPDATE()
 
 				case 3: // sound fx on/off
 				{
-					if (sfx_on == 0)
+					if (savegame.sfx_on == 0)
 					{
-						sfx_on = 1;
+						savegame.sfx_on = 1;
 					}
 					break;
 				}
 
 				case 4: // hard drops
 				{
-					if (hard_drops_on < NUM_HARD_DROP_SETTINGS - 1)
+					if (savegame.hard_drops_on < NUM_HARD_DROP_SETTINGS - 1)
 					{
-						++hard_drops_on;
+						++savegame.hard_drops_on;
 					}
 				}
 
@@ -1462,35 +1472,35 @@ void UPDATE()
 					break;
 
 				case 0: // Attack style
-					// if (attack_style == 0)
+					// if (savegame.attack_style == 0)
 					// {
-					// 	attack_style = ATTACK_NUM;
+					// 	savegame.attack_style = ATTACK_NUM;
 					// }
-					// attack_style = (attack_style - 1) % ATTACK_NUM;
+					// savegame.attack_style = (savegame.attack_style - 1) % ATTACK_NUM;
 
-					if (attack_style != 0)
+					if (savegame.attack_style != 0)
 					{
-						--attack_style;
+						--savegame.attack_style;
 						display_highscore();
 					}
 
 					break;
 
 				case 2: // Music off/on
-					// if (music_on == 0)
+					// if (savegame.music_on == 0)
 					// {
-					// 	music_on = 2;
+					// 	savegame.music_on = 2;
 					// }
-					// music_on = (music_on - 1) % 2;
+					// savegame.music_on = (savegame.music_on - 1) % 2;
 
-					if (music_on != 0)
+					if (savegame.music_on != 0)
 					{
-						music_on = 0;
+						savegame.music_on = 0;
 						music_pause(1);
 						StopMusic;
 					}
 
-					// if (music_on == 0)
+					// if (savegame.music_on == 0)
 					// {
 					// 	StopMusic;
 					// }
@@ -1503,17 +1513,17 @@ void UPDATE()
 
 				case 3: // sound fx off/on
 				{
-					if (sfx_on != 0)
+					if (savegame.sfx_on != 0)
 					{
-						sfx_on = 0;
+						savegame.sfx_on = 0;
 					}
 					break;
 				}
 				case 4: // hard drops
 				{
-					if (hard_drops_on != 0)
+					if (savegame.hard_drops_on != 0)
 					{
-						--hard_drops_on;
+						--savegame.hard_drops_on;
 					}
 					break;
 				}
@@ -1626,7 +1636,7 @@ void UPDATE()
 			}
 
 			// delay a frame for perf.
-			if (attack_style != ATTACK_NEVER && attack_queued)
+			if (savegame.attack_style != ATTACK_NEVER && attack_queued)
 			{
 //PROFILE_POKE(PROF_R);
 				// TODO: Perf - Very expensive.
@@ -1671,7 +1681,7 @@ void UPDATE()
 
 //PROFILE_POKE(PROF_W);
 
-			if (attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
+			if (savegame.attack_style == ATTACK_ON_TIME && attack_queue_ticks_remaining != 0)
 			{
 				--attack_queue_ticks_remaining;
 
@@ -2035,7 +2045,7 @@ void UPDATE()
 				POKE(0x4016, 2);
 #endif // #if VS_SRAM_ENABLED
 				// Save a bunch of code space, and make this easier to work with.
-				temp_table = high_scores_vs_initials[attack_style][cur_level_vs_setting][high_score_entry_placement];
+				temp_table = high_scores_vs_initials[savegame.attack_style][cur_level_vs_setting][high_score_entry_placement];
 
 				if (temp_table[cur_initial_index] == '-')
 				{
@@ -2152,13 +2162,13 @@ void UPDATE()
 
 				if (auto_forward_leaderboards && ticks_in_state_large > (60*10))
 				{
-					if (attack_style > 0)
+					if (savegame.attack_style > 0)
 					{
-						--attack_style;
+						--savegame.attack_style;
 					}
 					else
 					{
-						attack_style = ATTACK_NUM - 1;
+						savegame.attack_style = ATTACK_NUM - 1;
 					}
 
 					--auto_forward_leaderboards;
@@ -2179,13 +2189,13 @@ void UPDATE()
 				}
 				else if ( pad_all_new & PAD_LEFT)
 				{
-					if (attack_style > 0)
+					if (savegame.attack_style > 0)
 					{
-						--attack_style;
+						--savegame.attack_style;
 					}
 					else
 					{
-						attack_style = ATTACK_NUM - 1;
+						savegame.attack_style = ATTACK_NUM - 1;
 					}
 
 					auto_forward_leaderboards = 1;
@@ -2195,13 +2205,13 @@ void UPDATE()
 				}
 				else if ( pad_all_new & PAD_RIGHT)
 				{
-					if (attack_style < ATTACK_NUM - 1)
+					if (savegame.attack_style < ATTACK_NUM - 1)
 					{
-						++attack_style;
+						++savegame.attack_style;
 					}
 					else
 					{
-						attack_style = 0;
+						savegame.attack_style = 0;
 					}
 
 					auto_forward_leaderboards = 1;
@@ -2366,10 +2376,10 @@ void draw_gameplay_sprites(void)
 
 //PROFILE_POKE(0x1f); // white
 
-	if (attack_style != ATTACK_NEVER)
+	if (savegame.attack_style != ATTACK_NEVER)
 	{
 		shake_offset = 0;
-		if (attack_style == ATTACK_ON_TIME)
+		if (savegame.attack_style == ATTACK_ON_TIME)
 		{
 			if (attack_queue_ticks_remaining < 120)
 			{
@@ -2488,7 +2498,7 @@ void draw_gameplay_sprites(void)
 	// BLINKING
 	else
 	{
-		if (attack_style == ATTACK_NEVER)
+		if (savegame.attack_style == ATTACK_NEVER)
 		{
 			// sleeping
 			// oam_spr(3 << 3, 25 << 3, 0x63, 1);
@@ -2826,7 +2836,7 @@ void movement(void)
 	temp_fall_frame_counter = fall_frame_counter;
 
 	hard_drop_performed = 0;
-	if (hard_drops_on && pad_all & PAD_UP && (pad_all & (PAD_LEFT|PAD_RIGHT)) == 0)
+	if (savegame.hard_drops_on && pad_all & PAD_UP && (pad_all & (PAD_LEFT|PAD_RIGHT)) == 0)
 	{
 		if ((pad_all & PAD_UP && hard_drop_tap_required == 0) || pad_all_new & PAD_UP)
 		{
@@ -2858,11 +2868,11 @@ void movement(void)
 		{
 			hard_drop_tap_required = 0;
 		}
-		if (hard_drops_on == 1) // tap
+		if (savegame.hard_drops_on == 1) // tap
 		{
 			hard_drop_hold_remaining = 1;
 		}
-		else if (hard_drops_on == 2) // hold
+		else if (savegame.hard_drops_on == 2) // hold
 		{
 			hard_drop_hold_remaining = HARD_DROP_HOLD_TIME;
 		}
@@ -3068,7 +3078,7 @@ void put_cur_cluster()
 		oam_spr(0, 0, 0, 0);
 
 //PROFILE_POKE(0x9f); //blue
-		if (attack_style == ATTACK_ON_LAND)
+		if (savegame.attack_style == ATTACK_ON_LAND)
 		{
 			attack_queued = 1;
 		}
@@ -3379,19 +3389,19 @@ void go_to_state(unsigned char new_state)
 #endif // #if VS_SRAM_ENABLED
 				for (i = 0; i < 3; ++i)
 				{
-					if (high_scores_vs_value[attack_style][cur_level_vs_setting][i] == NO_SCORE || cur_score > high_scores_vs_value[attack_style][cur_level_vs_setting][i])
+					if (high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][i] == NO_SCORE || cur_score > high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][i])
 					{
 						high_score_entry_placement = i;
 						for(j = 2; j != i; --j)
 						{
-							if (high_scores_vs_value[attack_style][cur_level_vs_setting][j-1] != NO_SCORE)
+							if (high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][j-1] != NO_SCORE)
 							{
-								high_scores_vs_value[attack_style][cur_level_vs_setting][j] = high_scores_vs_value[attack_style][cur_level_vs_setting][j-1];
-								memcpy(high_scores_vs_initials[attack_style][cur_level_vs_setting][j], high_scores_vs_initials[attack_style][cur_level_vs_setting][j-1], 3);
+								high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][j] = high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][j-1];
+								memcpy(high_scores_vs_initials[savegame.attack_style][cur_level_vs_setting][j], high_scores_vs_initials[savegame.attack_style][cur_level_vs_setting][j-1], 3);
 							}
 						}
-						high_scores_vs_value[attack_style][cur_level_vs_setting][i] = cur_score;
-						memcpy(high_scores_vs_initials[attack_style][cur_level_vs_setting][i], "---", 3);
+						high_scores_vs_value[savegame.attack_style][cur_level_vs_setting][i] = cur_score;
+						memcpy(high_scores_vs_initials[savegame.attack_style][cur_level_vs_setting][i], "---", 3);
 						cur_score = NO_SCORE;
 						break;
 					}
@@ -3403,9 +3413,9 @@ void go_to_state(unsigned char new_state)
 				attract_gameplay_enabled = 0;
 			}
 #else
-			if (cur_score > high_scores[attack_style])
+			if (cur_score > savegame.high_scores[savegame.attack_style])
 			{
-				high_scores[attack_style] = cur_score;
+				savegame.high_scores[savegame.attack_style] = cur_score;
 			}
 #endif
 			break;
@@ -3609,7 +3619,7 @@ void go_to_state(unsigned char new_state)
 			// Update the palettes to show which option is currently selected.
 			for (i = 0; i < 4; ++i)
 			{
-				pal_col(i + (4 * attack_style), palette_vs_options_active[i]);
+				pal_col(i + (4 * savegame.attack_style), palette_vs_options_active[i]);
 			}
 #else
 			pal_bg(palette_bg_options);
@@ -3663,10 +3673,10 @@ void go_to_state(unsigned char new_state)
 			vram_unrle(options_screen);			
 #endif // PLAT_GB			
 			// vram_adr(NTADR_A(16,19));
-			// vram_write(attack_style_strings[attack_style], ATTACK_STRING_LEN);
+			// vram_write(attack_style_strings[savegame.attack_style], ATTACK_STRING_LEN);
 
 			// vram_adr(NTADR_A(16,21));
-			// vram_write(off_on_string[music_on], OFF_ON_STRING_LEN);
+			// vram_write(off_on_string[savegame.music_on], OFF_ON_STRING_LEN);
 
 			// handle case where player used cheat to jump 10 levels, and then quit back
 			// to the main menu.
@@ -3893,7 +3903,7 @@ void go_to_state(unsigned char new_state)
 				attack_row_status[i] = 1;
 
 				require_new_down_button = 1;
-				if (attack_style == ATTACK_ON_TIME)
+				if (savegame.attack_style == ATTACK_ON_TIME)
 				{
 					attack_queue_ticks_remaining = attack_delay;
 				}
@@ -3955,7 +3965,7 @@ void go_to_state(unsigned char new_state)
 			// Without music this delay feels really odd.
 			// However, we need to keep the SIO game in sync, so always wait in that case.
 #if !VS_SYS_ENABLED
-			if (music_on || is_sio_game)
+			if (savegame.music_on || is_sio_game)
 			{
 				vbl_delay(120);
 			}
@@ -4117,16 +4127,16 @@ void go_to_state(unsigned char new_state)
 			vram_adr(NTADR_A(0,0));
 			vram_unrle(high_score_screen);
 
-			if (attack_style == ATTACK_NEVER)
+			if (savegame.attack_style == ATTACK_NEVER)
 			{
-				vram_adr(NTADR_A(15 - ((sizeof(attack_style_strings[attack_style]))/2),3));
+				vram_adr(NTADR_A(15 - ((sizeof(attack_style_strings[savegame.attack_style]))/2),3));
 			}
 			else
 			{
-				vram_adr(NTADR_A(16 - ((sizeof(attack_style_strings[attack_style]))/2),3));
+				vram_adr(NTADR_A(16 - ((sizeof(attack_style_strings[savegame.attack_style]))/2),3));
 			}
 
-			vram_write(attack_style_strings[attack_style], sizeof(attack_style_strings[attack_style]));
+			vram_write(attack_style_strings[savegame.attack_style], sizeof(attack_style_strings[savegame.attack_style]));
 
 			// difficulty
 			for (i = 0; i < 4; ++i)
@@ -4145,15 +4155,15 @@ void go_to_state(unsigned char new_state)
 						// take control of SRAM.
 						POKE(0x4016, 2);
 #endif // #if VS_SRAM_ENABLED			
-						vram_write(high_scores_vs_initials[attack_style][i][j], 3);
+						vram_write(high_scores_vs_initials[savegame.attack_style][i][j], 3);
 
 						// re-use cur_score. Means this can't be done during gameplay.
-						//cur_score = high_scores_vs_value[attack_style][i][j];
+						//cur_score = high_scores_vs_value[savegame.attack_style][i][j];
 
 						// vram_adr(NTADR_A(in_x + 4,in_y+j));
 						// vram_put('0' + cur_score);
 
-						temp_score = high_scores_vs_value[attack_style][i][j];
+						temp_score = high_scores_vs_value[savegame.attack_style][i][j];
 #if VS_SRAM_ENABLED						
 						// Reliquish control of SRAM.
 						POKE(0x4016, 0);
@@ -4320,7 +4330,7 @@ void display_highscore()
 	static unsigned long temp_score;
 	static unsigned char i;
 
-	temp_score = high_scores[attack_style];
+	temp_score = savegame.high_scores[savegame.attack_style];
 
 	// clear out any old score.
 	multi_vram_buffer_horz("0000000", 7, get_ppu_addr(0, 17<<3, 27<<3));
@@ -4974,16 +4984,16 @@ void display_options()
 
 	multi_vram_buffer_horz(&starting_levels[cur_level], 1, get_ppu_addr(0,17<<3,start_y<<3));
 	PRINT(15,7, digits[cur_level]);
-	multi_vram_buffer_horz(attack_style_strings[attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
-	PRINT(5,3, attack_style_strings[attack_style]);
-	PRINT(5,4, attack_style__desc_strings_01[attack_style]);
-	PRINT(5,5, attack_style__desc_strings_02[attack_style]);
-	multi_vram_buffer_horz(off_on_string[music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
-	PRINT(13,8, off_on_string[music_on]);
-	multi_vram_buffer_horz(off_on_string[sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
-	PRINT(13,9, off_on_string[sfx_on]);
-	multi_vram_buffer_horz(hard_drop_types[hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
-	PRINT(12,10, hard_drop_types[hard_drops_on]);
+	multi_vram_buffer_horz(attack_style_strings[savegame.attack_style], ATTACK_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+2)<<3));
+	PRINT(5,3, attack_style_strings[savegame.attack_style]);
+	PRINT(5,4, attack_style__desc_strings_01[savegame.attack_style]);
+	PRINT(5,5, attack_style__desc_strings_02[savegame.attack_style]);
+	multi_vram_buffer_horz(off_on_string[savegame.music_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+4)<<3));
+	PRINT(13,8, off_on_string[savegame.music_on]);
+	multi_vram_buffer_horz(off_on_string[savegame.sfx_on], OFF_ON_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+6)<<3));
+	PRINT(13,9, off_on_string[savegame.sfx_on]);
+	multi_vram_buffer_horz(hard_drop_types[savegame.hard_drops_on], HARD_DROP_STRING_LEN, get_ppu_addr(0,17<<3,(start_y+8)<<3));
+	PRINT(12,10, hard_drop_types[savegame.hard_drops_on]);
 
 	// // NOTE: One redundant call.
 	// multi_vram_buffer_horz(option_empty, 2, get_ppu_addr(0, 7<<3, (start_y)<<3));
