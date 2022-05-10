@@ -147,22 +147,22 @@ UINT8 sprite_data[4];
 
 MUST:
 
-* Add GB Credits (add make more visible)
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
+* BUG: Konami code crashes the game.
 
 SHOULD:
 
 * [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SIO] More variety in garbage.
 * [SIO] Play sound effect/visuals when garbage incoming.
-* Add "save" support.
 * Bottom of well looks weird going straight into water.
-* High contrast mode.
-* Add Thank You.
+* Add sound effects to main menu player select.
+* Add sound effect to advancing from main menu to settings.
 
 PROBABLY CUT:
 
+* High contrast mode.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
@@ -853,8 +853,8 @@ void UPDATE()
 			if (tick_count == 120 || pad_all_new & PAD_ALL_BUTTONS)
 			{
 				fade_to_black();
-				//go_to_state(STATE_TY);
-				go_to_state(STATE_MENU);
+				go_to_state(STATE_TY);
+				//go_to_state(STATE_MENU);
 				fade_from_black();
 			}
 			break;
@@ -3335,8 +3335,8 @@ void go_to_state(unsigned char new_state)
 
 	switch (state)
 	{
-		case STATE_BOOT:
-		//case STATE_TY:
+		//case STATE_BOOT:
+		case STATE_TY:
 		case STATE_SOUND_TEST:
 		{
 			MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);
