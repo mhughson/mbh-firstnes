@@ -308,6 +308,7 @@ void memfill(void *dst,unsigned char value,unsigned int len) { memset(dst, value
 #define PAD_RIGHT		J_RIGHT
 #define PAD_ALL         0xff
 #define PAD_ALL_BUTTONS (PAD_A|PAD_B|PAD_SELECT|PAD_START)
+#define PAD_ALL_CONFIRM (PAD_A|PAD_START)
 
 // #define OAM_FLIP_V		0x80
 // #define OAM_FLIP_H		0x40

@@ -25,6 +25,10 @@ typedef struct {
   // This stores an enum for the 3 types of hard drop (off, hold, and tap).
   unsigned char hard_drops_on;
 
+  // After the starting level is chosen, we save that (in SRAM) so that if 
+  // the player restarts, they restart at the same level.
+  unsigned char saved_starting_level;
+
 } Savegame;
 
 extern Savegame savegame;

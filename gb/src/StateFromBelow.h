@@ -334,10 +334,6 @@ unsigned char block_style;
 
 // Display for the starting levels on the settings screen.
 const unsigned char starting_levels[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-// After the starting level is chosen, we save that (in RAM) so that if 
-// the player restarts, they restart at the same level.
-// NOTE: The game does not feature battery save.
-unsigned char saved_starting_level;
 
 // In the case of "hold" hard drops, this tracks how much time remains of
 // the player holding UP before the block hard drops.

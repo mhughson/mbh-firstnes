@@ -149,7 +149,6 @@ MUST:
 
 * [SGB] Title screen colors are all wrong now.
 * [SGB] Options screen colors are wrong now.
-* BUG: Konami code crashes the game.
 
 SHOULD:
 
@@ -959,7 +958,7 @@ void UPDATE()
 
 			// If the player presses STARRT while selecting
 			// the "2 player" option.
-			if (pad_all_new & PAD_START && 
+			if (pad_all_new & PAD_ALL_CONFIRM && 
 				sub_state == 1 && 
 				cur_option == 1)
 			{
@@ -1060,18 +1059,18 @@ void UPDATE()
 				// If play player presses START while selecting
 				// 1-player, or if there is a host event 
 				// (happens on both host and client).
-				if ((pad_all_new & PAD_START && cur_option == 0) || host_advanced)
+				if ((pad_all_new & PAD_ALL_CONFIRM && cur_option == 0) || host_advanced)
 	#endif //VS_SYS_ENABLED
 				{
 
 	#if !VS_SYS_ENABLED
-					if (cur_konami_index >= KONAMI_CODE_LEN)
-					{
-						SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
-						StopMusic;
-						go_to_state(STATE_SOUND_TEST);
-					}
-					else
+					// if (cur_konami_index >= KONAMI_CODE_LEN)
+					// {
+					// 	SFX_PLAY_WRAPPER(SOUND_LEVELUP_MULTI);
+					// 	StopMusic;
+					// 	go_to_state(STATE_SOUND_TEST);
+					// }
+					// else
 	#endif //#if !VS_SYS_ENABLED
 					{
 						// If we got here through an SIO event, this is an SIO game.
@@ -1328,6 +1327,7 @@ void UPDATE()
 				// receive_byte();
 			}
 
+			// Only accept "Start" because holding "A" means skip 10 levels.
 			if ((pad_all_new & PAD_START && is_host) || host_advanced)
 			{
 				if (!host_advanced)
@@ -3350,7 +3350,7 @@ void go_to_state(unsigned char new_state)
 			bank_spr(1);
 #endif
 			pal_bg(palette_bg);
-			saved_starting_level = cur_level;
+			savegame.saved_starting_level = cur_level;
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			row_to_clear = -1;
 			start_delay_remaining = START_DELAY;
@@ -3527,7 +3527,7 @@ void go_to_state(unsigned char new_state)
 				// On the NES, this was done below in the else...gameover case, but that is
 				// all commented out now.
 				//reset_gameplay_area();
-				cur_level = saved_starting_level;
+				cur_level = savegame.saved_starting_level;
 
 				// Disabled for now. If this is needed in the end remember
 				// to push the current_bank first.
@@ -4912,7 +4912,7 @@ void reset_gameplay_area()
 
 	// Reset stats.
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_score = 0;
-	cur_level = saved_starting_level;
+	cur_level = savegame.saved_starting_level;
 	fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 	row_to_clear = -1;
 	delay_lock_remaining = -1;
