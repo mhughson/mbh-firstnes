@@ -579,7 +579,7 @@ void START()
 	cur_nt = 2;
 
 #if PLAT_GB
-	INIT_FONT(font, PRINT_BKG);
+	//INIT_FONT(font, PRINT_BKG);
 	//vram_unrle(title_and_game_area);
 	//InitScroll(BANK(title_and_game_area), &title_and_game_area, 0, 0);
 #else
@@ -3504,9 +3504,11 @@ void go_to_state(unsigned char new_state)
 				// Using PNG for backgrounds causes the DMG version to look bad
 				// because the palettes get mapped poorly. To avoid this, we just
 				// have a unique background for the DMG consoles.
+				unsigned char cloud_tile = 0x13;
 				if (_cpu == CGB_TYPE) 		
 				{		
 					InitScroll(BANK(title_screen), &title_screen, 0, 0);
+					cloud_tile = 0x14;
 				}
 				else	
 				{		
@@ -3515,8 +3517,8 @@ void go_to_state(unsigned char new_state)
 
 				for (i = 0; i < 5; ++i)
 				{
-					UPDATE_TILE_BY_VALUE(7+i, 6, 0xff, 0x10);
-					UPDATE_TILE_BY_VALUE(7+i, 7, 0xff, 0x10);
+					UPDATE_TILE_BY_VALUE(7+i, 6, cloud_tile, 0x10);
+					UPDATE_TILE_BY_VALUE(7+i, 7, cloud_tile, 0x10);
 				}
 
  				MUSIC_PLAY_ATTRACT_WRAPPER(MUSIC_TITLE);				
