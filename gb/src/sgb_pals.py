@@ -1,7 +1,7 @@
 
 import array
 
-pal_in = array.array('i', [
+pal_title = array.array('i', [
     0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
@@ -24,25 +24,53 @@ pal_in = array.array('i', [
     0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
     ])
 
-pal_out = array.array('i', [])
+pal_settings = array.array('i', [
+    3,3,3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,3,3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,0,3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,0,0,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,0,0,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,0,0,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
 
-for i in range (0, int(len(pal_in)), 4):
+    3,1,1,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,1,1,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,3,
+    3,1,1,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,3,0,
+    3,1,1,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3,0,0,
+    3,1,1,0,3,3,3,3,3,3, 3,3,3,3,3,3,0,3,0,0,
+    3,1,1,0,3,3,3,3,3,3, 3,3,3,3,3,0,0,0,0,0,
 
-    b = pal_in[i] << 6
-    b |= pal_in[i+1] << 4
-    b |= pal_in[i+2] << 2
-    b |= pal_in[i+3]
-    pal_out.append(b)
+    3,1,1,0,0,3,3,3,3,3, 3,3,3,3,3,0,0,0,1,1,
+    3,1,1,0,0,3,3,3,3,3, 3,3,3,0,3,0,0,2,2,2,
+    2,1,1,0,0,0,0,0,3,3, 3,3,3,0,1,1,1,2,2,2,
+    2,2,2,2,0,0,0,0,2,2, 2,2,2,0,1,1,1,2,2,2,
+    2,2,2,2,2,2,1,2,1,1, 1,2,2,1,1,2,2,2,2,2,
+    2,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,
+    ])
 
-print("---- writing to file ----")
+def create_att(pal_in, name):
 
-newfile = open('src/sgb_menu_pal_attr.h', 'w')
+    pal_out = array.array('i', [])
 
-for i in range(0, 3):
+    for i in range (0, int(len(pal_in)), 4):
 
-    newfile.write("const UINT8 menu_pal_attr_" + str(i) + "[] = { (SGB_ATTR_CHR << 3) | 3, 0, " + str(i*6) + ", 0, 120, 0, \n")
+        b = pal_in[i] << 6
+        b |= pal_in[i+1] << 4
+        b |= pal_in[i+2] << 2
+        b |= pal_in[i+3]
+        pal_out.append(b)
 
-    for j in range((i*30), (i*30)+30 ):
-        newfile.write(str(pal_out[j]) + ", ")
+    print("---- writing to file ----")
 
-    newfile.write("\n};\n\n")
+    newfile = open('src/sgb_' + name + '_pal_attr.h', 'w')
+
+    for i in range(0, 3):
+
+        newfile.write("const UINT8 " + name + "_pal_attr_" + str(i) + "[] = { (SGB_ATTR_CHR << 3) | 3, 0, " + str(i*6) + ", 0, 120, 0, \n")
+
+        for j in range((i*30), (i*30)+30 ):
+            newfile.write(str(pal_out[j]) + ", ")
+
+        newfile.write("\n};\n\n")
+
+create_att(pal_title, "menu")
+create_att(pal_settings, "settings")

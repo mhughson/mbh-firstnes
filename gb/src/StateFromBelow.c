@@ -147,8 +147,6 @@ UINT8 sprite_data[4];
 
 MUST:
 
-* [SGB] Title screen colors are all wrong now.
-* [SGB] Options screen colors are wrong now.
 
 SHOULD:
 
@@ -3922,7 +3920,7 @@ void go_to_state(unsigned char new_state)
 					cur_high_water_row = &game_board[(BOARD_OOB_END + 1) * BOARD_WIDTH];
 				}
 
-				sgb_int_gameplay();
+				sgb_init_gameplay();
 
 				PRINT_POS(0,1);
 				Printf("%d", send_result);
@@ -5050,7 +5048,14 @@ void fade_from_black()
 	// color.
 	// To fix this, we set the real colors right before FadeOut to set the proper
 	// destination colors.
-	BGP_REG = PAL_DEF(0, 1, 2, 3);
+	// if (state == STATE_OPTIONS && sgb_check() != 0 )
+	// {
+	// 	BGP_REG = PAL_DEF(3, 2, 1, 0);
+	// }
+	// else
+	{
+		BGP_REG = PAL_DEF(0, 1, 2, 3);
+	}
 	// NOTE: Shifting colors right to account for transparent Col0.
 	OBP0_REG = PAL_DEF(0, 0, 1, 2);
 	// Blinking requires darkest shade. Although, if this becomes a problem

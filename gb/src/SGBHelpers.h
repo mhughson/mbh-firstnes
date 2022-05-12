@@ -19,6 +19,9 @@ UINT8 sound_a_pitch_table[] = {2,3,3,3,3,3,3,3,2,2,2,2,1,1,1,3,3,0,0,3,3,3,2,3,3
 UINT8 sound_b_pitch_table[] = {0,2,2,2,1,1,1,2,0,0,0,0,3,2,3,3,1,0,1,2,0,3,2,3,0,0};
 
 #include "sgb_menu_pal_attr.h"
+#include "sgb_settings_pal_attr.h"
+
+void sgb_init_pals();
 
 void sgb_play_sounda(UINT8 index)
 {
@@ -77,8 +80,10 @@ void sgb_stop_testsound()
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
 }
 
-void sgb_int_gameplay()
+void sgb_init_gameplay()
 {
+    sgb_init_pals();
+
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
 
     // memset(map_buf, 0, sizeof(map_buf));
@@ -447,26 +452,126 @@ void sgb_init_menu()
 void sgb_init_settings()
 {
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE); 
-    
+
+
+/// PALETTES
+
+    UINT16 col;
+
+    //#define SHARED_SETTINGS_BG_COL RGB2(0, 0, 0)
+    #define SHARED_SETTINGS_BG_COL RGB2(31, 27, 20)
+    #define SHARED_SETTINGS_DARK_BLUE RGB2(3, 4, 6)
+    #define SHARED_SETTINGS_LIGHT_GREY RGB2(23, 23, 23)
+    #define SHARED_SETTINGS_DARK_GREY RGB2(12, 12, 12)
+    #define SHARED_SETTINGS_BLACK RGB2(0,0,0)
+
+    #define SHARED_SETTINGS_UNUSED RGB2(31, 0, 31)
+
+    SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_FREEZE);
+
     memset(map_buf, 0, sizeof(map_buf));
-    map_buf[0] = (SGB_ATTR_DIV << 3) | 3;
-    // 2 bits - pal below
-    // 2 bits - pal above
-    // 2 bits - pal on line
-    // 1 bit - 1 split up/down
-    map_buf[1] = 0	| (0 << 2) | (0 << 4) | (1 << 6);
-    map_buf[2] = 0;	
+
+    map_buf[0] = (SGB_PAL_01 << 3) | 1;
+ 
+    // Sky and Water
+    //
+
+    col = SHARED_SETTINGS_BG_COL;
+    map_buf[1] = COL_LOW(col);
+    map_buf[2] = COL_HIGH(col);
+
+    // pal 0 - col 1 - Sky / Light Water
+    col = RGB2(6, 13, 10); //SHARED_SETTINGS_DARK_BLUE
+    map_buf[3] = COL_LOW(col);
+    map_buf[4] = COL_HIGH(col);
+
+    // pal 0 - col 2 - Dark Green Plant
+    col = SHARED_SETTINGS_DARK_BLUE// RGB2(6, 13, 10);
+    map_buf[5] = COL_LOW(col);
+    map_buf[6] = COL_HIGH(col);
+
+    // pal 0 - col 3 - Light Green Plant
+    col = SHARED_SETTINGS_BLACK //RGB2(16, 24, 13);
+    map_buf[7] = COL_LOW(col);
+    map_buf[8] = COL_HIGH(col);
+
+    // Stone
+    //
+
+    // pal 1 - col 1
+    col = SHARED_SETTINGS_DARK_GREY //SHARED_SETTINGS_DARK_BLUE;
+    map_buf[9] = COL_LOW(col);
+    map_buf[10] = COL_HIGH(col);
+    // pal 1 - col 2 - Stone Grey
+    col = SHARED_SETTINGS_DARK_BLUE //SHARED_SETTINGS_DARK_GREY
+    map_buf[11] = COL_LOW(col);
+    map_buf[12] = COL_HIGH(col);
+    // pal 1 - col 3 - sand
+    col = SHARED_SETTINGS_BLACK //RGB2(31, 27, 20);
+    map_buf[13] = COL_LOW(col);
+    map_buf[14] = COL_HIGH(col);	
+
+    sgb_transfer(map_buf);	
+
+
+    memset(map_buf, 0, sizeof(map_buf));
+
+    // Kraken
+    //
+
+    map_buf[0] = (SGB_PAL_23 << 3) | 1;
+    
+    // Background
+    col = SHARED_SETTINGS_BG_COL;
+    map_buf[1] = COL_LOW(col);
+    map_buf[2] = COL_HIGH(col);
+
+    // pal 2 - col 1 
+    col = SHARED_SETTINGS_DARK_GREY //SHARED_SETTINGS_DARK_BLUE
+    map_buf[3] = COL_LOW(col);
+    map_buf[4] = COL_HIGH(col);
+    // pal 2 - col 2 
+    col = SHARED_SETTINGS_DARK_BLUE //SHARED_SETTINGS_DARK_GREY
+    map_buf[5] = COL_LOW(col);
+    map_buf[6] = COL_HIGH(col);
+    // pal 2 - col 3 
+    col = SHARED_SETTINGS_BLACK //RGB2(23, 23, 23);
+    map_buf[7] = COL_LOW(col);
+    map_buf[8] = COL_HIGH(col);
+
+    // ///
+
+    // pal 3 - col 1 - menu highlight blue
+    col = SHARED_SETTINGS_UNUSED //RGB2(16, 18, 31);
+    map_buf[9] = COL_LOW(col);
+    map_buf[10] = COL_HIGH(col);
+    // pal 3 - col 2 - dark green
+    col = RGB2(16, 18, 31); //SHARED_SETTINGS_UNUSED
+    map_buf[11] = COL_LOW(col);
+    map_buf[12] = COL_HIGH(col);
+    // pal 3 - col 3 - white
+    col = SHARED_SETTINGS_BLACK //RGB2(31, 31, 31);
+    map_buf[13] = COL_LOW(col);
+    map_buf[14] = COL_HIGH(col);	
+
     sgb_transfer(map_buf);
 
-    // disabled for now because the palettes got all messed up.
-    // memset(map_buf, 0, sizeof(map_buf));
-    // map_buf[0] = (SGB_ATTR_LIN << 3) | 3;
-    // map_buf[1] = 1;
-    // // 5 bits - line number
-    // // 2 bits - pal
-    // // 1 bit - 1 horz
-    // map_buf[2] = (17U) | (2U << 5) | (1U << 7);
-    // sgb_transfer(map_buf);	
+/// END PALETTES
+
+//      Byte  Content
+//  0     Command*8+Length (length=1..6)
+//  1     Beginning X-Coordinate
+//  2     Beginning Y-Coordinate
+//  3-4   Number of Data Sets (1-360)
+//  5     Writing Style   (0=Left to Right, 1=Top to Bottom)
+//  6     Data Sets 1-4   (Set 1 in MSBs, Set 4 in LSBs)
+//  7     Data Sets 5-8   (if any)
+//  8     Data Sets 9-12  (if any)
+//  etc.
+
+    sgb_transfer(settings_pal_attr_0);
+    sgb_transfer(settings_pal_attr_1);
+    sgb_transfer(settings_pal_attr_2);
 
     SGB_TRANSFER((SGB_MASK_EN << 3) | 1, SGB_SCR_UNFREEZE); 
 }
