@@ -153,6 +153,8 @@ SHOULD:
 * [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SIO] More variety in garbage.
 * [SIO] Play sound effect/visuals when garbage incoming.
+* [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
+* [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
 * Bottom of well looks weird going straight into water.
 * Add sound effects to main menu player select.
 * Add sound effect to advancing from main menu to settings.
@@ -550,6 +552,9 @@ void START()
 		remove_LCD(LCD_isr);
 		LYC_REG = 0;
 		add_LCD(my_interrupt);
+
+		// LCD_isr may have left sprites in a hidden state!
+		SHOW_SPRITES;
 	}
 
 	CRITICAL {
@@ -637,7 +642,8 @@ void START()
 #endif //#if VS_SYS_ENABLED
 	pal_bright(0);
 	go_to_state(STATE_BOOT);
-	fade_from_black();
+	// removed to fix flash at boot.
+	//fade_from_black();
 
 #if VS_SRAM_ENABLED
 	//one_vram_buffer('0', get_ppu_addr(0, 24, 32));
