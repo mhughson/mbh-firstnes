@@ -2813,7 +2813,9 @@ void movement(void)
 
 		// This pains me, but I am NOT implementing this fix for the NES version to avoid
 		// complicating high scores ("which version did you get the score on!?").
-#if VS_SYS_ENABLED
+		// Enabling the fix on GB since that feels like a different experience overall and
+		// score will not be 1:1 with NES anyway.
+#if VS_SYS_ENABLED || PLAT_GB
 		// If we are charging into a wall, instantly clear the button delay.
 		// this is because we WANT pieces to tuck into walls when charged against them.
 		// Without this, it will only TRY to tuck when horz_button_delay reaches 0 with DAS,
