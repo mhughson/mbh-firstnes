@@ -969,6 +969,7 @@ void UPDATE()
 				// Send out the HOST START event. It only does something
 				// if we get an ack back.
 				_io_out = MP_TITLE_HOST_START;
+				// fire and forget
 				send_byte();
 				while((_io_status == IO_SENDING));
 				receive_byte();
@@ -984,8 +985,13 @@ void UPDATE()
 					host_advanced = 1;
 					is_host = 0;
 					_io_out = MP_TITLE_HOST_ACK;
-					send_byte();
-					while((_io_status == IO_SENDING));
+					// needs to be reliable
+					// NOTE: This can likely result in repeat ACK events.
+					do
+					{
+						send_byte();
+						while((_io_status == IO_SENDING));
+					} while (_io_status != IO_IDLE);
 					// jump to the next start if we aren't there already so that
 					// it will move to the next scren.
 					sub_state = 1;
@@ -1007,10 +1013,11 @@ void UPDATE()
 				receive_byte();
 			}
 
-			if (sub_state == 0) // PRESS START state.
+			if (sub_state == 0)
 			{
-				if (pad_all & PAD_ALL_BUTTONS)
-				{
+				if (pad_all & PAD_ALL_CONFIRM)
+				{					
+					SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 					sub_state = 1;
 
 					UINT8 p1 = '\x35';
@@ -1041,6 +1048,7 @@ void UPDATE()
 				{
 					if (cur_option == 1)
 					{
+						SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 						cur_option = 0;
 					}
 				}
@@ -1048,6 +1056,7 @@ void UPDATE()
 				{
 					if (cur_option == 0)
 					{
+						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 						cur_option = 1;
 					}
 				}
@@ -1111,6 +1120,9 @@ void UPDATE()
 				// 	go_to_state(STATE_OPTIONS);
 				// 	fade_from_black();
 				// }
+
+				
+				SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
 
 				// Currently this substate isn't actually used. It was put in 
 				// place to allow a scroll/fade out but it caused too many
@@ -1337,6 +1349,7 @@ void UPDATE()
 				if (!host_advanced)
 				{
 					queued_packet |= MP_OPTIONS_MENU_ADVANCE;
+					queued_packet_required = 1;
 					send_queued_packet();
 				}
 
@@ -1617,9 +1630,10 @@ void UPDATE()
 				other_lost = (packet_in & MP_GAME_OTHER_LOST) >> MP_GAME_OTHER_LOST_SHIFT;
 
 				++packet_count_in;
-				// PRINT_POS(0,4);
-				// Printf("I:%d %d %d", packet_count_in, garbage_rows, other_lost);
-
+	#if DEBUG_ENABLED
+				PRINT_POS(0,4);
+				Printf("I:%d %d %d", other_highwater, garbage_rows, other_lost);
+	#endif // DEBUG_ENABLED
 				// Start listening again...
 				receive_byte();
 			}
@@ -3751,11 +3765,11 @@ void go_to_state(unsigned char new_state)
 				if (is_sio_game)
 				{
 					// TODO: Delay may not actually be needed now that fade was moved to after this.
-					#define SAFE_DELAY (5) // 30, 2x60 works
-					send_result = 0;
+					#define SAFE_DELAY (60) // 30, 2x60 works
 
 					PRINT_POS(0,0);
-					Printf("0");
+					Printf("3");
+					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 					if (is_host)
 					{
@@ -3771,10 +3785,9 @@ void go_to_state(unsigned char new_state)
 							while(_io_status == IO_SENDING);
 						//} while (_io_status == IO_ERROR);
 
-						send_result |= _io_status;
-
 						PRINT_POS(0,0);
-						Printf("1");
+						Printf("2");
+						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						// Now wait for client to get the upper byte and send
 						// back and ACK.
@@ -3782,7 +3795,8 @@ void go_to_state(unsigned char new_state)
 						while(_io_status == IO_RECEIVING);
 
 						PRINT_POS(0,0);
-						Printf("2");
+						Printf("1");
+						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						// Client has sent ACK. Value doesn't matter, as we just
 						// assume success at this point.
@@ -3796,17 +3810,17 @@ void go_to_state(unsigned char new_state)
 							_io_out = (tick_count_large & 0xff);
 							send_byte();
 							while(_io_status == IO_SENDING);
-						//} while (_io_status == IO_ERROR);
+						//} while (_io_status != IO_IDLE);
 
 						PRINT_POS(0,0);
-						Printf("3");
-
-						send_result |= _io_status;
+						Printf("0");
+						//SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Seed the RNG with this synced value.
-						srand(tick_count_large);
+						srand(0xffff);
 
-						seed_value = tick_count_large;
+						seed_value = 0xffff;
 					}
 					else
 					{
@@ -3822,7 +3836,8 @@ void go_to_state(unsigned char new_state)
 						seed_value = (_io_in << 8);
 
 						PRINT_POS(0,0);
-						Printf("1");
+						Printf("2");
+						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						vbl_delay(SAFE_DELAY);
 						//do
@@ -3832,12 +3847,11 @@ void go_to_state(unsigned char new_state)
 							_io_out = 0x69;
 							send_byte();
 							while(_io_status == IO_SENDING);
-						//} while (_io_status == IO_ERROR);
-
-						send_result |= _io_status;
+						//} while (_io_status  != IO_IDLE);
 
 						PRINT_POS(0,0);
-						Printf("2");
+						Printf("1");
+						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						// The second byte should be arriving next.
 						receive_byte();
@@ -3845,7 +3859,9 @@ void go_to_state(unsigned char new_state)
 						seed_value |= _io_in;
 
 						PRINT_POS(0,0);
-						Printf("3");
+						Printf("0");
+						//SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
+						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Seed the RNG with this synced value.
 						srand(seed_value);
@@ -3888,7 +3904,12 @@ void go_to_state(unsigned char new_state)
 #endif //!VS_SYS_ENABLED
 				// scroll_y_game = 0;
 				// scroll(0, scroll_y_game);
-				
+
+#if DEBUG_ENABLED
+				PRINT_POS(0,4);
+				Printf("SEED:%d", seed_value);
+#endif // DEBUG_ENABLED
+
 				INIT_FONT(font_gameplay, PRINT_BKG);
 				InitScroll(BANK(gameplay_map), &gameplay_map, 0, 0);
 				// Clear out the temp tiles used to force tile index.
@@ -3896,6 +3917,11 @@ void go_to_state(unsigned char new_state)
 				// UPDATE_TILE_BY_VALUE(1,0,3,NULL);
 				// UPDATE_TILE_BY_VALUE(2,0,3,NULL);
 				reset_gameplay_area();
+
+#if DEBUG_ENABLED
+				PRINT_POS(0,3);
+				Printf("%d %d", (seed_value>>8), (seed_value&0xff));
+#endif // DEBUG_ENABLED
 
 				//UPDATE_TILE(0,0,&test_bg_tile,0);
 
@@ -3929,9 +3955,6 @@ void go_to_state(unsigned char new_state)
 				}
 
 				sgb_init_gameplay();
-
-				PRINT_POS(0,1);
-				Printf("%d", send_result);
 
 				fade_from_black();
 			}

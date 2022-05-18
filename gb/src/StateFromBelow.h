@@ -1005,8 +1005,6 @@ UINT8 packet_in;
 UINT8 is_sio_game;
 // Tracks the shared seed in SIO matches for debugging.
 UINT16 seed_value;
-// Debug tracking of where the hand shake got to.
-UINT8 send_result;
 // Number of garbage rows queued up.
 UINT8 garbage_row_queue;
 // pointer to the currently evaluated line of the game board
