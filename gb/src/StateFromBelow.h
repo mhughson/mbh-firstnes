@@ -678,12 +678,17 @@ unsigned char game_board_temp[BOARD_SIZE];
 // An empty row of the board is just 10 0's. Used for quick memcpy.
 const char empty_row[10] = { EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE,  };
 // TODO: It would be nice to have a more random selection.
-const UINT8 garbage_row[10] = { 29, 29, 0, 29, 29, 29, 29, 29, 29, 29 };
+const UINT8 garbage_row[19] = { 29, 29, 29, 29, 29, 29, 29, 29, 29, 0, 29, 29, 29, 29, 29, 29, 29, 29, 29 };
 // When selecting an option in the settings screen, and little cursor moves around.
 // This is done via the nametable, and these are the sprites used to clear and set
 // that cursor.
 const unsigned char option_empty[] = {0x0, 0x0};
 const unsigned char option_icon[] = {0x25, 0x26};
+
+// current offset for spawning garbage rows.
+unsigned char garbage_offset;
+// current number of garbage rows that have been spawned. Will switch offset after 9 are spawned.
+unsigned char garbage_row_count;
 
 // copy_board_to_nt()
 unsigned char copy_board_data[BOARD_HEIGHT];

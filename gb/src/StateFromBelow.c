@@ -149,7 +149,6 @@ BETA:
 
 * BUG: If the tentacle is pushing blocks up when you die, then you first die, the tentacle will disappear and you just see the "blocks". 
        But then, on the game over screen, just for a split second, the tentacle randomly appears again and then disappears. 
-* BUG: Garbage well should shift after every 9th row.
 * BUG: Stress music starts 1 row too early.
 * BUG: Game hangs at Credits Screen on TGB Dual core.
 * BUG: GAME OVER graphics are chopped at the bottom.
@@ -170,7 +169,7 @@ BETA FIXED:
 * BUG: Flash on intiali boot.
 * BUG: Doesn't work on DSi emulator.
 * BUG: Sprites don't appear on mGBA core.
-
+* BUG: Garbage well should shift after every 9th row.
 
 
 MUST:
@@ -179,7 +178,7 @@ MUST:
 SHOULD:
 
 * [SGB] Long delay setting attributes. Can this be done with linear array?
-* [SIO] More variety in garbage.
+* [SIO] More variety in garbage tiles.
 * [SIO] Play sound effect/visuals when garbage incoming.
 * [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
 * [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
@@ -2778,6 +2777,8 @@ void movement(void)
 		//add_block_at_bottom();
 		//spawn_new_cluster();
 
+		//add_garbage_row_at_bottom(4);
+
 		// Don't allow forcing the tentacle up while it is on the way down.
 		// Not too serious, but looks weird when the height in increases
 		// while the sprites are not moving up.
@@ -3844,9 +3845,9 @@ void go_to_state(unsigned char new_state)
 						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Seed the RNG with this synced value.
-						srand(0xffff);
+						srand(tick_count_large);
 
-						seed_value = 0xffff;
+						seed_value = tick_count_large;
 					}
 					else
 					{
@@ -4954,9 +4955,17 @@ void add_garbage_row_at_bottom(UINT8 num_rows)
 		memcpy(&game_board[TILE_TO_BOARD_INDEX(0, dest_row)], &game_board[TILE_TO_BOARD_INDEX(0, dest_row + num_rows)], BOARD_WIDTH);
 	}
 
-	for (dest_row = BOARD_END_Y_PX_BOARD; dest_row > (BOARD_END_Y_PX_BOARD - num_rows); --dest_row)
+	for (dest_row = (BOARD_END_Y_PX_BOARD - num_rows + 1); dest_row <= BOARD_END_Y_PX_BOARD ; ++dest_row)
 	{
-		memcpy(&game_board[TILE_TO_BOARD_INDEX(0, dest_row)], garbage_row, BOARD_WIDTH);
+		memcpy(&game_board[TILE_TO_BOARD_INDEX(0, dest_row)], garbage_row + garbage_offset, BOARD_WIDTH);
+
+		++garbage_row_count;
+
+		if (garbage_row_count >= 9)
+		{
+			garbage_offset = (unsigned char)rand() % 10u;
+			garbage_row_count = 0;
+		}
 	}
 
 	copy_board_to_nt();
@@ -4979,6 +4988,10 @@ void reset_gameplay_area()
 	delay_spawn_remaining = -1;
 	level_up_remaining = 0;
 	garbage_row_queue = 0;
+
+	garbage_offset = (unsigned char)rand() % 10u;
+	garbage_row_count = 0;
+
 	// We don't want the previous round's blocks to impact the choice
 	// the starting blocks next round, as that will cause a desync in 
 	// sio matches.
