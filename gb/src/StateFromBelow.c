@@ -145,6 +145,34 @@ UINT8 sprite_data[4];
 
 --GB--
 
+BETA:
+
+* BUG: If the tentacle is pushing blocks up when you die, then you first die, the tentacle will disappear and you just see the "blocks". 
+       But then, on the game over screen, just for a split second, the tentacle randomly appears again and then disappears. 
+* BUG: Garbage well should shift after every 9th row.
+* BUG: Stress music starts 1 row too early.
+* BUG: Game hangs at Credits Screen on TGB Dual core.
+* BUG: GAME OVER graphics are chopped at the bottom.
+* FEEDBACK: Consider removing H.Drop HOLD setting.
+* FEEDBACK: Add more colors to pieces.
+* FEEDBACK: Make On/Off options loop.
+* FEEDBACK: Stress music is annoying.
+* FEEDBACK: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
+* FEEDBACK: Add "First to 3 wins" to SIO, as well as overall win tracking.
+* FEEDBACK: Score/Level/Lines are too cramped.
+* FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
+* FEEDBACK: Bring menu palette into gameplay.
+* INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2.
+
+
+BETA FIXED:
+
+* BUG: Flash on intiali boot.
+* BUG: Doesn't work on DSi emulator.
+* BUG: Sprites don't appear on mGBA core.
+
+
+
 MUST:
 
 
@@ -156,8 +184,6 @@ SHOULD:
 * [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
 * [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
 * Bottom of well looks weird going straight into water.
-* Add sound effects to main menu player select.
-* Add sound effect to advancing from main menu to settings.
 
 PROBABLY CUT:
 
