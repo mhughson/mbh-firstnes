@@ -147,8 +147,6 @@ UINT8 sprite_data[4];
 
 BETA:
 
-* BUG: If the tentacle is pushing blocks up when you die, then you first die, the tentacle will disappear and you just see the "blocks". 
-       But then, on the game over screen, just for a split second, the tentacle randomly appears again and then disappears. 
 * BUG: Stress music starts 1 row too early.
 * BUG: Game hangs at Credits Screen on TGB Dual core.
 * BUG: GAME OVER graphics are chopped at the bottom.
@@ -170,6 +168,8 @@ BETA FIXED:
 * BUG: Doesn't work on DSi emulator.
 * BUG: Sprites don't appear on mGBA core.
 * BUG: Garbage well should shift after every 9th row.
+* BUG: If the tentacle is pushing blocks up when you die, then you first die, the tentacle will disappear and you just see the "blocks". 
+       But then, on the game over screen, just for a split second, the tentacle randomly appears again and then disappears. 
 
 
 MUST:
@@ -1720,7 +1720,11 @@ void UPDATE()
 
 //PROFILE_POKE(PROF_B);
 
-			draw_gameplay_sprites();
+			// Handle the case where we hit game over earlier in this thread.
+			if (state == STATE_GAME)
+			{
+				draw_gameplay_sprites();
+			}
 
 //PROFILE_POKE(PROF_W);
 
@@ -1925,7 +1929,6 @@ void UPDATE()
 				fade_from_black();
 			}
 #else
-
 
 			queued_packet = queued_packet_required = 0;
 
@@ -3957,12 +3960,6 @@ void go_to_state(unsigned char new_state)
 				// "Next" becomes current, and a new next is defined.
 				spawn_new_cluster();
 
-				memfill(attack_row_status, 0, BOARD_WIDTH);
-
-				// where to start the attack!
-				i = (unsigned char)rand() % BOARD_WIDTH;
-				attack_row_status[i] = 1;
-
 				require_new_down_button = 1;
 				if (savegame.attack_style == ATTACK_ON_TIME)
 				{
@@ -4014,7 +4011,7 @@ void go_to_state(unsigned char new_state)
 			clear_vram_buffer();
 
 			// Without this, the "next" block won't appear for the first half of the sequence.
-			draw_gameplay_sprites();
+			//draw_gameplay_sprites();
 
 			StopMusic;
 			MUSIC_PLAY_WRAPPER(MUSIC_GAMEOVER_INTRO);
@@ -4975,6 +4972,9 @@ void add_garbage_row_at_bottom(UINT8 num_rows)
 void reset_gameplay_area()
 {
 	memfill(game_board, EMPTY_TILE, BOARD_SIZE);
+	memfill(attack_row_status, 0, BOARD_WIDTH);
+	// where to start the attack!
+	attack_row_status[(unsigned char)rand() % BOARD_WIDTH] = 1;
 
 	// Reset stats.
 	lines_cleared_one = lines_cleared_ten = lines_cleared_hundred = cur_score = 0;
