@@ -1883,6 +1883,7 @@ void UPDATE()
 
 			if (other_lost && is_sio_game)
 			{
+				++rounds_won;
 				go_to_state(STATE_OVER);
 
 				PRINT(10, 4, "YOU WIN!");
@@ -3290,6 +3291,7 @@ void spawn_new_cluster()
 		// with the normal flow.
 		queued_packet |= (1 << MP_GAME_HIGHWATER_SHIFT);
 
+		++rounds_lost;
 		send_queued_packet();
 		go_to_state(STATE_OVER);
 
@@ -3404,6 +3406,9 @@ void go_to_state(unsigned char new_state)
 			fall_rate = fall_rates_per_level[MIN(cur_level, sizeof(fall_rates_per_level))];
 			row_to_clear = -1;
 			start_delay_remaining = START_DELAY;
+			rounds_won = 0;
+			rounds_lost = 0;
+			matches_won = 0;
 			//display_level();
 			//display_score();
 			break;
@@ -4134,6 +4139,25 @@ void go_to_state(unsigned char new_state)
 			UPDATE_TILE_BY_VALUE(10, 14, 178, 0x10);
 			PRINT(11, 12, "RESTART");
 			PRINT(11, 14, "QUIT   ");
+
+			if (is_sio_game)
+			{
+				PRINT(10,16,"1ST TO 3");
+				PRINT_POS(11, 17);
+				Printf("%d VS %d", rounds_won, rounds_lost);
+
+				if(rounds_lost >= 3 || rounds_won >= 3)
+				{
+					if (rounds_won >= 3)
+					{
+						++matches_won;
+					}
+					rounds_lost = rounds_won = 0;
+				}
+
+				PRINT_POS(10, 18);
+				Printf("WINS: %d", matches_won);
+			}
 #else
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
 			multi_vram_buffer_horz("\x9a\x9b\xba\xbb\x00\x9b\x96\xbb\x9d\xf7", 10, address);

@@ -1023,6 +1023,12 @@ unsigned char prev_high_water;
 // Tracks which current row is being checked from highwater across multiple frames.
 unsigned char high_water_y;
 
+// Tracks wins and losses in SIO matches. Resets every time the player
+// leaves the settings screen.
+unsigned char rounds_won;
+unsigned char rounds_lost;
+unsigned char matches_won;
+
 // #define NUM_BLOCK_PARTICLES 4
 // unsigned int block_particle_x[NUM_BLOCK_PARTICLES];
 // unsigned int block_particle_y[NUM_BLOCK_PARTICLES] ;
