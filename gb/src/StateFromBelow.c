@@ -150,14 +150,18 @@ BETA:
 * BUG: Stress music starts 1 row too early.
 * BUG: Game hangs at Credits Screen on TGB Dual core.
 * BUG: GAME OVER graphics are chopped at the bottom.
+* BUG: No sound fx on countdown during gameplay.
 * FEEDBACK: Consider removing H.Drop HOLD setting.
 * FEEDBACK: Add more colors to pieces.
 * FEEDBACK: Make On/Off options loop.
 * FEEDBACK: Stress music is annoying.
-* FEEDBACK: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * FEEDBACK: Score/Level/Lines are too cramped.
 * FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
 * FEEDBACK: Bring menu palette into gameplay.
+* FEEDBACK: Should be able to pause in versus.
+* FEEDBACK: Should have a "garbage incoming" sound.
+* FEEDBACK: Should be able to cancel incoming garbage.
+* INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2.
 
 
@@ -4172,7 +4176,6 @@ void go_to_state(unsigned char new_state)
 					if (rounds_won >= 3)
 					{
 						++matches_won;
-						matches_won += 11;
 					}
 					rounds_lost = rounds_won = 0;
 				}
