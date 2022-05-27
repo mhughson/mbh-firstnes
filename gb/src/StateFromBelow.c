@@ -155,7 +155,6 @@ BETA:
 * FEEDBACK: Make On/Off options loop.
 * FEEDBACK: Stress music is annoying.
 * FEEDBACK: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
-* FEEDBACK: Add "First to 3 wins" to SIO, as well as overall win tracking.
 * FEEDBACK: Score/Level/Lines are too cramped.
 * FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
 * FEEDBACK: Bring menu palette into gameplay.
@@ -164,7 +163,8 @@ BETA:
 
 BETA FIXED:
 
-* BUG: Flash on intiali boot.
+* FEEDBACK: Add "First to 3 wins" to SIO, as well as overall win tracking.
+* BUG: Flash on intial boot.
 * BUG: Doesn't work on DSi emulator.
 * BUG: Sprites don't appear on mGBA core.
 * BUG: Garbage well should shift after every 9th row.
@@ -183,6 +183,7 @@ SHOULD:
 * [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
 * [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
 * Bottom of well looks weird going straight into water.
+* [SIO] BUG: (Emulicious Only) Sometimes after playing a SP game, and then an MP game, Host will get random "0x55" event triggering a single line to appear.
 
 PROBABLY CUT:
 
@@ -4112,6 +4113,19 @@ void go_to_state(unsigned char new_state)
 				}
 			}
 
+
+			if (is_sio_game)
+			{
+				// clear the area used for the SIO wins/loses.
+				for (i = 0; i < 10; ++i)
+				{
+					for (UINT8 j = 14; j < 17; ++j)
+					{
+						UPDATE_TILE_BY_VALUE(9 + i, 3 + j, 0x0, 0x10);
+					}
+				}
+			}			
+
 			// for(i = 0; i < 9; ++i)
 			// {
 			// 	UPDATE_TILE_BY_VALUE(9, 6 + i, 184, 0x10);
@@ -4142,21 +4156,44 @@ void go_to_state(unsigned char new_state)
 
 			if (is_sio_game)
 			{
-				PRINT(10,16,"1ST TO 3");
-				PRINT_POS(11, 17);
-				Printf("%d VS %d", rounds_won, rounds_lost);
+
+				for (i = 0; i < 3; ++i)
+				{
+					// Wins
+					UPDATE_TILE_BY_VALUE(10 + i, 18, (rounds_won > i) ? 189 : 190, 0x10);
+					// Loses
+					UPDATE_TILE_BY_VALUE(15 + i, 18, (rounds_lost > i) ? 189 : 190, 0x10);
+				}
+
+				PRINT(13, 18, "VS");
 
 				if(rounds_lost >= 3 || rounds_won >= 3)
 				{
 					if (rounds_won >= 3)
 					{
 						++matches_won;
+						matches_won += 11;
 					}
 					rounds_lost = rounds_won = 0;
 				}
 
-				PRINT_POS(10, 18);
-				Printf("WINS: %d", matches_won);
+
+				// Edges of win count text.
+				// TODO: Could be flipped instead of duplicated.
+				UPDATE_TILE_BY_VALUE(11,17, 0xbf, 0x10);
+				UPDATE_TILE_BY_VALUE(16,17, 0xc0, 0x10);
+
+				// Always use 2 digits. Doesn't handle >99 well.
+				if (matches_won < 10)
+				{
+					PRINT_POS(12, 17);
+					Printf("-0%d-", matches_won);
+				}
+				else
+				{
+					PRINT_POS(12, 17);
+					Printf("-%d-", matches_won);
+				}
 			}
 #else
 			address = get_ppu_addr(cur_nt, 96, 14<<3);
