@@ -151,8 +151,8 @@ BETA:
 * BUG: Game hangs at Credits Screen on TGB Dual core.
 * BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: No sound fx on countdown during gameplay.
+* BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
 * FEEDBACK: Consider removing H.Drop HOLD setting.
-* FEEDBACK: Add more colors to pieces.
 * FEEDBACK: Make On/Off options loop.
 * FEEDBACK: Stress music is annoying.
 * FEEDBACK: Score/Level/Lines are too cramped.
@@ -160,6 +160,7 @@ BETA:
 * FEEDBACK: Bring menu palette into gameplay.
 * FEEDBACK: Should be able to pause in versus.
 * FEEDBACK: Should have a "garbage incoming" sound.
+* FEEDBACK: Should have a "garbage filling" sound.
 * FEEDBACK: Should be able to cancel incoming garbage.
 * INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2.
@@ -174,6 +175,12 @@ BETA FIXED:
 * BUG: Garbage well should shift after every 9th row.
 * BUG: If the tentacle is pushing blocks up when you die, then you first die, the tentacle will disappear and you just see the "blocks". 
        But then, on the game over screen, just for a split second, the tentacle randomly appears again and then disappears. 
+
+
+BETA CUT:
+
+* FEEDBACK: Add more colors to pieces.
+
 
 
 MUST:
