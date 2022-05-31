@@ -619,7 +619,7 @@ signed char delay_spawn_remaining;
 
 // How many frames the player must hold UP to trigger a Hard Drop when using the
 // HOLD Hard Drop setting.
-#define HARD_DROP_HOLD_TIME 2
+#define HARD_DROP_HOLD_TIME 5
 
 // Poorly named, this is actually the COLUMN of Tentacle that is currently retreating.
 // -1 if not active.

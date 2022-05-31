@@ -152,7 +152,6 @@ BETA:
 * BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: No sound fx on countdown during gameplay.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
-* FEEDBACK: Consider removing H.Drop HOLD setting.
 * FEEDBACK: Make On/Off options loop.
 * FEEDBACK: Stress music is annoying.
 * FEEDBACK: Score/Level/Lines are too cramped.
@@ -162,12 +161,13 @@ BETA:
 * FEEDBACK: Should have a "garbage incoming" sound.
 * FEEDBACK: Should have a "garbage filling" sound.
 * FEEDBACK: Should be able to cancel incoming garbage.
-* INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2.
 
 
 BETA FIXED:
 
+* INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
+* FEEDBACK: Consider removing H.Drop HOLD setting. (increases hold time instead)
 * FEEDBACK: Add "First to 3 wins" to SIO, as well as overall win tracking.
 * BUG: Flash on intial boot.
 * BUG: Doesn't work on DSi emulator.
