@@ -147,25 +147,20 @@ UINT8 sprite_data[4];
 
 BETA:
 
-* BUG: Stress music starts 1 row too early.
-* BUG: Game hangs at Credits Screen on TGB Dual core.
 * BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: No sound fx on countdown during gameplay.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
-* FEEDBACK: Make On/Off options loop.
-* FEEDBACK: Stress music is annoying.
-* FEEDBACK: Score/Level/Lines are too cramped.
 * FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
-* FEEDBACK: Bring menu palette into gameplay.
 * FEEDBACK: Should be able to pause in versus.
 * FEEDBACK: Should have a "garbage incoming" sound.
 * FEEDBACK: Should have a "garbage filling" sound.
 * FEEDBACK: Should be able to cancel incoming garbage.
-* INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2.
+* FEEDBACK: Isn't obvious that you options is how you Start the game.
 
 
 BETA FIXED:
 
+* FEEDBACK: Bring menu palette into gameplay.
 * INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * FEEDBACK: Consider removing H.Drop HOLD setting. (increases hold time instead)
 * FEEDBACK: Add "First to 3 wins" to SIO, as well as overall win tracking.
@@ -179,7 +174,13 @@ BETA FIXED:
 
 BETA CUT:
 
+* BUG: Stress music starts 1 row too early.
+* BUG: Game hangs at Credits Screen on TGB Dual core.
+* FEEDBACK: Make On/Off options loop.
+* FEEDBACK: Stress music is annoying.
+* FEEDBACK: Score/Level/Lines are too cramped.
 * FEEDBACK: Add more colors to pieces.
+* INVESTIGATE: You could hack cbtfx to use channel 1 instead with a few line changes since iirc the data structure is the same between the first 2. (sounds worse)
 
 
 
@@ -188,16 +189,17 @@ MUST:
 
 SHOULD:
 
-* [SGB] Long delay setting attributes. Can this be done with linear array?
 * [SIO] More variety in garbage tiles.
 * [SIO] Play sound effect/visuals when garbage incoming.
 * [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
 * [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
 * Bottom of well looks weird going straight into water.
 * [SIO] BUG: (Emulicious Only) Sometimes after playing a SP game, and then an MP game, Host will get random "0x55" event triggering a single line to appear.
+* Add bubbles to settings screen.
 
 PROBABLY CUT:
 
+* [SGB] Long delay setting attributes. Can this be done with linear array?
 * High contrast mode.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
@@ -5203,7 +5205,8 @@ void fade_from_black()
 	// that portion of the sprite make be able to be transparent and just
 	// show the black background tile for the eyebrow. Not sure.
 	OBP1_REG = PAL_DEF(0, 0, 1, 3);
-	DISPLAY_ON;
+	// Now in fadein code to avoid flicker when vblank waiting.
+//	DISPLAY_ON;
 	FadeOut();
 }
 

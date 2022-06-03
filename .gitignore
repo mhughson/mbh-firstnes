@@ -2,3 +2,4 @@
 game/BUILD/
 promotion/vs/Original/*
 promotion/orders.csv
+gb/beta_builds/*.sav
