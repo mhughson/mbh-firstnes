@@ -148,7 +148,6 @@ UINT8 sprite_data[4];
 BETA:
 
 * BUG: GAME OVER graphics are chopped at the bottom.
-* BUG: No sound fx on countdown during gameplay.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
 * FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
 * FEEDBACK: Should be able to pause in versus.
@@ -160,6 +159,7 @@ BETA:
 
 BETA FIXED:
 
+* BUG: No sound fx on countdown during gameplay.
 * FEEDBACK: Bring menu palette into gameplay.
 * INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
 * FEEDBACK: Consider removing H.Drop HOLD setting. (increases hold time instead)
@@ -3816,9 +3816,25 @@ void go_to_state(unsigned char new_state)
 					// TODO: Delay may not actually be needed now that fade was moved to after this.
 					#define SAFE_DELAY (60) // 30, 2x60 works
 
-					PRINT_POS(0,0);
-					Printf("3");
+					unsigned char x_offset = 0;
+					if (prev_state == STATE_OPTIONS)
+					{
+						x_offset = 4;
+					}
+
+					// 10,6 -> 17,10
+					for (local_ix = 10; local_ix <= 17; ++local_ix)
+					{
+						for (local_iy = 6; local_iy <= 10; ++local_iy)
+						{
+							UPDATE_TILE_BY_VALUE(local_ix - x_offset, local_iy, 0x0, 0x10);
+						}
+					}
+
+					PRINT(11-x_offset,8, "READY?");
 					SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+
+					draw_pause_sprites();
 
 					if (is_host)
 					{
@@ -3834,8 +3850,7 @@ void go_to_state(unsigned char new_state)
 							while(_io_status == IO_SENDING);
 						//} while (_io_status == IO_ERROR);
 
-						PRINT_POS(0,0);
-						Printf("2");
+						PRINT(11-x_offset,8, " SET? ");
 						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						// Now wait for client to get the upper byte and send
@@ -3843,9 +3858,8 @@ void go_to_state(unsigned char new_state)
 						receive_byte();
 						while(_io_status == IO_RECEIVING);
 
-						PRINT_POS(0,0);
-						Printf("1");
-						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+						PRINT(11-x_offset,8, "  GO! ");
+						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Client has sent ACK. Value doesn't matter, as we just
 						// assume success at this point.
@@ -3861,10 +3875,9 @@ void go_to_state(unsigned char new_state)
 							while(_io_status == IO_SENDING);
 						//} while (_io_status != IO_IDLE);
 
-						PRINT_POS(0,0);
-						Printf("0");
+						//PRINT(13,8, "GO!");
 						//SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-						SFX_PLAY_WRAPPER(SOUND_START);
+						//SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Seed the RNG with this synced value.
 						srand(tick_count_large);
@@ -3884,8 +3897,7 @@ void go_to_state(unsigned char new_state)
 						while(_io_status == IO_RECEIVING);
 						seed_value = (_io_in << 8);
 
-						PRINT_POS(0,0);
-						Printf("2");
+						PRINT(11-x_offset,8, " SET? ");
 						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
 
 						vbl_delay(SAFE_DELAY);
@@ -3898,19 +3910,17 @@ void go_to_state(unsigned char new_state)
 							while(_io_status == IO_SENDING);
 						//} while (_io_status  != IO_IDLE);
 
-						PRINT_POS(0,0);
-						Printf("1");
-						SFX_PLAY_WRAPPER(SOUND_MENU_LOW);
+						PRINT(11-x_offset,8, "  GO! ");
+						SFX_PLAY_WRAPPER(SOUND_START);
 
 						// The second byte should be arriving next.
 						receive_byte();
 						while(_io_status == IO_RECEIVING);
 						seed_value |= _io_in;
 
-						PRINT_POS(0,0);
-						Printf("0");
+						//PRINT(13,8, "GO!");
 						//SFX_PLAY_WRAPPER(SOUND_MENU_HIGH);
-						SFX_PLAY_WRAPPER(SOUND_START);
+						//SFX_PLAY_WRAPPER(SOUND_START);
 
 						// Seed the RNG with this synced value.
 						srand(seed_value);
