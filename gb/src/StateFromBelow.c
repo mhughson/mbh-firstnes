@@ -153,12 +153,13 @@ BETA:
 * FEEDBACK: Should be able to pause in versus.
 * FEEDBACK: Should have a "garbage incoming" sound.
 * FEEDBACK: Should have a "garbage filling" sound.
-* FEEDBACK: Should be able to cancel incoming garbage.
 * FEEDBACK: Isn't obvious that you options is how you Start the game.
+* BUG: Clearing 4 rows while 1 incoming garbage row is queued still results in sending 4 rows (4-1=3 == 4)
 
 
 BETA FIXED:
 
+* FEEDBACK: Should be able to cancel incoming garbage.
 * BUG: No sound fx on countdown during gameplay.
 * FEEDBACK: Bring menu palette into gameplay.
 * INVESTIGATE: Try tbsp color fade: https://discord.com/channels/731554439055278221/974456955622031401/976159536345935942
@@ -3248,6 +3249,8 @@ void spawn_new_cluster()
 		id = (unsigned char)rand() % NUM_CLUSTERS;
 	}
 
+//	id = 2;
+
 	if (id >= NUM_CLUSTERS)
 	{
 		Printf("ERROR");
@@ -4633,8 +4636,29 @@ void clear_rows_in_data(unsigned char start_y)
 		// other player as garbage.
 		if (i > 1)
 		{
-			// Add the number of rows cleared to the packet.
-			queued_packet |= (i - 1);
+			unsigned char j = (i == 4) ? i : i - 1;
+
+			if (j > garbage_row_queue)
+			{
+
+				// BUG IN CASE OF CLEARING 4 WHILE QUEUED UP IS 1: 
+				// Sends 4-1=3, which gets upgraded to 4 on reciever.
+				// No way to send 3 rows atm. 
+				// Decided it is ok to just not let 1 row impact Tetris.
+
+				j -= garbage_row_queue;
+				garbage_row_queue = 0;
+
+				// Add the number of rows to send to the packet.
+				// j can be 4, so make sure it gets clamped to 3.
+				queued_packet |= MIN(j, 3);
+			}
+			else if (garbage_row_queue >= j)
+			{
+				// The is more queued up than we cleared, so just reduce
+				// the queue by the amount we would have sent.
+				garbage_row_queue -= j;
+			}
 		}
 
 		// 40 * (n + 1)	100 * (n + 1) 	300 * (n + 1) 	1200 * (n + 1)
