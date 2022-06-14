@@ -1893,6 +1893,8 @@ void UPDATE()
 					garbage_rows = 4;
 				}
 				garbage_row_queue += garbage_rows;
+				
+				SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 			}
 
 			if (other_lost && is_sio_game)
@@ -5029,6 +5031,8 @@ void add_row_at_bottom()
 void add_garbage_row_at_bottom(UINT8 num_rows)
 {
 	static UINT8 dest_row;
+
+	SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 
 	for(dest_row = 0; dest_row <= (BOARD_END_Y_PX_BOARD - num_rows); ++dest_row)
 	{
