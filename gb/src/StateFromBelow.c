@@ -149,16 +149,16 @@ BETA:
 
 * BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
-* FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
-* FEEDBACK: Should be able to pause in versus.
-* FEEDBACK: Should have a "garbage incoming" sound.
-* FEEDBACK: Should have a "garbage filling" sound.
+* FEEDBACK: Should be able to pause in versus. (idea: could use extra values in row height bits to signal pause)
+* FEEDBACK: Should have a "garbage incoming" sound. (waiting on SFX)
+* FEEDBACK: Should have a "garbage filling" sound. (waiting on SFX)
 * FEEDBACK: Isn't obvious that you options is how you Start the game.
-* BUG: Clearing 4 rows while 1 incoming garbage row is queued still results in sending 4 rows (4-1=3 == 4)
+* BUG: Clearing 4 rows while 1 incoming garbage row is queued still results in sending 4 rows (4-1=3 == 4) (idea: could use extra values in row height bits to signal tetris)
 
 
 BETA FIXED:
 
+* FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
 * FEEDBACK: Should be able to cancel incoming garbage.
 * BUG: No sound fx on countdown during gameplay.
 * FEEDBACK: Bring menu palette into gameplay.
@@ -197,6 +197,7 @@ SHOULD:
 * Bottom of well looks weird going straight into water.
 * [SIO] BUG: (Emulicious Only) Sometimes after playing a SP game, and then an MP game, Host will get random "0x55" event triggering a single line to appear.
 * Add bubbles to settings screen.
+* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 
 PROBABLY CUT:
 
@@ -204,7 +205,6 @@ PROBABLY CUT:
 * High contrast mode.
 * [SIO] Replicate "mode" choice by host.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
-* [SIO] BUG: Losing on the same frame as opponent causes switch from YOU LOSE to YOU WIN! (in CGB vs CGB emulator)
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
 * BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
@@ -5379,6 +5379,11 @@ void send_queued_packet()
 		 // TODO: Detect timeout and disconnect, but make sure its not enough for all the
 		 // 	  delay and fade calls.
 		} while(queued_packet_required && (_io_status != IO_IDLE));
+
+		if (_io_status == IO_ERROR)
+		{
+			--packet_count_out;
+		}
 
 		// Probably not needed since queued packet is cleared at the start of
 		// the frame.
