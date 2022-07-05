@@ -1,11 +1,11 @@
 /*
 
-		bop_SFX
+		unableRotate_SFX
 
 		Sound Effect File.
 		
 		Info:
-			Length			:	3
+			Length			:	2
 			Priority		:	0
 			Channels used	:	Duty channel 2
 		
@@ -13,8 +13,8 @@
 
 	*/
 #pragma bank 5
-	const unsigned char bop_SFX[] = {
+	const unsigned char unableRotate_SFX[] = {
 192, // Header
-3,
-0, 34, 128, 80, 158, 134, 0, 34, 128, 80, 20, 135, 0, 34, 128, 16, 158, 134
+2,
+0, 34, 128, 160, 237, 133, 0, 34, 128, 160, 229, 132
 };

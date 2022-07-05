@@ -51,6 +51,13 @@
         "string.h": "c",
         "rand.h": "c",
         "tilesinfo.h": "c",
-        "mapinfo.h": "c"
+        "mapinfo.h": "c",
+        "sfx_block_land_echo.h": "c",
+        "sfx_alarm_high.h": "c",
+        "blockrotate_sfx.h": "c",
+        "hugedriver.h": "c",
+        "gb.h": "c",
+        "sfx_alarm_normal.h": "c",
+        "sfx_alarm_medium.h": "c"
     }
 }

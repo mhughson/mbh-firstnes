@@ -44,26 +44,33 @@
 
 #include "cbtfx.h"
 #include "beep_sfx.h"
-#include "block_land_sfx.h"
-#include "block_rotate_sfx.h"
+#include "blockLand_SFX.h"
+#include "blockRotate_SFX.h"
 #include "bop_sfx.h"
-#include "level_up_4_sfx.h"
-#include "level_up_sfx.h"
-#include "multi_row_destroyed_sfx.h"
-#include "row_destroyed_sfx.h"
-#include "start_game_sfx.h"
-#include "unable_rotate_sfx.h"
+#include "levelUp4_SFX.h"
+#include "levelUp_SFX.h"
+#include "multiRowDestroyed_SFX.h"
+#include "rowDestroyed_SFX.h"
+#include "startGame_SFX.h"
+#include "SFX_Alarm_High.h"
+#include "SFX_Alarm_Medium.h"
+#include "SFX_Alarm_Normal.h"
+#include "SFX_Block_Land_Echo.h"
 
-#define SOUND_ROTATE			CBTFX_PLAY_block_rotate_sfx
-#define SOUND_LAND				CBTFX_PLAY_block_land_sfx
-#define SOUND_ROW				CBTFX_PLAY_row_destroyed_sfx
-#define SOUND_MULTIROW			CBTFX_PLAY_multi_row_destroyed_sfx
-#define SOUND_START				CBTFX_PLAY_start_game_sfx
-#define SOUND_BLOCKED			CBTFX_PLAY_unable_rotate_sfx
-#define SOUND_LEVELUP			CBTFX_PLAY_level_up_sfx
-#define SOUND_LEVELUP_MULTI		CBTFX_PLAY_level_up_4_sfx
-#define SOUND_MENU_HIGH			CBTFX_PLAY_beep_sfx
-#define SOUND_MENU_LOW			CBTFX_PLAY_bop_sfx
+#define SOUND_ROTATE			CBTFX_PLAY_blockRotate_SFX
+#define SOUND_LAND				CBTFX_PLAY_blockLand_SFX
+#define SOUND_ROW				CBTFX_PLAY_rowDestroyed_SFX
+#define SOUND_MULTIROW			CBTFX_PLAY_multiRowDestroyed_SFX
+#define SOUND_START				CBTFX_PLAY_startGame_SFX
+#define SOUND_BLOCKED			CBTFX_PLAY_blockRotate_SFX
+#define SOUND_LEVELUP			CBTFX_PLAY_levelUp_SFX
+#define SOUND_LEVELUP_MULTI		CBTFX_PLAY_levelUp4_SFX
+#define SOUND_MENU_HIGH			CBTFX_PLAY_beep_SFX
+#define SOUND_MENU_LOW			CBTFX_PLAY_bop_SFX
+#define SOUND_GARBAGE_FILL		CBTFX_PLAY_SFX_0D
+#define SOUND_GARBAGE_LOW		CBTFX_PLAY_SFX_0A
+#define SOUND_GARBAGE_MED		CBTFX_PLAY_SFX_0B
+#define SOUND_GARBAGE_HIGH		CBTFX_PLAY_SFX_0C
 
 #include <gbdk/platform.h>
 #include <stdint.h>
@@ -1892,10 +1899,18 @@ void UPDATE()
 				if (garbage_rows == 3)
 				{
 					garbage_rows = 4;
+					SFX_PLAY_WRAPPER(SOUND_GARBAGE_HIGH);
 				}
+				else if (garbage_rows == 2)
+				{
+					SFX_PLAY_WRAPPER(SOUND_GARBAGE_MED);
+				}
+				else
+				{
+					SFX_PLAY_WRAPPER(SOUND_GARBAGE_LOW);
+				}
+
 				garbage_row_queue += garbage_rows;
-				
-				SFX_PLAY_WRAPPER(SOUND_BLOCKED);
 			}
 
 			if (other_lost && is_sio_game)
@@ -2317,7 +2332,6 @@ void UPDATE()
 			// ++scroll_y_game;
 //#endif	// VS_SYS_ENABLED
 }
-
 
 #if PLAT_NES
 void draw_menu_sprites(void)
@@ -2764,6 +2778,20 @@ void movement(void)
 	else
 	{
 		--start_delay_remaining;
+	}
+
+
+	if (pad_all_new & PAD_DOWN)
+	{
+		SFX_PLAY_WRAPPER(SOUND_GARBAGE_LOW);
+	}	
+	if (pad_all_new & PAD_RIGHT)
+	{
+		SFX_PLAY_WRAPPER(SOUND_GARBAGE_MED);
+	}	
+	if (pad_all_new & PAD_UP)
+	{
+		SFX_PLAY_WRAPPER(SOUND_GARBAGE_HIGH);
 	}
 
 #if VS_SYS_ENABLED
@@ -5056,7 +5084,7 @@ void add_garbage_row_at_bottom(UINT8 num_rows)
 {
 	static UINT8 dest_row;
 
-	SFX_PLAY_WRAPPER(SOUND_BLOCKED);
+	SFX_PLAY_WRAPPER(SOUND_GARBAGE_FILL);
 
 	for(dest_row = 0; dest_row <= (BOARD_END_Y_PX_BOARD - num_rows); ++dest_row)
 	{
