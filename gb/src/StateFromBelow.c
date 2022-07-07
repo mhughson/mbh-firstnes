@@ -154,11 +154,8 @@ UINT8 sprite_data[4];
 
 BETA:
 
-* BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
-* FEEDBACK: Should be able to pause in versus. (idea: could use extra values in row height bits to signal pause)
 * BUG: Clearing 4 rows while 1 incoming garbage row is queued still results in sending 4 rows (4-1=3 == 4) (idea: could use extra values in row height bits to signal tetris)
-* BUG: Bottom row is cleared with empty tiles rather than ____
 
 BETA FIXED:
 
@@ -182,6 +179,9 @@ BETA FIXED:
 
 BETA CUT:
 
+* BUG: GAME OVER graphics are chopped at the bottom.
+* FEEDBACK: Should be able to pause in versus. (idea: could use extra values in row height bits to signal pause)
+* BUG: Bottom row is cleared with empty tiles rather than ____
 * BUG: Stress music starts 1 row too early.
 * BUG: Game hangs at Credits Screen on TGB Dual core.
 * FEEDBACK: Make On/Off options loop.
@@ -212,7 +212,6 @@ PROBABLY CUT:
 * [SIO] Replicate "mode" choice by host.
 * [SIO] Non-host starts slightly delayed from host, causing non-host to win in AFK case. (CGB vs SGB emulator)
 * Try https://github.com/untoxa/VGM2GBSFX for alternate sfx driver (test integration with music, ROM size, clicking).
-* BUG: Sound Effects cut out music in an un-natural way.
 * BUG: Music sometimes has an extended first note.
 
 CNR:
