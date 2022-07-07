@@ -157,14 +157,14 @@ BETA:
 * BUG: GAME OVER graphics are chopped at the bottom.
 * BUG: Both players hit A at the same time, and player got stuck on Game Over. https://discord.com/channels/731554439055278221/974456955622031401/980959536699568149
 * FEEDBACK: Should be able to pause in versus. (idea: could use extra values in row height bits to signal pause)
-* FEEDBACK: Should have a "garbage incoming" sound. (waiting on SFX)
-* FEEDBACK: Should have a "garbage filling" sound. (waiting on SFX)
-* FEEDBACK: Isn't obvious that you options is how you Start the game.
 * BUG: Clearing 4 rows while 1 incoming garbage row is queued still results in sending 4 rows (4-1=3 == 4) (idea: could use extra values in row height bits to signal tetris)
-
+* BUG: Bottom row is cleared with empty tiles rather than ____
 
 BETA FIXED:
 
+* FEEDBACK: Isn't obvious that you options is how you Start the game.
+* FEEDBACK: Should have a "garbage incoming" sound. (waiting on SFX)
+* FEEDBACK: Should have a "garbage filling" sound. (waiting on SFX)
 * FEEDBACK: Flags don't look like flags. Either swap the static tile, or add sprites back in.
 * FEEDBACK: Should be able to cancel incoming garbage.
 * BUG: No sound fx on countdown during gameplay.
@@ -198,7 +198,6 @@ MUST:
 SHOULD:
 
 * [SIO] More variety in garbage tiles.
-* [SIO] Play sound effect/visuals when garbage incoming.
 * [SIO] Player 1 mashed B on Game Over and was able to exit before the other player (I think)
 * [SIO] Player 1 (CGB) mash START while transitioning between Title and Settings. Player 2 (DMG) shows 0 in top left, Player 1 shows 1.
 * Bottom of well looks weird going straight into water.
@@ -2781,18 +2780,18 @@ void movement(void)
 	}
 
 
-	if (pad_all_new & PAD_DOWN)
-	{
-		SFX_PLAY_WRAPPER(SOUND_GARBAGE_LOW);
-	}	
-	if (pad_all_new & PAD_RIGHT)
-	{
-		SFX_PLAY_WRAPPER(SOUND_GARBAGE_MED);
-	}	
-	if (pad_all_new & PAD_UP)
-	{
-		SFX_PLAY_WRAPPER(SOUND_GARBAGE_HIGH);
-	}
+	// if (pad_all_new & PAD_DOWN)
+	// {
+	// 	SFX_PLAY_WRAPPER(SOUND_GARBAGE_LOW);
+	// }	
+	// if (pad_all_new & PAD_RIGHT)
+	// {
+	// 	SFX_PLAY_WRAPPER(SOUND_GARBAGE_MED);
+	// }	
+	// if (pad_all_new & PAD_UP)
+	// {
+	// 	SFX_PLAY_WRAPPER(SOUND_GARBAGE_HIGH);
+	// }
 
 #if VS_SYS_ENABLED
 	if (pad_all_new & (PAD_SELECT | PAD_START))
@@ -3800,7 +3799,7 @@ void go_to_state(unsigned char new_state)
 			}
 			else
 			{
-				PRINT(6, 1, "SETTINGS");
+				PRINT(5, 1, "PUSH START");
 			}
 #endif
 
@@ -4207,7 +4206,18 @@ void go_to_state(unsigned char new_state)
 
 			UPDATE_TILE_BY_VALUE(10, 12, 177, 0x10);
 			UPDATE_TILE_BY_VALUE(10, 14, 178, 0x10);
-			PRINT(11, 12, "RESTART");
+
+			if (!is_sio_game)
+			{
+				PRINT(11, 12, "RESTART");
+			}
+			else
+			{
+				// in multiplayer match, make it clear that you are advancing
+				// to the next round, not "restarting" the previous round.
+				// Struggled a lot with a word that fits in 7 characters.
+				PRINT(11, 12, "READY");
+			}
 			PRINT(11, 14, "QUIT   ");
 
 			if (is_sio_game)

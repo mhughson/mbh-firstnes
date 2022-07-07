@@ -12,7 +12,7 @@
 
 // When set to 1, certain debug features will be enabled.
 // Should be set to 0 before shipping.
-#define DEBUG_ENABLED 1
+#define DEBUG_ENABLED 0
 #define HIGHWATER_ON 1
 
 #if DEBUG_ENABLED
