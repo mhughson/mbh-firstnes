@@ -133,8 +133,8 @@ const unsigned char test_bg_tile = 128;
 const unsigned char* digits[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 // Palettes to flash between when leveling up on CGB.
-const UWORD palette_flash[4] = { 0x7fff, 0x7ab4, 0x65ce, 0x0 };
-const UWORD palette_normal[4] = { 0x7f97, 0x7ab4, 0x65ce, 0x0 };
+const UWORD palette_flash[4] = { 0x7fff, 0x7e92, 0x7e50, 0x0 };
+const UWORD palette_normal[4] = { 0x7f97, 0x7e92, 0x7e50, 0x0 };
 
 // current sprite index in ZGB
 extern UINT8 next_oam_idx;
