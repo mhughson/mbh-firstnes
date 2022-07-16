@@ -1,6 +1,6 @@
 /*
 
-		blockLand_SFX
+		SFX_01
 
 		Sound Effect File.
 		
@@ -13,8 +13,8 @@
 
 	*/
 #pragma bank 5
-	const unsigned char blockLand_SFX[] = {
+	const unsigned char SFX_01[] = {
 48, // Header
 6,
-1, 136, 15, 241, 0, 136, 13, 65, 0, 136, 11, 98, 2, 136, 7, 98, 1, 136, 3, 98, 0, 136, 1, 98
+0, 136, 15, 98, 0, 136, 13, 65, 0, 136, 11, 98, 2, 136, 7, 98, 1, 136, 3, 98, 0, 136, 1, 98
 };

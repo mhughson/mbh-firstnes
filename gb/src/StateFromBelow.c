@@ -56,11 +56,11 @@
 #include "SFX_Alarm_Medium.h"
 #include "SFX_Alarm_Normal.h"
 #include "SFX_Block_Land_Echo.h"
-
+ 
 #define SOUND_ROTATE			CBTFX_PLAY_blockRotate_SFX
-#define SOUND_LAND				CBTFX_PLAY_blockLand_SFX
-#define SOUND_ROW				CBTFX_PLAY_rowDestroyed_SFX
-#define SOUND_MULTIROW			CBTFX_PLAY_multiRowDestroyed_SFX
+#define SOUND_LAND				CBTFX_PLAY_SFX_01
+#define SOUND_ROW				CBTFX_PLAY_SFX_02
+#define SOUND_MULTIROW			CBTFX_PLAY_SFX_03
 #define SOUND_START				CBTFX_PLAY_startGame_SFX
 #define SOUND_BLOCKED			CBTFX_PLAY_blockRotate_SFX
 #define SOUND_LEVELUP			CBTFX_PLAY_levelUp_SFX
