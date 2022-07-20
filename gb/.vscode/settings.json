@@ -58,6 +58,7 @@
         "hugedriver.h": "c",
         "gb.h": "c",
         "sfx_alarm_normal.h": "c",
-        "sfx_alarm_medium.h": "c"
+        "sfx_alarm_medium.h": "c",
+        "sgbhelpers.h": "c"
     }
 }

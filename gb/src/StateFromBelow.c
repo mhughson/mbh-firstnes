@@ -590,7 +590,8 @@ void START()
 	static unsigned char k;
 #endif
 
-	LOAD_SGB_BORDER(gb_border);
+	// Doing this in ZGB main to avoid glitches on startup.
+	//LOAD_SGB_BORDER(gb_border);
 	sgb_init_pals();
 
 	CRITICAL {
