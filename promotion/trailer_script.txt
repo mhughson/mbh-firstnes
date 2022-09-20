@@ -1,0 +1,99 @@
+From Below Pocket Trailer Outline:
+
+======================================
+
+"" = on screen text
+[] = description of footage
+<<>> = additional notes from me to you
+
+======================================
+
+<<for the first section, I think some subtle background sound, giving an "ominous" vibe>>
+
+"From the ocean depths..."
+[zoomed in footage panning across the ocean at the bottom the screen]
+[01_KrakenGameplay_Basic_DMG]
+
+"The Kraken has come!"
+[camera shake as the Kraken's eyes go wide, and a "monster scream" sound plays]
+[01_KrakenGameplay_Basic_DMG]
+
+<<Trailer music kicks in here. I will provide the music, as it is from the game.>>
+<<Music: Title.wav has a natural loop of 45s>>
+
+"FROM BELOW POCKET"
+"A New Game for you Game Boy!"
+[logo reveal]
+
+"Send blocks down at the monster to defend your castle"
+[footage of basic kraken gameplay, zoomed slightly and panning]
+[02_KrakenGameplayNearTop_Basic_GBC]
+
+"As lines are cleared, the Kraken retreats"
+[clear a line, Kraken withdrawls tentacle, zoomed in to show tentacle getting hit, and Kraken playing "exlamation" reaction]
+[02_KrakenGameplayNearTop_Basic_GBC]
+
+"Can you survive the night, and live to fight another day?"
+[getting close to the top, pan up from tentacle pushing blocks]
+[02_KrakenGameplayNearTop_Basic_GBC]
+
+---
+
+<<This section should be quick barage of features. Could be back to back quick cuts, or multiple videos overlapping with text popping in.>>
+
+"Modern gameplay on the classic system"
+
+"Full 10x20 game area"
+[a grid animates in overtop of gameplay footage, showing that the gameplay area (where the blocks fall) is 10 tiles wide and 20 tiles high (with each tile being 8x7 pixels)]
+[highlight to top 2 row, as that is the part that other similar games are missing (most games are only 10x18]
+
+"Wall Kicks"
+[wall kick]
+[03_WallKick_Basic_DMG]
+
+"Lock Delay"
+[sliding piece]
+[06_LockDelay_Advanced_GBCc]
+
+"Kill Screen"
+[show flow rising on level up]
+[07_KillScreen_Advanced_GBC]
+
+"And more!"
+[hard drop, t spin, spawn delay?]
+[09_TSpin_Basic_SGB]
+[08_HardDrop_Basic_GBC]
+
+--
+
+<<I want this to feel like a big moment, and highlight of the trailer>>
+
+"And exclusive to the Game Boy, Two-Player simultaneous play!"
+[Footage of IRL players transitions into crisp, emulator footage of multiplayer game]
+[First show IRL_01-08... in a quick montage (maybe split screen) showing the set up for a multiplayer game in real life]
+
+[As last show is played (IRL_08_HeadToHead), zoom transition to footage taken direct from PC (
+[Gameplay should be a quick montage showing the match advance from the main menu, cutting to mid game, and then the final few moments ending in "game over"]
+[11_2PlayerMatch_Basic_DMG+GBC]
+
+<<Originally I was imagining that this would have a "mock" set of Game Boys connected together by link cable, and showing the gameplay footage on the screens. I think this is probably the biggest ask of the project, so let me know what you think.>>
+
+--
+
+"Compatible with all Game Boy models, and enhanced for the Super Game Boy!"
+[General footage of all platforms, I am imagining sliding in one after another, resulting in a 3 running clips side by side, with logos for each platform below the footage.]
+[01_KrakenGameplay_Basic_DMG/GBC/SGB]
+
+--
+
+<<Trailer should have a very short "fake out" ending, probably a short black fade, before coming in with a "one more thing" moment>>
+
+"You've been asking, and it's finally happening..."
+
+"The return of From Below for the NES in physical form!"
+[high level NES footage]
+[99_TommyNTG_Save_NES - last little bit of the footage showing him getting out of death, and landing a 4 line clear]
+
+--
+
+"Available now and for a limited time at www.frombelowgame.com!"
